@@ -6,10 +6,11 @@
 > report — do not improvise. When done, update the status row for this plan
 > in `plans/README.md`.
 >
-> **Drift check**: The usual `git diff <SHA>..HEAD` check does not work in this
-> repo — see "A warning about drift detection" in `plans/README.md`. Instead,
-> confirm the "Current state" excerpts below match the live files before
-> proceeding. A mismatch is a STOP condition.
+> **Drift check**: This plan was written against commit `6e39653`. Before you
+> start, run `git diff --name-only 6e39653..HEAD -- <the files listed in scope>`.
+> If any file this plan quotes under "Current state" comes back changed, confirm
+> the excerpt still matches what is on disk. A mismatch you cannot reconcile is
+> a STOP condition.
 
 ## Status
 
@@ -18,7 +19,9 @@
 - **Risk**: MED
 - **Depends on**: plans/001-test-baseline.md
 - **Category**: direction
-- **Planned at**: commit `d554b36`, 2026-07-29
+- **Planned at**: commit `6e39653`, 2026-07-29 (SHA re-stamped 2026-07-30 by
+  `reconcile` when the working tree was committed; plan content unchanged and
+  excerpts re-verified against the live files)
 
 ## Why this matters
 

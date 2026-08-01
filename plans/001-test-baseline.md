@@ -6,10 +6,11 @@
 > report — do not improvise. When done, update the status row for this plan
 > in `plans/README.md`.
 >
-> **Drift check**: The usual `git diff <SHA>..HEAD` check does not work in this
-> repo — see "A warning about drift detection" in `plans/README.md`. Instead,
-> confirm the "Current state" excerpts below match the live files before
-> proceeding. A mismatch is a STOP condition.
+> **Drift check**: This plan was written against commit `6e39653`. Before you
+> start, run `git diff --name-only 6e39653..HEAD -- <the files listed in scope>`.
+> If any file this plan quotes under "Current state" comes back changed, confirm
+> the excerpt still matches what is on disk. A mismatch you cannot reconcile is
+> a STOP condition.
 
 ## Status
 
@@ -18,7 +19,9 @@
 - **Risk**: LOW
 - **Depends on**: none
 - **Category**: tests
-- **Planned at**: commit `d554b36`, 2026-07-29
+- **Planned at**: commit `6e39653`, 2026-07-29 (SHA re-stamped 2026-07-30 by
+  `reconcile` when the working tree was committed; plan content unchanged and
+  excerpts re-verified against the live files)
 
 ## Why this matters
 
@@ -67,7 +70,7 @@ export function cn(...inputs: ClassValue[]) {
 Repo conventions to match:
 
 - TypeScript throughout, `strict: true` (`tsconfig.json`).
-- Path alias `@/*` → `./src/*` (`tsconfig.json:20-22`). Use it in test imports.
+- Path alias `@/*` → `./src/*` (`tsconfig.json:21-23`). Use it in test imports.
 - No semicolon-style enforcement — `src/mastra/` files use semicolons,
   `src/app/chat/page.tsx` does not. ESLint does not enforce either. Match
   whatever file you are editing; for new files under `src/mastra/`, use
