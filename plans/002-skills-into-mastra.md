@@ -215,8 +215,10 @@ Standalone skills (not part of the ordered pipeline):
 - `src/mastra/index.ts` (edit — register the new agent only)
 - `next.config.ts` (edit — add `outputFileTracingIncludes` only)
 - `docs/kessel-run/README.md`, `docs/kessel-run/QUICK-REFERENCE.md` (create, by moving)
-- `.gitignore` (edit — one line)
 - `kessel-run-skills/` (delete the directory once emptied)
+
+**Not in scope any more**: `.gitignore`. An earlier commit added a `*.zip` rule
+that already covers the skills zip, so step 2 is now a verification only.
 
 **Out of scope** (do NOT touch, even though they look related):
 - `src/mastra/agents/weather-agent.ts`, `src/mastra/tools/weather-tool.ts`,
@@ -232,15 +234,17 @@ Standalone skills (not part of the ordered pipeline):
 ## Git workflow
 
 - Branch: `advisor/002-skills-into-mastra`
-- Commit per step or per logical unit; plain imperative subject lines
-  (the repo's only commit is `Initial commit`; there is no convention to match).
+- Commit per step or per logical unit; plain imperative subject lines, matching
+  the existing history (e.g. `Add Vitest baseline and typecheck script`).
 - Do NOT push or open a PR.
 
 ## Steps
 
 ### Step 1: Relocate the skill files into Mastra's expected layout
 
-The source files are untracked, so `git mv` will not work — use plain `mv`.
+The source files **are tracked** (committed in `6e39653`), so use `git mv` — it
+preserves rename history, and `git log --follow` will keep working on the
+relocated files.
 
 For each of the 11 rows in the mapping table above, create
 `src/mastra/skills/<skill-name>/` and move the file in as `SKILL.md`.
@@ -249,7 +253,7 @@ For each of the 11 rows in the mapping table above, create
 mkdir -p src/mastra/skills
 while IFS=' ' read -r src name; do
   mkdir -p "src/mastra/skills/$name"
-  mv "kessel-run-skills/$src" "src/mastra/skills/$name/SKILL.md"
+  git mv "kessel-run-skills/$src" "src/mastra/skills/$name/SKILL.md"
 done <<'EOF'
 01-anchor.md kessel-run-anchor
 02-ideation.md kessel-run-ideation
@@ -269,8 +273,8 @@ Then move the two docs out of the way and remove the now-empty source dir:
 
 ```bash
 mkdir -p docs/kessel-run
-mv kessel-run-skills/README.md docs/kessel-run/README.md
-mv kessel-run-skills/QUICK-REFERENCE.md docs/kessel-run/QUICK-REFERENCE.md
+git mv kessel-run-skills/README.md docs/kessel-run/README.md
+git mv kessel-run-skills/QUICK-REFERENCE.md docs/kessel-run/QUICK-REFERENCE.md
 rmdir kessel-run-skills
 ```
 
@@ -290,16 +294,18 @@ done
 
 → prints nothing.
 
-### Step 2: Ignore the skills zip
+### Step 2: Confirm the skills zip stays ignored — no edit needed
 
 `kessel-run-skills.zip` sits in the repo root and is a duplicate of what you
-just installed. Append to `.gitignore`:
+just installed. It is **already ignored** by the `*.zip` rule in `.gitignore`
+(added before this plan's base commit). Do not add a redundant
+`kessel-run-skills.zip` line, and do not delete the zip — plan 002's maintenance
+notes still reference it as a comparison copy.
 
-```
-kessel-run-skills.zip
-```
+**Verify**: `git status --short | grep -c kessel-run-skills.zip` → `0`, and
+`git check-ignore -v kessel-run-skills.zip` → names the `*.zip` rule.
 
-**Verify**: `git status --short | grep -c kessel-run-skills.zip` → `0`.
+This step is a check, not a change. `.gitignore` should be untouched by this plan.
 
 ### Step 3: Create the typed skill catalog
 
@@ -720,8 +726,10 @@ Stop and report back (do not improvise) if:
   break skill loading with no error other than an empty skill list. If skills
   ever vanish in a new environment, check cwd first.
 - Reviewers should confirm the `SKILL.md` bodies are unchanged from
-  `kessel-run-skills/` — `git log --follow` will not help since the originals
-  were untracked, so compare against `kessel-run-skills.zip` if in doubt.
+  `kessel-run-skills/`. Because the originals are tracked as of `6e39653` and
+  the move uses `git mv`, `git diff -M 6e39653..HEAD -- '*SKILL.md'` should show
+  pure renames with no content hunks. `kessel-run-skills.zip` is a second copy
+  to compare against if in doubt.
 - Deferred: skill `references/` subdirectories. `01-anchor.md` mentions a
   `references/publications.md` for voice profiles that does not exist yet.
   Adding voice profiles as skill references is a natural follow-on and is why
