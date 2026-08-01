@@ -1,0 +1,1235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kessel Run — front-end workflow prototype</title>
+<style>
+/* ---------------------------------------------------------------
+   Kessel Run — front-end workflow prototype
+   Visual language: aeronautical sectional chart. The product is a
+   route with per-leg time budgets, so the page is drawn as a flight
+   plan: chart paper, ink, a magenta route line, airway blue.
+   --------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+
+  --paper:      #eef2f3;
+  --surface:    #fbfcfc;
+  --surface-2:  #e6ecee;
+  --ink:        #14252c;
+  --ink-2:      #4a6069;
+  --ink-3:      #7b929b;
+  --line:       #c8d6da;
+  --line-soft:  #dde6e9;
+
+  --route:      #c0286b;
+  --route-tint: rgba(192, 40, 107, 0.09);
+  --on-route:   #ffffff;
+  --airway:     #2a6e8f;
+  --airway-tint:rgba(42, 110, 143, 0.10);
+
+  --ok:         #2f7d5a;
+  --ok-tint:    rgba(47, 125, 90, 0.12);
+  --warn:       #a86c14;
+  --warn-tint:  rgba(168, 108, 20, 0.13);
+
+  --shadow:     0 1px 2px rgba(20, 37, 44, .06), 0 8px 24px -12px rgba(20, 37, 44, .18);
+
+  --display: "Avenir Next Condensed", "Helvetica Neue Condensed", "Arial Narrow", ui-sans-serif, sans-serif;
+  --body:    Charter, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif;
+  --mono:    ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  --step--1: clamp(.72rem, .70rem + .10vw, .78rem);
+  --step-0:  clamp(.94rem, .90rem + .18vw, 1.02rem);
+  --step-1:  clamp(1.12rem, 1.05rem + .32vw, 1.30rem);
+  --step-2:  clamp(1.45rem, 1.30rem + .70vw, 1.95rem);
+  --step-3:  clamp(2.10rem, 1.70rem + 1.80vw, 3.40rem);
+
+  --rail: 1.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --paper:      #0e1a20;
+    --surface:    #14242c;
+    --surface-2:  #1b2f38;
+    --ink:        #e4edf0;
+    --ink-2:      #9db3bb;
+    --ink-3:      #6b858f;
+    --line:       #27414c;
+    --line-soft:  #1e343d;
+    --route:      #ff74a8;
+    --route-tint: rgba(255, 116, 168, 0.14);
+    --on-route:   #0e1a20;
+    --airway:     #63b6dc;
+    --airway-tint:rgba(99, 182, 220, 0.14);
+    --ok:         #5cc08d;
+    --ok-tint:    rgba(92, 192, 141, 0.15);
+    --warn:       #e0a84a;
+    --warn-tint:  rgba(224, 168, 74, 0.16);
+    --shadow:     0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper:      #0e1a20;
+  --surface:    #14242c;
+  --surface-2:  #1b2f38;
+  --ink:        #e4edf0;
+  --ink-2:      #9db3bb;
+  --ink-3:      #6b858f;
+  --line:       #27414c;
+  --line-soft:  #1e343d;
+  --route:      #ff74a8;
+  --route-tint: rgba(255, 116, 168, 0.14);
+  --on-route:   #0e1a20;
+  --airway:     #63b6dc;
+  --airway-tint:rgba(99, 182, 220, 0.14);
+  --ok:         #5cc08d;
+  --ok-tint:    rgba(92, 192, 141, 0.15);
+  --warn:       #e0a84a;
+  --warn-tint:  rgba(224, 168, 74, 0.16);
+  --shadow:     0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --paper:      #eef2f3;
+  --surface:    #fbfcfc;
+  --surface-2:  #e6ecee;
+  --ink:        #14252c;
+  --ink-2:      #4a6069;
+  --ink-3:      #7b929b;
+  --line:       #c8d6da;
+  --line-soft:  #dde6e9;
+  --route:      #c0286b;
+  --route-tint: rgba(192, 40, 107, 0.09);
+  --on-route:   #ffffff;
+  --airway:     #2a6e8f;
+  --airway-tint:rgba(42, 110, 143, 0.10);
+  --ok:         #2f7d5a;
+  --ok-tint:    rgba(47, 125, 90, 0.12);
+  --warn:       #a86c14;
+  --warn-tint:  rgba(168, 108, 20, 0.13);
+  --shadow:     0 1px 2px rgba(20, 37, 44, .06), 0 8px 24px -12px rgba(20, 37, 44, .18);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--line-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+  background-size: 128px 128px, 128px 128px;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--step-0);
+  line-height: 1.6;
+}
+
+.wrap {
+  max-width: 78rem;
+  margin-inline: auto;
+  padding: 2.5rem 1.5rem 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4.5rem;
+}
+
+/* --- shared type -------------------------------------------------- */
+
+.eyebrow {
+  font-family: var(--display);
+  font-size: var(--step--1);
+  text-transform: uppercase;
+  letter-spacing: .16em;
+  color: var(--route);
+  margin: 0;
+}
+
+.eyebrow--quiet { color: var(--ink-3); }
+
+h1, h2, h3, h4 {
+  font-family: var(--display);
+  font-weight: 600;
+  text-wrap: balance;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+h1 { font-size: var(--step-3); line-height: 1.02; letter-spacing: -0.02em; }
+h2 { font-size: var(--step-2); line-height: 1.1; }
+h3 { font-size: var(--step-1); line-height: 1.2; }
+
+p { margin: 0; max-width: 66ch; }
+
+.lede { font-size: var(--step-1); line-height: 1.45; color: var(--ink-2); }
+.note { font-size: var(--step--1); color: var(--ink-2); }
+
+.mono {
+  font-family: var(--mono);
+  font-size: .82em;
+  font-variant-numeric: tabular-nums;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: .84em;
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 3px;
+  padding: .08em .34em;
+  color: var(--ink);
+}
+
+a { color: var(--airway); }
+
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--route);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* --- masthead ----------------------------------------------------- */
+
+.masthead {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 2rem;
+}
+
+.masthead__top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.masthead h1 { text-transform: uppercase; }
+
+.masthead__sub {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 60ch;
+}
+
+.themetoggle {
+  font-family: var(--display);
+  font-size: var(--step--1);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: .4rem .9rem;
+  cursor: pointer;
+}
+.themetoggle:hover { color: var(--ink); border-color: var(--ink-3); }
+
+.readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.readout__cell {
+  flex: 1 1 8rem;
+  padding: .85rem 1.1rem;
+  border-right: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+}
+.readout__cell:last-child { border-right: 0; }
+
+.readout__k {
+  font-family: var(--display);
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--ink-3);
+}
+.readout__v {
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* --- section scaffold --------------------------------------------- */
+
+.section { display: flex; flex-direction: column; gap: 1.75rem; }
+
+.section__head { display: flex; flex-direction: column; gap: .5rem; }
+
+.scrollx {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-bottom: .5rem;
+}
+
+/* --- the route ---------------------------------------------------- */
+
+.route { display: flex; align-items: stretch; gap: 0; min-width: 60rem; }
+
+.leg {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  padding: 0 .55rem;
+  border-top: 2px solid var(--route);
+  position: relative;
+  padding-top: 1.1rem;
+}
+.leg::before {
+  content: "";
+  position: absolute;
+  top: -5px; left: 50%;
+  transform: translateX(-50%);
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--route);
+}
+.leg--optional { border-top-style: dashed; }
+.leg--optional::before { background: var(--paper); border: 2px solid var(--route); }
+
+.leg__n {
+  font-family: var(--mono);
+  font-size: .7rem;
+  color: var(--route);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.leg__name {
+  font-family: var(--display);
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--ink);
+}
+.leg__t {
+  font-family: var(--mono);
+  font-size: .72rem;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.leg__out { font-size: .78rem; color: var(--ink-3); line-height: 1.35; }
+
+.aside-skills {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+.offroute {
+  border: 1px dashed var(--line);
+  border-left: 3px solid var(--airway);
+  border-radius: 3px;
+  background: var(--surface);
+  padding: .9rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+.offroute__name {
+  font-family: var(--display);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--ink);
+}
+
+/* --- browser frame ------------------------------------------------ */
+
+.frame {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.frame__bar {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  padding: .6rem .9rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.frame__dots { display: flex; gap: .35rem; }
+.frame__dots i {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--line);
+  display: block;
+}
+.frame__url {
+  font-family: var(--mono);
+  font-size: .74rem;
+  color: var(--ink-2);
+  background: var(--paper);
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  padding: .2rem .8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.frame__body { padding: 1.5rem; }
+
+/* --- app mock: shared --------------------------------------------- */
+
+.app { font-family: ui-sans-serif, system-ui, sans-serif; }
+.app p { max-width: none; }
+
+.apphead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid var(--line-soft);
+  margin-bottom: 1.4rem;
+}
+.apphead__title {
+  font-family: var(--display);
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.apphead__meta { font-size: .8rem; color: var(--ink-2); }
+
+.btn {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: .82rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  padding: .5rem .95rem;
+  cursor: pointer;
+  background: var(--route);
+  color: var(--on-route);
+}
+.btn--ghost {
+  background: transparent;
+  color: var(--ink-2);
+  border-color: var(--line);
+}
+
+.sublabel {
+  font-family: var(--display);
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--ink-3);
+  margin-bottom: .8rem;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
+  gap: .8rem;
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper);
+  padding: .85rem .95rem;
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+}
+.card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.card__name { font-weight: 650; font-size: .92rem; }
+.card__sum { font-size: .8rem; color: var(--ink-2); line-height: 1.4; }
+.card__trig {
+  font-family: var(--mono);
+  font-size: .69rem;
+  color: var(--ink-3);
+  border-top: 1px dotted var(--line);
+  padding-top: .45rem;
+}
+
+.pill {
+  font-family: var(--mono);
+  font-size: .66rem;
+  letter-spacing: .04em;
+  padding: .12rem .45rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  font-variant-numeric: tabular-nums;
+}
+.pill--stage { background: var(--route-tint); color: var(--route); border-color: var(--route); }
+.pill--alone { background: transparent; color: var(--airway); border-color: var(--airway); }
+.pill--ok    { background: var(--ok-tint); color: var(--ok); border-color: var(--ok); }
+.pill--live  { background: var(--warn-tint); color: var(--warn); border-color: var(--warn); }
+.pill--idle  { background: transparent; color: var(--ink-3); border-color: var(--line); }
+
+.projects { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: .8rem; }
+.proj {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper);
+  padding: .9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+.proj__t { font-weight: 650; font-size: .95rem; line-height: 1.3; }
+.proj__m { font-size: .78rem; color: var(--ink-2); display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.proj__d { font-family: var(--mono); font-size: .7rem; color: var(--ink-3); }
+
+/* --- app mock: workspace ------------------------------------------ */
+
+.ws {
+  display: grid;
+  grid-template-columns: 13rem minmax(0, 1fr) 17rem;
+  gap: 1rem;
+  align-items: start;
+}
+@media (max-width: 60rem) {
+  .ws { grid-template-columns: 1fr; }
+}
+
+.rail { display: flex; flex-direction: column; gap: .3rem; }
+
+.rail__btn {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  width: 100%;
+  text-align: left;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: .84rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: .45rem .55rem;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.rail__btn:hover { background: var(--surface-2); color: var(--ink); }
+.rail__btn[aria-selected="true"] {
+  background: var(--route-tint);
+  border-color: var(--route);
+  color: var(--ink);
+  font-weight: 650;
+}
+.rail__n {
+  font-family: var(--mono);
+  font-size: .68rem;
+  color: var(--ink-3);
+  width: 1.1rem;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.rail__btn[aria-selected="true"] .rail__n { color: var(--route); }
+.rail__dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  flex: none;
+  margin-left: auto;
+  background: var(--line);
+}
+.rail__dot--ok { background: var(--ok); }
+.rail__dot--live { background: var(--warn); }
+
+.chat {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  min-height: 21rem;
+}
+.chat__head {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+  padding: .6rem .8rem;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: .78rem;
+  color: var(--ink-2);
+}
+.chat__log { padding: .9rem .9rem; display: flex; flex-direction: column; gap: .75rem; flex: 1; }
+
+.msg { display: flex; flex-direction: column; gap: .25rem; max-width: 90%; }
+.msg--user { align-self: flex-end; align-items: flex-end; }
+.msg__who {
+  font-family: var(--display);
+  font-size: .66rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--ink-3);
+}
+.msg__b {
+  font-size: .85rem;
+  line-height: 1.5;
+  padding: .55rem .75rem;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+}
+.msg--user .msg__b { background: var(--airway-tint); border-color: transparent; }
+
+.toolcall {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--airway);
+  border-radius: 5px;
+  background: var(--surface);
+  padding: .45rem .65rem;
+  font-family: var(--mono);
+  font-size: .71rem;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+.toolcall b { color: var(--airway); font-weight: 600; }
+
+.composer {
+  border-top: 1px solid var(--line-soft);
+  padding: .6rem .8rem;
+  display: flex;
+  gap: .6rem;
+  align-items: center;
+}
+.composer__fake {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  padding: .5rem .7rem;
+  font-size: .82rem;
+  color: var(--ink-3);
+}
+
+.artifacts {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper);
+  padding: .85rem .95rem;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+.artifacts__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.artifacts__t {
+  font-family: var(--display);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: .74rem;
+  color: var(--ink-3);
+}
+.artifacts__body {
+  font-size: .82rem;
+  line-height: 1.55;
+  color: var(--ink);
+  white-space: pre-wrap;
+  font-family: var(--mono);
+  font-size: .74rem;
+  border-top: 1px dotted var(--line);
+  padding-top: .6rem;
+  margin: 0;
+  overflow-x: auto;
+}
+.artifacts__empty { color: var(--ink-3); font-style: italic; font-family: ui-sans-serif, system-ui, sans-serif; font-size: .8rem; }
+
+/* --- mechanic / flow ---------------------------------------------- */
+
+.flow { display: flex; flex-direction: column; gap: 0; counter-reset: step; }
+.flowstep {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  gap: 1.1rem;
+  padding: 1.1rem 0;
+  border-bottom: 1px solid var(--line-soft);
+  align-items: start;
+}
+.flowstep:first-child { border-top: 1px solid var(--line-soft); }
+.flowstep__n {
+  font-family: var(--mono);
+  font-size: .78rem;
+  color: var(--route);
+  padding-top: .2rem;
+  font-variant-numeric: tabular-nums;
+}
+.flowstep__b { display: flex; flex-direction: column; gap: .3rem; }
+.flowstep__t { font-family: var(--display); font-size: 1.05rem; letter-spacing: .01em; }
+.flowstep__d { font-size: .88rem; color: var(--ink-2); }
+
+/* --- build table --------------------------------------------------- */
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 40rem; font-size: .85rem; }
+th, td { text-align: left; padding: .65rem .9rem; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+th {
+  font-family: var(--display);
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .13em;
+  color: var(--ink-3);
+  background: var(--surface-2);
+}
+tr:last-child td { border-bottom: 0; }
+td.mono { font-family: var(--mono); font-size: .76rem; color: var(--ink-2); }
+
+.foot {
+  border-top: 2px solid var(--ink);
+  padding-top: 1.25rem;
+  font-size: .8rem;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rail__btn, .themetoggle, .btn { transition: background-color .14s ease, color .14s ease, border-color .14s ease; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============================ MASTHEAD ============================ -->
+  <header class="masthead">
+    <div class="masthead__top">
+      <div>
+        <p class="eyebrow">Front-end workflow prototype</p>
+        <h1>Kessel&nbsp;Run</h1>
+      </div>
+      <button class="themetoggle" type="button" id="theme">Invert</button>
+    </div>
+
+    <div class="masthead__sub">
+      <p class="lede">Eleven content skills, wired into one Mastra agent, driven by a
+      user interface that carries each artifact forward from stage to stage.</p>
+      <p class="note">This page is a static mockup of the two screens specified in
+      plans <span class="mono">005</span> and <span class="mono">006</span>. No app code runs here — the
+      workspace below is interactive so the pinning mechanic can be seen rather
+      than described.</p>
+    </div>
+
+    <div class="readout">
+      <div class="readout__cell"><span class="readout__k">Skills</span><span class="readout__v">11</span></div>
+      <div class="readout__cell"><span class="readout__k">Pipeline stages</span><span class="readout__v">0–7</span></div>
+      <div class="readout__cell"><span class="readout__k">Standalone</span><span class="readout__v">3</span></div>
+      <div class="readout__cell"><span class="readout__k">Full run</span><span class="readout__v">~35 min</span></div>
+      <div class="readout__cell"><span class="readout__k">Screens</span><span class="readout__v">2</span></div>
+    </div>
+  </header>
+
+  <!-- ============================== ROUTE ============================= -->
+  <section class="section">
+    <div class="section__head">
+      <p class="eyebrow eyebrow--quiet">The route</p>
+      <h2>Eight stages, in order, with a time budget each</h2>
+      <p>Stage 0 is dashed because Research is optional — a run can start at Anchor.
+      The times are the targets the skills themselves set, and they add up to the
+      ~35 minutes quoted for a full pipeline excluding Research.</p>
+    </div>
+
+    <div class="scrollx">
+      <ol class="route">
+        <li class="leg leg--optional">
+          <span class="leg__n">STAGE 0</span>
+          <span class="leg__name">Research</span>
+          <span class="leg__t">20–30 min · optional</span>
+          <span class="leg__out">Research brief with gaps &amp; angles</span>
+        </li>
+        <li class="leg">
+          <span class="leg__n">STAGE 1</span>
+          <span class="leg__name">Anchor</span>
+          <span class="leg__t">~3 min</span>
+          <span class="leg__out">Topic, audience, goal, framing</span>
+        </li>
+        <li class="leg">
+          <span class="leg__n">STAGE 2</span>
+          <span class="leg__name">Ideation</span>
+          <span class="leg__t">~5 min</span>
+          <span class="leg__out">Thesis, points, stories, evidence</span>
+        </li>
+        <li class="leg">
+          <span class="leg__n">STAGE 3</span>
+          <span class="leg__name">Hook</span>
+          <span class="leg__t">~3 min</span>
+          <span class="leg__out">Hook + bridge, variants scored</span>
+        </li>
+        <li class="leg">
+          <span class="leg__n">STAGE 4</span>
+          <span class="leg__name">Architecture</span>
+          <span class="leg__t">~5 min</span>
+          <span class="leg__out">Beat map, section by section</span>
+        </li>
+        <li class="leg">
+          <span class="leg__n">STAGE 5</span>
+          <span class="leg__name">Draft</span>
+          <span class="leg__t">~8 min</span>
+          <span class="leg__out">Section drafts, one at a time</span>
+        </li>
+        <li class="leg">
+          <span class="leg__n">STAGE 6</span>
+          <span class="leg__name">Personalize</span>
+          <span class="leg__t">~3 min</span>
+          <span class="leg__out">Authenticity audit + prompts</span>
+        </li>
+        <li class="leg">
+          <span class="leg__n">STAGE 7</span>
+          <span class="leg__name">Polish</span>
+          <span class="leg__t">~4 min</span>
+          <span class="leg__out">Scorecard across 7 dimensions</span>
+        </li>
+      </ol>
+    </div>
+
+    <div>
+      <p class="sublabel">Off the route — no fixed position in the run</p>
+      <div class="aside-skills">
+        <div class="offroute">
+          <span class="offroute__name">Review</span>
+          <span class="note">Audit a published piece. 10–15 min per piece.</span>
+        </div>
+        <div class="offroute">
+          <span class="offroute__name">Repurpose</span>
+          <span class="note">Adapt a finished piece to another format. 5–10 min per format.</span>
+        </div>
+        <div class="offroute">
+          <span class="offroute__name">Analyze</span>
+          <span class="note">Post-publish performance, feeding the next run. 10–15 min.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ SCREEN ONE ========================== -->
+  <section class="section">
+    <div class="section__head">
+      <p class="eyebrow eyebrow--quiet">Screen one · plan 005</p>
+      <h2>The front door</h2>
+      <p>The gallery states plainly what the eleven skills are: an ordered pipeline
+      plus three tools that sit outside it. Below it, the projects already in
+      flight. Each skill card carries its trigger phrases, because that is how a
+      user learns to summon a stage in conversation rather than by clicking.</p>
+    </div>
+
+    <div class="frame">
+      <div class="frame__bar">
+        <div class="frame__dots"><i></i><i></i><i></i></div>
+        <div class="frame__url">localhost:3000/kessel-run</div>
+      </div>
+      <div class="frame__body app">
+
+        <div class="apphead">
+          <div>
+            <div class="apphead__title">Kessel Run</div>
+            <div class="apphead__meta">A staged content pipeline, from raw idea to published piece.</div>
+          </div>
+          <button class="btn" type="button">New project</button>
+        </div>
+
+        <p class="sublabel">The pipeline</p>
+        <div class="cards">
+          <div class="card">
+            <div class="card__top"><span class="card__name">Research</span><span class="pill pill--stage">Stage 0</span></div>
+            <div class="card__sum">Map what already exists and where the gaps are, before committing to an angle.</div>
+            <div class="card__trig">“research this” · “what’s out there”</div>
+          </div>
+          <div class="card">
+            <div class="card__top"><span class="card__name">Anchor</span><span class="pill pill--stage">Stage 1</span></div>
+            <div class="card__sum">Pin the topic, audience, goal and framing before a word gets written.</div>
+            <div class="card__trig">“I have an idea” · “help me plan”</div>
+          </div>
+          <div class="card">
+            <div class="card__top"><span class="card__name">Ideation</span><span class="pill pill--stage">Stage 2</span></div>
+            <div class="card__sum">Develop the thesis into points, stories and the evidence behind each.</div>
+            <div class="card__trig">“help me develop” · “what angles”</div>
+          </div>
+          <div class="card">
+            <div class="card__top"><span class="card__name">Hook</span><span class="pill pill--stage">Stage 3</span></div>
+            <div class="card__sum">Write the opening and the bridge into the piece. Several variants, scored.</div>
+            <div class="card__trig">“I need a hook” · “how should I open”</div>
+          </div>
+          <div class="card">
+            <div class="card__top"><span class="card__name">Architecture</span><span class="pill pill--stage">Stage 4</span></div>
+            <div class="card__sum">Lay out the beat map, section by section, with energy flow planned.</div>
+            <div class="card__trig">“help me outline” · “what structure”</div>
+          </div>
+          <div class="card">
+            <div class="card__top"><span class="card__name">Draft</span><span class="pill pill--stage">Stage 5</span></div>
+            <div class="card__sum">Write it one section at a time, editing as you go.</div>
+            <div class="card__trig">“let’s start writing” · “draft this”</div>
+          </div>
+          <div class="card">
+            <div class="card__top"><span class="card__name">Personalize</span><span class="pill pill--stage">Stage 6</span></div>
+            <div class="card__sum">Audit for authenticity and ground the general claims in specifics.</div>
+            <div class="card__trig">“too generic” · “make it sound like me”</div>
+          </div>
+          <div class="card">
+            <div class="card__top"><span class="card__name">Polish</span><span class="pill pill--stage">Stage 7</span></div>
+            <div class="card__sum">Final quality check against seven dimensions, with a fix for each.</div>
+            <div class="card__trig">“is this ready” · “final review”</div>
+          </div>
+          <div class="card">
+            <div class="card__top"><span class="card__name">Review</span><span class="pill pill--alone">Standalone</span></div>
+            <div class="card__sum">Decide whether a published piece should be updated or retired.</div>
+            <div class="card__trig">“is this still accurate”</div>
+          </div>
+          <div class="card">
+            <div class="card__top"><span class="card__name">Repurpose</span><span class="pill pill--alone">Standalone</span></div>
+            <div class="card__sum">Adapt a finished piece into another format without flattening it.</div>
+            <div class="card__trig">“turn into a LinkedIn post”</div>
+          </div>
+          <div class="card">
+            <div class="card__top"><span class="card__name">Analyze</span><span class="pill pill--alone">Standalone</span></div>
+            <div class="card__sum">Read the performance data and extract lessons for the next piece.</div>
+            <div class="card__trig">“how did my post do”</div>
+          </div>
+        </div>
+
+        <div style="height:1.6rem"></div>
+
+        <p class="sublabel">Your projects</p>
+        <div class="projects">
+          <div class="proj">
+            <div class="proj__t">Why your onboarding emails go unread</div>
+            <div class="proj__m">Signal Weekly <span class="pill pill--live">Stage 5 · Draft</span></div>
+            <div class="proj__d">Updated Aug 1, 2026</div>
+          </div>
+          <div class="proj">
+            <div class="proj__t">The case against quarterly planning</div>
+            <div class="proj__m">Signal Weekly <span class="pill pill--ok">Complete</span></div>
+            <div class="proj__d">Updated Jul 24, 2026</div>
+          </div>
+          <div class="proj">
+            <div class="proj__t">What we learned shipping on Fridays</div>
+            <div class="proj__m">Field Notes <span class="pill pill--idle">Stage 1 · Anchor</span></div>
+            <div class="proj__d">Updated Jul 19, 2026</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ SCREEN TWO ========================== -->
+  <section class="section">
+    <div class="section__head">
+      <p class="eyebrow eyebrow--quiet">Screen two · plan 006</p>
+      <h2>The workspace</h2>
+      <p>Three things share this screen: the stage rail on the left showing real
+      completion state read from the project, the conversation in the middle with
+      one skill pinned, and the artifacts the run has produced so far on the right.
+      <strong>Click a stage in the rail</strong> — the pin, the conversation and the
+      artifact panel all follow, which is the mechanic plan 006 exists to build.</p>
+    </div>
+
+    <div class="frame">
+      <div class="frame__bar">
+        <div class="frame__dots"><i></i><i></i><i></i></div>
+        <div class="frame__url" id="url">localhost:3000/kessel-run/projects/prj_8fd2a1</div>
+      </div>
+      <div class="frame__body app">
+
+        <div class="apphead">
+          <div>
+            <div class="apphead__title">Why your onboarding emails go unread</div>
+            <div class="apphead__meta">Signal Weekly · article · started Jul 28, 2026</div>
+          </div>
+          <button class="btn btn--ghost" type="button">All projects</button>
+        </div>
+
+        <div class="ws">
+
+          <!-- stage rail -->
+          <div class="rail" role="tablist" aria-label="Pipeline stages" id="rail">
+            <p class="sublabel" style="margin-bottom:.3rem">Stages</p>
+            <!-- buttons injected by script -->
+          </div>
+
+          <!-- conversation -->
+          <div class="chat">
+            <div class="chat__head">
+              <span class="pill pill--stage" id="pinPill">Stage 5 · Draft</span>
+              <span>pinned for this conversation</span>
+            </div>
+            <div class="chat__log" id="log"><!-- injected --></div>
+            <div class="composer">
+              <div class="composer__fake" id="composer">Message the Draft skill…</div>
+              <button class="btn" type="button">Send</button>
+            </div>
+          </div>
+
+          <!-- artifacts -->
+          <div class="artifacts">
+            <div class="artifacts__head">
+              <span class="artifacts__t">Artifact</span>
+              <span class="pill pill--idle" id="artState">—</span>
+            </div>
+            <div id="artName" style="font-weight:650;font-size:.9rem"></div>
+            <pre class="artifacts__body" id="artBody"></pre>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <p class="note">Completion state is read from the project record, never guessed
+    from the conversation. A stage counts as complete when its artifact field in
+    working memory is populated — which is why the rail can show Stage 5 in
+    progress while Stages 6 and 7 stay dormant.</p>
+  </section>
+
+  <!-- ============================= MECHANIC =========================== -->
+  <section class="section">
+    <div class="section__head">
+      <p class="eyebrow eyebrow--quiet">What happens on send</p>
+      <h2>How a pinned skill reaches the agent</h2>
+      <p>The numbering here is a real sequence — each step depends on the one above
+      it, and the third is where the design earns its keep.</p>
+    </div>
+
+    <div class="flow">
+      <div class="flowstep">
+        <div class="flowstep__n">01</div>
+        <div class="flowstep__b">
+          <div class="flowstep__t">The rail sets the pin</div>
+          <div class="flowstep__d">Choosing a stage stores its skill name in client state. Nothing is sent yet.</div>
+        </div>
+      </div>
+      <div class="flowstep">
+        <div class="flowstep__n">02</div>
+        <div class="flowstep__b">
+          <div class="flowstep__t">The message carries it</div>
+          <div class="flowstep__d">The chat transport posts to <code>/api/kessel-run/projects/[id]/chat</code> with the pinned skill in the body.</div>
+        </div>
+      </div>
+      <div class="flowstep">
+        <div class="flowstep__n">03</div>
+        <div class="flowstep__b">
+          <div class="flowstep__t">The body is resolved at send time, not at construction</div>
+          <div class="flowstep__d">The transport’s <code>body</code> takes a function. A plain object would freeze the pin at its first value and every later message would carry a stale one — the single most likely way this feature breaks.</div>
+        </div>
+      </div>
+      <div class="flowstep">
+        <div class="flowstep__n">04</div>
+        <div class="flowstep__b">
+          <div class="flowstep__t">The route puts it in request context</div>
+          <div class="flowstep__d">The agent’s dynamic <code>skills</code> resolver reads <code>requestContext</code> and returns that skill first.</div>
+        </div>
+      </div>
+      <div class="flowstep">
+        <div class="flowstep__n">05</div>
+        <div class="flowstep__b">
+          <div class="flowstep__t">The agent may still reach past the pin</div>
+          <div class="flowstep__d">Pinning is a default, not a cage. Anchor can hand off to Ideation mid-conversation, and the tool call shows in the transcript so the user sees which skill answered.</div>
+        </div>
+      </div>
+      <div class="flowstep">
+        <div class="flowstep__n">06</div>
+        <div class="flowstep__b">
+          <div class="flowstep__t">Artifacts refresh when the turn ends</div>
+          <div class="flowstep__d">On finish, the workspace refetches project state, so the rail and the artifact panel reflect what the agent actually wrote to working memory.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ BUILD ORDER ========================= -->
+  <section class="section">
+    <div class="section__head">
+      <p class="eyebrow eyebrow--quiet">Where this sits</p>
+      <h2>What has to exist first</h2>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Plan</th><th>Delivers</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="mono">001</td><td>Vitest + typecheck baseline</td><td><span class="pill pill--ok">Done</span></td></tr>
+          <tr><td class="mono">002</td><td>The 11 skills loaded into one Mastra agent</td><td><span class="pill pill--idle">To do</span></td></tr>
+          <tr><td class="mono">003</td><td>Project model — artifacts in typed working memory</td><td><span class="pill pill--idle">To do</span></td></tr>
+          <tr><td class="mono">004</td><td>Skills, projects and skill-pinned chat endpoints</td><td><span class="pill pill--idle">To do</span></td></tr>
+          <tr><td class="mono">005</td><td>Screen one — gallery and project list</td><td><span class="pill pill--idle">To do</span></td></tr>
+          <tr><td class="mono">006</td><td>Screen two — rail, chat and artifacts</td><td><span class="pill pill--idle">To do</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div>Kessel Run — front-end workflow prototype. Static mockup; no application code runs on this page.</div>
+    <div class="mono">prototype/index.html</div>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STAGES = [
+    { n: 0, name: "Research",     skill: "kessel-run-research",     state: "ok",
+      artifact: "Research brief",
+      body: "12 sources reviewed, 4 worth citing.\n\nGAP FOUND\nEveryone writes about subject lines.\nNobody covers what happens to open\nrates after day three.\n\nANGLE\nThe decay curve, not the first impression." },
+    { n: 1, name: "Anchor",       skill: "kessel-run-anchor",       state: "ok",
+      artifact: "Content anchor",
+      body: "TOPIC     Onboarding email sequences that\n          stop being opened after day 3\n\nAUDIENCE  Lifecycle marketers at B2B SaaS,\n          1-10 person teams\n\nGOAL      Get them to audit their own\n          day 4-14 window this week\n\nFRAMING   Diagnostic, not prescriptive" },
+    { n: 2, name: "Ideation",     skill: "kessel-run-ideation",     state: "ok",
+      artifact: "Ideation map",
+      body: "THESIS\nOnboarding sequences are written for\nday 1 and inherited by day 10.\n\nPOINTS\n1. The drop-off is predictable\n2. Most teams never look past day 3\n3. Re-engagement ≠ more frequency\n4. One audit beats a rewrite" },
+    { n: 3, name: "Hook",         skill: "kessel-run-hook",         state: "ok",
+      artifact: "Hook + bridge",
+      body: "SELECTED  (scored 8.5)\n\"Your day-one email is excellent.\nIt is also the only one anyone reads.\"\n\nBRIDGE\n\"Here is what the next thirteen days\nlook like from the inbox side.\"\n\nALSO CONSIDERED\n· Statistic open        (7.0)\n· Second-person scene   (6.5)" },
+    { n: 4, name: "Architecture", skill: "kessel-run-architecture", state: "ok",
+      artifact: "Beat map",
+      body: "1  Hook + bridge            ~120 w\n2  The decay curve           ~350 w\n   evidence: cohort data\n3  Why teams miss it          ~300 w\n   energy: lowest point\n4  The four-question audit    ~400 w\n   energy: lift, concrete\n5  Close — do it this week    ~150 w" },
+    { n: 5, name: "Draft",        skill: "kessel-run-draft",        state: "live",
+      artifact: "Section drafts",
+      body: "SECTION 1  Hook + bridge      ✓ drafted\nSECTION 2  The decay curve    ✓ drafted\nSECTION 3  Why teams miss it   ← current\nSECTION 4  The audit           pending\nSECTION 5  Close               pending\n\n2 of 5 sections complete." },
+    { n: 6, name: "Personalize",  skill: "kessel-run-personalize",  state: "idle",
+      artifact: "Authenticity audit",
+      body: null },
+    { n: 7, name: "Polish",       skill: "kessel-run-polish",       state: "idle",
+      artifact: "Scorecard",
+      body: null }
+  ];
+
+  var TRANSCRIPTS = {
+    0: [["user","What's already out there on onboarding email drop-off?"],
+        ["tool","skill_read · kessel-run-research"],
+        ["agent","Twelve sources worth reading, four worth citing. The consistent gap: everyone optimises the day-one email. Almost nobody writes about what happens to open rates from day four onward. That is your opening."]],
+    1: [["user","I want to write about onboarding emails going unread."],
+        ["tool","skill_read · kessel-run-anchor"],
+        ["agent","Before we write anything — who is this for, and what do you want them to do after reading? \"Marketers\" is too broad to write against."],
+        ["user","Lifecycle marketers at small B2B SaaS teams. I want them to audit their day 4–14 window."]],
+    2: [["user","Help me develop this into something with real substance."],
+        ["tool","skill_read · kessel-run-ideation"],
+        ["agent","Your thesis is sharper than your topic: these sequences are written for day one and inherited by day ten. Four points hold that up — and point three is where you will need the cohort data."]],
+    3: [["user","How should I open it?"],
+        ["tool","skill_read · kessel-run-hook"],
+        ["agent","Three variants, scored. The one that wins concedes something first: \"Your day-one email is excellent. It is also the only one anyone reads.\" It earns the rest of the piece instead of announcing it."]],
+    4: [["user","What structure should this take?"],
+        ["tool","skill_read · kessel-run-architecture"],
+        ["agent","Five beats, roughly 1,300 words. Section three is your energy valley — keep it short and let the audit in section four do the lifting."]],
+    5: [["user","Let's write section three."],
+        ["tool","skill_read · kessel-run-draft"],
+        ["agent","Section three is the one that has to stay honest — this is where a diagnostic piece usually turns preachy. Drafting it at 300 words against the beat map now. Sections one and two are already done and unedited by you, so tell me if the voice has drifted."]],
+    6: [["user","(not started)"],
+        ["agent","Personalize runs after the draft is complete. It audits what you wrote for authenticity rather than generating new copy — so there is nothing for it to read yet."]],
+    7: [["user","(not started)"],
+        ["agent","Polish scores the finished piece across seven dimensions and returns a targeted fix for each. It needs a complete draft, and ideally a personalize pass first."]]
+  };
+
+  var rail = document.getElementById("rail");
+  var log = document.getElementById("log");
+  var pinPill = document.getElementById("pinPill");
+  var artName = document.getElementById("artName");
+  var artBody = document.getElementById("artBody");
+  var artState = document.getElementById("artState");
+  var composer = document.getElementById("composer");
+
+  STAGES.forEach(function (s) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "rail__btn";
+    b.setAttribute("role", "tab");
+    b.setAttribute("aria-selected", s.n === 5 ? "true" : "false");
+    b.dataset.stage = String(s.n);
+    b.innerHTML =
+      '<span class="rail__n">' + s.n + '</span>' +
+      '<span>' + s.name + '</span>' +
+      '<span class="rail__dot ' +
+        (s.state === "ok" ? "rail__dot--ok" : s.state === "live" ? "rail__dot--live" : "") +
+      '"></span>';
+    b.addEventListener("click", function () { select(s.n); });
+    rail.appendChild(b);
+  });
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function select(n) {
+    var s = STAGES[n];
+
+    Array.prototype.forEach.call(rail.querySelectorAll(".rail__btn"), function (b) {
+      b.setAttribute("aria-selected", b.dataset.stage === String(n) ? "true" : "false");
+    });
+
+    pinPill.textContent = "Stage " + s.n + " · " + s.name;
+    composer.textContent = "Message the " + s.name + " skill…";
+
+    artName.textContent = s.artifact;
+    if (s.body) {
+      artBody.textContent = s.body;
+      artBody.classList.remove("artifacts__empty");
+    } else {
+      artBody.textContent = "This stage has not run yet. Its artifact field in working memory is still empty, which is what keeps the rail dot grey.";
+      artBody.classList.add("artifacts__empty");
+    }
+
+    artState.textContent = s.state === "ok" ? "Complete" : s.state === "live" ? "In progress" : "Not started";
+    artState.className = "pill " + (s.state === "ok" ? "pill--ok" : s.state === "live" ? "pill--live" : "pill--idle");
+
+    log.innerHTML = "";
+    (TRANSCRIPTS[n] || []).forEach(function (m) {
+      if (m[0] === "tool") {
+        var t = document.createElement("div");
+        t.className = "toolcall";
+        t.innerHTML = "<b>" + esc(m[1]) + "</b><span>loaded the full skill instructions on demand</span>";
+        log.appendChild(t);
+        return;
+      }
+      var d = document.createElement("div");
+      d.className = "msg" + (m[0] === "user" ? " msg--user" : "");
+      d.innerHTML =
+        '<span class="msg__who">' + (m[0] === "user" ? "You" : s.name) + '</span>' +
+        '<div class="msg__b">' + esc(m[1]) + "</div>";
+      log.appendChild(d);
+    });
+  }
+
+  select(5);
+
+  var root = document.documentElement;
+  document.getElementById("theme").addEventListener("click", function () {
+    var dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var cur = root.getAttribute("data-theme") || (dark ? "dark" : "light");
+    root.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+  });
+})();
+</script>
+</body>
+</html>
