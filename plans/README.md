@@ -30,7 +30,7 @@ These were chosen by the repo owner. Plans assume them.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 001  | Establish a test and typecheck baseline | P1 | S | — | DONE (merged to `main` as `87fa9fd`) |
-| 002  | Install the 11 Kessel Run skills into Mastra | P1 | M | 001 | TODO |
+| 002  | Install the 11 Kessel Run skills into Mastra | P1 | M | 001 | DONE (unmerged — branch `advisor/002-skills-into-mastra`, head `c3e5d17`) |
 | 003  | Model pipeline state as a content project | P1 | M | 002 | TODO |
 | 004  | API routes for skills, projects, and skill-pinned chat | P1 | M | 003 | TODO |
 | 005  | UI shell — skill gallery and project list | P2 | M | 004 | TODO |
@@ -39,7 +39,8 @@ These were chosen by the repo owner. Plans assume them.
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale)
 
-**002 is executable now.** 001 is merged, so `npm test` exists on `main`.
+**003 is executable once 002 is merged to `main`.** 002 is approved but still on
+its own branch; 003's schema imports the skill catalog that 002 creates.
 
 > Anyone pulling `main` at or after `87fa9fd` must run `npm install` before
 > `npm test` will work — the merge added `vitest` and `vite-tsconfig-paths` to
@@ -81,6 +82,46 @@ Two things worth knowing, neither blocking:
 Separately: `.claude/` is untracked and not covered by `.gitignore`, so it shows
 up as dirty in the main repo. Worth adding to `.gitignore` — flagged only, not
 changed here, since the advisor does not edit outside `plans/`.
+
+### 002 — executed and approved 2026-08-01 (unmerged)
+
+Executed by a Sonnet subagent in an isolated worktree; reviewed by re-running
+every done criterion independently.
+
+| Done criterion | Result on re-run |
+|---|---|
+| 11 `SKILL.md` files present | 11 |
+| `kessel-run-skills/` gone | gone |
+| Directory name == frontmatter name | all 11 match |
+| `npm test` | exit 0, 9 passed (3 existing + 6 new catalog) |
+| `npm run typecheck` | exit 0 |
+| `npm run lint` | exit 0, 9 warnings / 0 errors |
+| `npm run build` | exit 0 |
+| `listSkills()` returns 11 | reproduced `COUNT: 11`, all names, cwd = repo root |
+| Weather demo untouched | no diff to weather agent/tool/workflow or `/chat` |
+
+All 11 skill files are **byte-identical** to their originals at `6e39653`,
+verified two ways: git records every move as a 0-insertion/0-deletion rename,
+and a direct content diff against `git show 6e39653:…` passes for all 11 plus
+both docs.
+
+**Process failure worth recording.** The executor's worktree branched from
+`f1928cf`, which predates the plan refresh in `c574a9a`, so it received and
+executed the *stale* plan. The advisor had skipped inlining the plan text on the
+assumption that a committed plan would be present in the worktree — it was not.
+Inline the full plan text on every dispatch; "it's committed" is not sufficient.
+
+Consequences were minor and both are resolved: plain `mv` instead of `git mv`
+(git detected 100% renames anyway, so history survived), and a redundant
+`kessel-run-skills.zip` line added to `.gitignore`, reverted in `c3e5d17`.
+`.gitignore` is now identical to its state at `f1928cf`.
+
+**Not verified by the reviewer**: the `GET /chat` → 200 check. An unrelated
+project's dev server holds port 3000 on this machine and both servers bound
+simultaneously, misrouting requests; the executor diagnosed this and reconfirmed
+on port 3100. Build success and the untouched weather files are secondary
+evidence, but this criterion rests on the executor's report, not an independent
+re-run.
 
 ## Reconcile log
 
