@@ -32,15 +32,15 @@ These were chosen by the repo owner. Plans assume them.
 | 001  | Establish a test and typecheck baseline | P1 | S | — | DONE (merged to `main` as `87fa9fd`) |
 | 002  | Install the 11 Kessel Run skills into Mastra | P1 | M | 001 | DONE (merged to `main` as `d0c621b`) |
 | 003  | Model pipeline state as a content project | P1 | M | 002 | DONE (merged to `main` as `ce2b0b1`) |
-| 004  | API routes for skills, projects, and skill-pinned chat | P1 | M | 003 | TODO |
+| 004  | API routes for skills, projects, and skill-pinned chat | P1 | M | 003 | DONE (unmerged — branch `advisor/004-api-routes`, head `e1197df`) |
 | 005  | UI shell — skill gallery and project list | P2 | M | 004 | TODO |
 | 006  | UI — project workspace (chat, stage rail, artifacts) | P2 | L | 005 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale)
 
-**004 is executable now.** 003 is merged, so `src/mastra/projects/store.ts` exists
-on `main` for 004's routes to import.
+**005 is executable once 004 is merged to `main`.** 004 is approved but still on
+its own branch; 005's page fetches the endpoints 004 creates.
 
 > Anyone pulling `main` at or after `87fa9fd` must run `npm install` before
 > `npm test` will work — the merge added `vitest` and `vite-tsconfig-paths` to
@@ -158,6 +158,61 @@ routes and is the natural place to cover it. Do not let 004 land without a test
 that a project belonging to another `resourceId` is not readable.
 
 ## Reconcile log
+
+### 004 — executed and approved 2026-08-01 (unmerged)
+
+Executed against base `236b0e6` (current `main`, verified). Every done criterion
+re-run independently.
+
+| Done criterion | Result on re-run |
+|---|---|
+| `npm test` | exit 0, 30 passed (21 prior + 9 new) |
+| `npm run typecheck` | exit 0 |
+| `npm run lint` | exit 0, 9 warnings / 0 errors |
+| `npm run build` | exit 0 |
+| Scope | exactly the 8 in-scope files |
+| Forbidden files untouched | `chat/route.ts`, `chat/page.tsx`, `store.ts`, `schema.ts`, `catalog.ts`, `index.ts` all unmodified |
+
+**The ownership gap from 003 is closed and proven.** `store-access.test.ts`
+really does `vi.mock('../index')` and `await import('./store')`, so it exercises
+the actual store functions. The reviewer re-ran the mutation independently:
+replacing the guard with `if (!thread) return null` fails exactly one test —
+`returns null for a different resourceId` — and nothing else. `store.ts` was
+restored byte-exact afterwards.
+
+The chat route matches the plan on every security-relevant detail: the ownership
+check runs before streaming, `pinnedSkill` is validated against the catalog
+before it can reach a filesystem path, and `...body` is spread *before*
+`requestContext` and `memory` so a client cannot override the thread or resource.
+
+**Step 6 (live model call) is UNVERIFIED — environmental, not a defect.**
+`.env` is gitignored, so execution worktrees never receive it and
+`OPENAI_API_KEY` is absent there. The route's own logic is confirmed working:
+the request streamed with HTTP 200, and `GET .../chat` returned the persisted
+user message, proving the memory and recall wiring. What remains unproven is
+that a pinned skill produces a skill tool call in the stream. **Verify this on
+`main` after merging**, with the dev server running:
+
+```bash
+curl -s -X POST localhost:3000/api/kessel-run/projects/<id>/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"pinnedSkill":"kessel-run-anchor","messages":[{"id":"1","role":"user","parts":[{"type":"text","text":"I want to write about onboarding emails."}]}]}' \
+  --max-time 120 | grep -o '"type":"tool-[a-z_]*"' | head
+```
+
+Expect a skill tool chunk. Empty output means `requestContext` is not reaching
+the agent's `skills` resolver.
+
+> **Note for future plans**: any step requiring credentials cannot be verified
+> inside a worktree, because `.env` is gitignored. Either plan for it to be
+> marked UNVERIFIED and checked on `main`, or have the step read credentials
+> from the environment rather than the file.
+
+> **Note on a plan defect found by the executor**: 004's drift check used
+> `grep -c "export async function getProject"`, which also matches
+> `getProjectState` and returns 2, not 1. The executor caught it, verified the
+> real invariant with a precise pattern, and proceeded — correct judgment.
+> Future drift checks should anchor the pattern (`getProject(`).
 
 ### 2026-07-30 — commit `6e39653`
 
