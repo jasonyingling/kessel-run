@@ -31,7 +31,7 @@ These were chosen by the repo owner. Plans assume them.
 |------|-------|----------|--------|------------|--------|
 | 001  | Establish a test and typecheck baseline | P1 | S | — | DONE (merged to `main` as `87fa9fd`) |
 | 002  | Install the 11 Kessel Run skills into Mastra | P1 | M | 001 | DONE (merged to `main` as `d0c621b`) |
-| 003  | Model pipeline state as a content project | P1 | M | 002 | TODO |
+| 003  | Model pipeline state as a content project | P1 | M | 002 | DONE (unmerged — branch `advisor/003-project-state`, head `9f2a7b1`) |
 | 004  | API routes for skills, projects, and skill-pinned chat | P1 | M | 003 | TODO |
 | 005  | UI shell — skill gallery and project list | P2 | M | 004 | TODO |
 | 006  | UI — project workspace (chat, stage rail, artifacts) | P2 | L | 005 | TODO |
@@ -39,8 +39,8 @@ These were chosen by the repo owner. Plans assume them.
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale)
 
-**003 is executable now.** 002 is merged, so `src/mastra/skills/catalog.ts`
-exists on `main` for 003's schema to import.
+**004 is executable once 003 is merged to `main`.** 003 is approved but still on
+its own branch; 004's routes import `src/mastra/projects/store.ts`.
 
 > Anyone pulling `main` at or after `87fa9fd` must run `npm install` before
 > `npm test` will work — the merge added `vitest` and `vite-tsconfig-paths` to
@@ -82,6 +82,40 @@ Two things worth knowing, neither blocking:
 Separately: `.claude/` is untracked and not covered by `.gitignore`, so it shows
 up as dirty in the main repo. Worth adding to `.gitignore` — flagged only, not
 changed here, since the advisor does not edit outside `plans/`.
+
+### 003 — executed and approved 2026-08-01 (unmerged)
+
+Executed against base `67316dc` (current `main` — base verified before review,
+after 002's worktree branched from the wrong commit). Every done criterion
+re-run independently.
+
+| Done criterion | Result on re-run |
+|---|---|
+| `npm test` | exit 0, 21 passed (9 prior + 12 new) |
+| `npm run typecheck` | exit 0 |
+| `npm run lint` | exit 0, 9 warnings / 0 errors |
+| `npm run build` | exit 0 |
+| `workingMemory` present in agent | 1 |
+| bare `new Memory()` gone | 0 |
+| `index.ts` / `catalog.ts` untouched | 0 files changed |
+| Scope | exactly the 5 in-scope files |
+
+Tests were checked for teeth, not just a green run: deleting stage 7 from
+`STAGE_ARTIFACT_FIELD` correctly fails the catalog-coverage test. `store.ts`
+matches the plan exactly — the `getProject` ownership check and the
+parse-failure fallback in `getProjectState` are both present, and no artifact
+write path was added.
+
+**Open finding — untested ownership check.** `store.test.ts` constructs its own
+`Memory` and never imports `store.ts`, so none of `createProject`,
+`listProjects`, `getProject`, `getProjectState` or `toProject` has direct test
+coverage. This is the tradeoff the plan documents (importing `store.ts` pulls in
+`src/mastra/index.ts`, which builds the DuckDB observability store). It was
+followed correctly, but it leaves the resource-ownership check in `getProject`
+— the one line preventing any user from reading any project by guessing a UUID —
+with nothing enforcing it. Plan 004 exercises these functions through HTTP
+routes and is the natural place to cover it. Do not let 004 land without a test
+that a project belonging to another `resourceId` is not readable.
 
 ### 002 — executed, approved, and merged 2026-08-01 (`d0c621b`)
 
