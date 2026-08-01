@@ -160,12 +160,16 @@ Checked against the installed packages, not guessed:
 - `src/app/api/kessel-run/projects/[projectId]/route.ts` (create)
 - `src/app/api/kessel-run/projects/[projectId]/chat/route.ts` (create)
 - `src/lib/kessel-run/api-types.test.ts` (create)
+- `src/mastra/projects/store-access.test.ts` (create — see step 7b)
 
 **Out of scope** (do NOT touch):
 - `src/app/api/chat/route.ts` and `src/app/chat/page.tsx` — the weather demo
   stays exactly as it is. New routes live under `/api/kessel-run/`.
 - `src/mastra/**` — this plan consumes plans 002 and 003, it does not change
   them. If you need a new store helper, that is a STOP condition.
+  **One explicit exception**: you may *create* the new test file
+  `src/mastra/projects/store-access.test.ts` in step 7b. You may not modify
+  `store.ts`, `schema.ts`, or the existing `store.test.ts`.
 - Any React component. Plans 005 and 006 build the UI.
 - Authentication. See the session note in step 1.
 
@@ -582,6 +586,145 @@ boundary, not just a typo guard.
 
 **Verify**: `npm test` → exit 0, 4 new tests pass.
 
+### Step 7b: Cover the store's resource-ownership check
+
+**Why this step exists.** `getProject` contains the only line stopping one user
+from reading another user's project by guessing a thread UUID:
+
+```ts
+if (!thread || thread.resourceId !== resourceId) return null
+```
+
+Plan 003 shipped that line with **no test coverage**. Its `store.test.ts`
+constructs its own `Memory` and never imports `store.ts`, because `store.ts`
+imports `mastra` from `src/mastra/index.ts`, which builds the DuckDB
+observability store — far too heavy for a unit test. The check is therefore
+deletable today without a single test failing. This step closes that.
+
+The way through is to stub the `../index` module so `store.ts` can be imported
+without booting Mastra, while still running against a real LibSQL database.
+
+Create `src/mastra/projects/store-access.test.ts`:
+
+```ts
+import { afterAll, describe, expect, it, vi } from "vitest";
+import { rmSync } from "node:fs";
+import { Memory } from "@mastra/memory";
+import { LibSQLStore } from "@mastra/libsql";
+import { MastraCompositeStore } from "@mastra/core/storage";
+import { PROJECT_THREAD_KIND, projectStateSchema } from "./schema";
+
+const DB_FILE = "/tmp/kessel-run-store-access-test.db";
+
+const testMemory = new Memory({
+  storage: new MastraCompositeStore({
+    id: "access-test-store",
+    default: new LibSQLStore({ id: "access-test", url: `file:${DB_FILE}` }),
+  }),
+  options: {
+    workingMemory: { enabled: true, scope: "thread", schema: projectStateSchema },
+  },
+});
+
+// store.ts imports `mastra` from ../index, which constructs the DuckDB
+// observability store. Stub it with the minimal surface store.ts actually
+// uses, so these tests exercise the real store logic against real storage
+// without booting all of Mastra.
+vi.mock("../index", () => ({
+  mastra: {
+    getAgentById: () => ({ getMemory: async () => testMemory }),
+  },
+}));
+
+const { createProject, getProject, getProjectState, listProjects } =
+  await import("./store");
+
+afterAll(() => {
+  rmSync(DB_FILE, { force: true });
+});
+
+describe("getProject ownership", () => {
+  it("returns the project to its owner", async () => {
+    const created = await createProject({
+      resourceId: "owner",
+      title: "Mine",
+      publication: "P",
+      format: "article",
+    });
+
+    const found = await getProject("owner", created.id);
+    expect(found?.id).toBe(created.id);
+    expect(found?.title).toBe("Mine");
+  });
+
+  it("returns null for a different resourceId", async () => {
+    const created = await createProject({
+      resourceId: "owner",
+      title: "Private",
+      publication: "P",
+      format: "article",
+    });
+
+    // The attacker knows the exact project id and is still refused.
+    expect(await getProject("intruder", created.id)).toBeNull();
+  });
+
+  it("returns null for an id that does not exist", async () => {
+    expect(await getProject("owner", "no-such-thread")).toBeNull();
+  });
+});
+
+describe("listProjects isolation", () => {
+  it("returns only the caller's projects", async () => {
+    await createProject({
+      resourceId: "alice",
+      title: "Alice piece",
+      publication: "P",
+      format: "article",
+    });
+    await createProject({
+      resourceId: "bob",
+      title: "Bob piece",
+      publication: "P",
+      format: "thread",
+    });
+
+    const alices = await listProjects("alice");
+    expect(alices.length).toBeGreaterThan(0);
+    expect(alices.every(p => p.title !== "Bob piece")).toBe(true);
+  });
+});
+
+describe("getProjectState", () => {
+  it("returns the empty state for a project never written to", async () => {
+    const created = await createProject({
+      resourceId: "owner",
+      title: "Fresh",
+      publication: "P",
+      format: "article",
+    });
+
+    const state = await getProjectState("owner", created.id);
+    expect(state.currentStage).toBeNull();
+    expect(state.anchor).toBeNull();
+  });
+});
+```
+
+**Verify**: `npm test` → exit 0, these 5 tests pass alongside everything else.
+
+**Then prove the tests actually bite.** Temporarily change the ownership line in
+`store.ts` to `if (!thread) return null`, re-run `npm test`, and confirm
+`returns null for a different resourceId` **fails**. Then restore `store.ts`
+exactly and confirm `git status --short` shows no modification to it. Report both
+results. A test that passes with the check removed is worthless, and this is the
+one place in the plan where that matters.
+
+If stubbing `../index` does not work — for example if `store.ts` resolves the
+module differently than expected — STOP and report rather than deleting the test
+or weakening it to not import `store.ts`. Testing the real function is the
+entire point of this step.
+
 ### Step 8: Full regression pass
 
 **Verify** all four:
@@ -599,6 +742,11 @@ And confirm the untouched weather demo still works:
 - `src/lib/kessel-run/api-types.test.ts` — 4 cases covering format validation
   (accept/reject) and skill-name validation (accept, reject unknown, reject path
   traversal).
+- `src/mastra/projects/store-access.test.ts` — 5 cases covering the store
+  functions plan 003 left untested: ownership honoured for the owner, refused
+  for a different `resourceId` even with the exact project id, null for an
+  unknown id, `listProjects` isolation between two resources, and the empty
+  state for an unwritten project.
 - Model after `src/mastra/projects/schema.test.ts` from plan 003.
 - Route behavior is verified by the curl checks in steps 3–6 rather than by
   automated tests: the chat route requires a live model, and HTTP-level tests
@@ -611,7 +759,11 @@ And confirm the untouched weather demo still works:
 Machine-checkable. ALL must hold:
 
 - [ ] `npm run typecheck` exits 0
-- [ ] `npm test` exits 0 with 4 new tests passing
+- [ ] `npm test` exits 0 with 9 new tests passing (4 from step 7, 5 from step 7b)
+- [ ] `getProject` ownership is covered: with the `thread.resourceId !== resourceId`
+      check temporarily removed, `npm test` FAILS on
+      `returns null for a different resourceId`; with it restored, `npm test`
+      passes and `git status --short` shows `store.ts` unmodified
 - [ ] `npm run lint` exits 0 with 0 errors
 - [ ] `npm run build` exits 0
 - [ ] `GET /api/kessel-run/skills` returns 8 pipeline + 3 standalone, all with
