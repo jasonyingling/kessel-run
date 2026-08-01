@@ -30,7 +30,7 @@ These were chosen by the repo owner. Plans assume them.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 001  | Establish a test and typecheck baseline | P1 | S | — | DONE (merged to `main` as `87fa9fd`) |
-| 002  | Install the 11 Kessel Run skills into Mastra | P1 | M | 001 | DONE (unmerged — branch `advisor/002-skills-into-mastra`, head `c3e5d17`) |
+| 002  | Install the 11 Kessel Run skills into Mastra | P1 | M | 001 | DONE (merged to `main` as `d0c621b`) |
 | 003  | Model pipeline state as a content project | P1 | M | 002 | TODO |
 | 004  | API routes for skills, projects, and skill-pinned chat | P1 | M | 003 | TODO |
 | 005  | UI shell — skill gallery and project list | P2 | M | 004 | TODO |
@@ -39,8 +39,8 @@ These were chosen by the repo owner. Plans assume them.
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale)
 
-**003 is executable once 002 is merged to `main`.** 002 is approved but still on
-its own branch; 003's schema imports the skill catalog that 002 creates.
+**003 is executable now.** 002 is merged, so `src/mastra/skills/catalog.ts`
+exists on `main` for 003's schema to import.
 
 > Anyone pulling `main` at or after `87fa9fd` must run `npm install` before
 > `npm test` will work — the merge added `vitest` and `vite-tsconfig-paths` to
@@ -83,7 +83,7 @@ Separately: `.claude/` is untracked and not covered by `.gitignore`, so it shows
 up as dirty in the main repo. Worth adding to `.gitignore` — flagged only, not
 changed here, since the advisor does not edit outside `plans/`.
 
-### 002 — executed and approved 2026-08-01 (unmerged)
+### 002 — executed, approved, and merged 2026-08-01 (`d0c621b`)
 
 Executed by a Sonnet subagent in an isolated worktree; reviewed by re-running
 every done criterion independently.
