@@ -29,7 +29,7 @@ These were chosen by the repo owner. Plans assume them.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 001  | Establish a test and typecheck baseline | P1 | S | — | TODO |
+| 001  | Establish a test and typecheck baseline | P1 | S | — | DONE (merged to `main` as `87fa9fd`) |
 | 002  | Install the 11 Kessel Run skills into Mastra | P1 | M | 001 | TODO |
 | 003  | Model pipeline state as a content project | P1 | M | 002 | TODO |
 | 004  | API routes for skills, projects, and skill-pinned chat | P1 | M | 003 | TODO |
@@ -39,7 +39,48 @@ These were chosen by the repo owner. Plans assume them.
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale)
 
-**001 is executable right now.** Nothing else has started.
+**002 is executable now.** 001 is merged, so `npm test` exists on `main`.
+
+> Anyone pulling `main` at or after `87fa9fd` must run `npm install` before
+> `npm test` will work — the merge added `vitest` and `vite-tsconfig-paths` to
+> `package.json`, but an existing `node_modules` from before that commit will
+> not have them.
+
+## Execution log
+
+### 001 — executed, approved, and merged 2026-08-01
+
+Executed by a Sonnet subagent in an isolated worktree against `534d1f1`;
+reviewed by re-running every done criterion independently rather than trusting
+the executor's report.
+
+| Done criterion | Result on re-run |
+|---|---|
+| `npm test` exits 0, `3 passed` | exit 0, `Tests 3 passed (3)` |
+| `npm run typecheck` exits 0 | exit 0, no output |
+| `npm run lint` exits 0, 0 errors | exit 0, `9 problems (0 errors, 9 warnings)` |
+| `npm run build` exits 0 | exit 0 |
+| `vitest.config.ts`, `src/lib/utils.test.ts` exist | both present |
+| Only in-scope files changed | exactly the 4 in-scope files, nothing else |
+
+`package-lock.json` grew by ~10,600 diff lines, which looks alarming for two
+devDependencies. It is benign: **zero** version changes to pre-existing
+packages, 61 packages added (vitest, vite-tsconfig-paths, transitives), and one
+nested `@napi-rs/wasm-runtime` copy deduped to the existing top-level 1.2.2. The
+line count is npm re-serializing the file.
+
+Two things worth knowing, neither blocking:
+
+- Vitest 4 prints a notice that `vite-tsconfig-paths` is now redundant — Vite
+  supports `resolve.tsconfigPaths: true` natively. The plugin still works. Worth
+  dropping the dependency next time this config is touched.
+- `npm run build` warns about multiple lockfiles because the execution worktree
+  lives at `.claude/worktrees/` *inside* the repo. That warning is an artifact of
+  how the plan was executed and disappears when the worktree is removed.
+
+Separately: `.claude/` is untracked and not covered by `.gitignore`, so it shows
+up as dirty in the main repo. Worth adding to `.gitignore` — flagged only, not
+changed here, since the advisor does not edit outside `plans/`.
 
 ## Reconcile log
 
