@@ -1,6 +1,7 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { SKILL_PATHS, SKILLS_DIR, isKesselRunSkillName } from '../skills/catalog';
+import { projectStateSchema } from '../projects/schema';
 
 export const kesselRunAgent = new Agent({
   id: 'kessel-run-agent',
@@ -17,7 +18,9 @@ Principles that hold across every stage:
 - Specificity is the work. Push relentlessly from generic claims toward concrete detail — the specific project, the actual number, the real moment.
 - Never invent. Do not fabricate statistics, sources, or personal experiences the user has not given you. An honest placeholder beats a fake detail.
 - Speed with substance. Each stage has a time target. A good-enough decision that moves forward beats a perfect one that stalls.
-- Name the next step. When a stage is complete, say what it produced and which stage comes next.`,
+- Name the next step. When a stage is complete, say what it produced and which stage comes next.
+
+Every project keeps its pipeline state in working memory: the research brief, anchor, ideation map, hook, beat map, draft, personalization notes, and polish scorecard. Read it at the start of a stage so you build on what already exists rather than asking the user to repeat themselves. When a stage produces its output and the user confirms it, write that output to the matching working-memory field and set currentStage to that stage's number.`,
   model: 'openai/gpt-5',
   skills: ({ requestContext }) => {
     const pinned = requestContext.get('pinnedSkill');
@@ -29,5 +32,15 @@ Principles that hold across every stage:
 
     return [...SKILL_PATHS];
   },
-  memory: new Memory(),
+  memory: new Memory({
+    options: {
+      workingMemory: {
+        enabled: true,
+        // Scoped to the thread: one thread is one content project, and two
+        // projects for the same user must not share an anchor or draft.
+        scope: 'thread',
+        schema: projectStateSchema,
+      },
+    },
+  }),
 });
