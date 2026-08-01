@@ -48,3 +48,4 @@ mastra.duckdb*
 
 # local archives (kessel-run-skills/ is committed as source of truth)
 *.zip
+kessel-run-skills.zip
