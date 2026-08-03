@@ -32,15 +32,15 @@ These were chosen by the repo owner. Plans assume them.
 | 001  | Establish a test and typecheck baseline | P1 | S | — | DONE (merged to `main` as `87fa9fd`) |
 | 002  | Install the 11 Kessel Run skills into Mastra | P1 | M | 001 | DONE (merged to `main` as `d0c621b`) |
 | 003  | Model pipeline state as a content project | P1 | M | 002 | DONE (merged to `main` as `ce2b0b1`) |
-| 004  | API routes for skills, projects, and skill-pinned chat | P1 | M | 003 | DONE (unmerged — branch `advisor/004-api-routes`, head `e1197df`) |
+| 004  | API routes for skills, projects, and skill-pinned chat | P1 | M | 003 | DONE (merged to `main` as `aa1fb74`) |
 | 005  | UI shell — skill gallery and project list | P2 | M | 004 | TODO |
 | 006  | UI — project workspace (chat, stage rail, artifacts) | P2 | L | 005 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale)
 
-**005 is executable once 004 is merged to `main`.** 004 is approved but still on
-its own branch; 005's page fetches the endpoints 004 creates.
+**005 is executable now.** 004 is merged, so the `/api/kessel-run/` endpoints
+exist on `main`.
 
 > Anyone pulling `main` at or after `87fa9fd` must run `npm install` before
 > `npm test` will work — the merge added `vitest` and `vite-tsconfig-paths` to
@@ -159,7 +159,7 @@ that a project belonging to another `resourceId` is not readable.
 
 ## Reconcile log
 
-### 004 — executed and approved 2026-08-01 (unmerged)
+### 004 — executed, approved, and merged (`aa1fb74`)
 
 Executed against base `236b0e6` (current `main`, verified). Every done criterion
 re-run independently.
