@@ -33,14 +33,14 @@ These were chosen by the repo owner. Plans assume them.
 | 002  | Install the 11 Kessel Run skills into Mastra | P1 | M | 001 | DONE (merged to `main` as `d0c621b`) |
 | 003  | Model pipeline state as a content project | P1 | M | 002 | DONE (merged to `main` as `ce2b0b1`) |
 | 004  | API routes for skills, projects, and skill-pinned chat | P1 | M | 003 | DONE (merged to `main` as `aa1fb74`) |
-| 005  | UI shell — skill gallery and project list | P2 | M | 004 | TODO |
+| 005  | UI shell — skill gallery and project list | P2 | M | 004 | DONE (unmerged — branch `advisor/005-ui-shell`) |
 | 006  | UI — project workspace (chat, stage rail, artifacts) | P2 | L | 005 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale)
 
-**005 is executable now.** 004 is merged, so the `/api/kessel-run/` endpoints
-exist on `main`.
+**006 is executable once 005 is merged to `main`.** 005 is approved but still on
+its own branch; 006 imports the skill-card component 005 creates.
 
 > Anyone pulling `main` at or after `87fa9fd` must run `npm install` before
 > `npm test` will work — the merge added `vitest` and `vite-tsconfig-paths` to
@@ -213,6 +213,57 @@ the agent's `skills` resolver.
 > `getProjectState` and returns 2, not 1. The executor caught it, verified the
 > real invariant with a precise pattern, and proceeded — correct judgment.
 > Future drift checks should anchor the pattern (`getProject(`).
+
+### 005 — executed and approved (unmerged)
+
+Executed against base `7e2939e` (current `main`, verified). This was the first
+dispatch using the `.env` symlink convention; it worked — `test -f .env` passed
+inside the worktree.
+
+| Done criterion | Result on re-run |
+|---|---|
+| `npm test` | exit 0, 30 passed |
+| `npm run typecheck` | exit 0 |
+| `npm run lint` | exit 0, 9 warnings / 0 errors |
+| `npm run build` | exit 0 |
+| `src/components/ui/` modifications | 0 (three additions only) |
+| `ai-elements/`, `mastra/`, weather demo | untouched |
+| `/`, `/kessel-run`, `/chat` | 200, 200, 200 |
+
+Page content verified by the reviewer against a live dev server, not taken from
+the report: all 11 skill labels render exactly once, 8 stage badges (0–7), and
+exactly 3 `Standalone` badges. An initial count of 11 "Standalone" was a bad
+grep on the reviewer's part — 8 of those live in the RSC flight payload, where
+several skill descriptions literally begin "Standalone Kessel Run skill:". The
+delimited count is 3, which is correct.
+
+Client-bundle safety holds: the only `@/mastra` import in any `"use client"`
+component is `projects/schema` (types and constants), which is what the plan
+permits. Nothing imports the store or the Mastra root into the client.
+
+**Scope note — dependencies.** `package.json` and `package-lock.json` changed,
+and neither was in the plan's in-scope list. This is a necessary consequence of
+step 1: the shadcn `sonner.tsx` component imports `sonner` and `next-themes`.
+The lockfile delta is clean — exactly 2 packages added, **zero** version changes
+to pre-existing packages, zero removals. Approved on merit. Future plans that
+run a component-installer CLI should list `package.json` and `package-lock.json`
+in scope explicitly.
+
+**UNVERIFIED**: "no hydration warnings in the console". No browser is available
+to an executor, and this cannot be checked over HTTP. The `Intl.DateTimeFormat`
+guidance that exists to prevent the most likely mismatch was followed
+(explicit `"en-US"` locale and `"UTC"` time zone, no bare
+`toLocaleDateString()`), but the console itself has not been observed. Worth one
+look in a browser after merging.
+
+**Known issue, not introduced here — DuckDB lock contention during build.**
+Every `npm run build` since plan 002 logs `IO Error: Could not set lock on file
+.../mastra.duckdb — Conflicting lock is held ... by user miniying`. The cause is
+Next's parallel build workers each initializing Mastra and contending on the same
+observability store file. It is non-fatal — Mastra retries, the build exits 0,
+and all routes generate — but it has appeared in four consecutive plans and is
+loud enough to mask a real error. Worth fixing eventually: skip the observability
+store when building, or give each process its own DuckDB path.
 
 ### 2026-07-30 — commit `6e39653`
 
