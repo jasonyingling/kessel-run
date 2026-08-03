@@ -278,6 +278,25 @@ legitimately show up as new. That is the dependency landing, not drift.
 > The tree was committed as `6e39653` on 2026-07-30 and the `reconcile` run that
 > day re-stamped every plan. No plan content changed.
 
+## Executor dispatch convention
+
+Worktrees do not receive `.env` — it is gitignored, so any step needing
+`OPENAI_API_KEY` fails inside one. Every executor dispatch must include this
+after `npm install`:
+
+```bash
+ln -s ../../../.env .env
+```
+
+Worktrees live at `<repo>/.claude/worktrees/<name>/`, exactly three levels down,
+so that resolves to the main repo's `.env`. The committed `.gitignore` carries
+`.env*`, so the symlink cannot be committed from inside the worktree.
+
+Chosen 2026-08-03 over exporting the key in `~/.zshrc`, deliberately: the repo
+owner does not want the key readable by every process on the machine. `direnv`
+was considered and rejected — its hook does not fire reliably in the
+non-interactive shells these tools spawn.
+
 ## Scope boundaries that apply to every plan
 
 - **Do not touch `src/components/ai-elements/` or `src/components/ui/`** except
