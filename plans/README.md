@@ -33,14 +33,14 @@ These were chosen by the repo owner. Plans assume them.
 | 002  | Install the 11 Kessel Run skills into Mastra | P1 | M | 001 | DONE (merged to `main` as `d0c621b`) |
 | 003  | Model pipeline state as a content project | P1 | M | 002 | DONE (merged to `main` as `ce2b0b1`) |
 | 004  | API routes for skills, projects, and skill-pinned chat | P1 | M | 003 | DONE (merged to `main` as `aa1fb74`) |
-| 005  | UI shell — skill gallery and project list | P2 | M | 004 | DONE (unmerged — branch `advisor/005-ui-shell`) |
+| 005  | UI shell — skill gallery and project list | P2 | M | 004 | DONE (merged to `main` as `0636153`) |
 | 006  | UI — project workspace (chat, stage rail, artifacts) | P2 | L | 005 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale)
 
-**006 is executable once 005 is merged to `main`.** 005 is approved but still on
-its own branch; 006 imports the skill-card component 005 creates.
+**006 is executable now** — and it is the last plan. 005 is merged, so
+`src/components/kessel-run/` and `/kessel-run` exist on `main`.
 
 > Anyone pulling `main` at or after `87fa9fd` must run `npm install` before
 > `npm test` will work — the merge added `vitest` and `vite-tsconfig-paths` to
@@ -214,7 +214,7 @@ the agent's `skills` resolver.
 > real invariant with a precise pattern, and proceeded — correct judgment.
 > Future drift checks should anchor the pattern (`getProject(`).
 
-### 005 — executed and approved (unmerged)
+### 005 — executed, approved, and merged (`0636153`)
 
 Executed against base `7e2939e` (current `main`, verified). This was the first
 dispatch using the `.env` symlink convention; it worked — `test -f .env` passed
