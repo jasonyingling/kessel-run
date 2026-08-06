@@ -49,6 +49,10 @@ export function ProjectChat({
     pinnedRef.current = pinnedSkill
   }, [pinnedSkill])
 
+  // `body` is invoked by DefaultChatTransport at request-send time, never
+  // during this render; the nested closure only reads pinnedRef.current when
+  // the AI SDK calls it. react-hooks/refs cannot see across that boundary.
+  /* eslint-disable react-hooks/refs */
   const [transport] = useState(
     () =>
       new DefaultChatTransport({
@@ -56,6 +60,7 @@ export function ProjectChat({
         body: () => ({ pinnedSkill: pinnedRef.current }),
       }),
   )
+  /* eslint-enable react-hooks/refs */
 
   const { messages, setMessages, sendMessage, status } = useChat({
     transport,
