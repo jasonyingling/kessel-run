@@ -44,8 +44,8 @@ export function ProjectWorkspace({ project }: { project: ProjectDetail }) {
         <Badge variant="secondary">{project.format}</Badge>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        <aside className="border-b p-4 lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:flex-row">
+        <aside className="min-w-0 border-b p-4 lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r">
           <StageRail
             views={views}
             pinnedSkill={pinnedSkill}
@@ -53,7 +53,14 @@ export function ProjectWorkspace({ project }: { project: ProjectDetail }) {
           />
         </aside>
 
-        <main className="min-h-0 flex-1 p-4">
+        {/*
+          A flex item's default `min-width: auto` refuses to shrink below its
+          content's intrinsic width. The chat pane can contain very long
+          unbroken lines (skill tool output), which without `min-w-0` inflates
+          this column past its flex-basis share and pushes the artifacts
+          column off-screen, causing page-level horizontal scroll.
+        */}
+        <main className="min-h-0 min-w-0 flex-1 p-4">
           <ProjectChat
             projectId={project.id}
             pinnedSkill={pinnedSkill}
@@ -61,7 +68,7 @@ export function ProjectWorkspace({ project }: { project: ProjectDetail }) {
           />
         </main>
 
-        <aside className="min-h-0 border-t p-4 lg:w-96 lg:shrink-0 lg:border-t-0 lg:border-l">
+        <aside className="min-h-0 min-w-0 border-t p-4 lg:w-96 lg:shrink-0 lg:border-t-0 lg:border-l">
           <ArtifactsPanel views={views} />
         </aside>
       </div>

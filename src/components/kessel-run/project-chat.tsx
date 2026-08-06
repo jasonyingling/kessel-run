@@ -84,11 +84,11 @@ export function ProjectChat({
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <Conversation className="h-full">
+    <div className="flex h-full min-w-0 flex-col">
+      <Conversation className="h-full min-w-0">
         <ConversationContent>
           {messages.map((message) => (
-            <div key={message.id}>
+            <div key={message.id} className="min-w-0">
               {message.parts?.map((part, i) => {
                 if (part.type === "text") {
                   return (
@@ -102,17 +102,21 @@ export function ProjectChat({
 
                 if (part.type?.startsWith("tool-")) {
                   return (
-                    <Tool key={`${message.id}-${i}`}>
+                    <Tool key={`${message.id}-${i}`} className="min-w-0">
                       <ToolHeader
                         type={(part as ToolUIPart).type}
                         state={(part as ToolUIPart).state || "output-available"}
                         className="cursor-pointer"
                       />
-                      <ToolContent>
-                        <ToolInput input={(part as ToolUIPart).input || {}} />
+                      <ToolContent className="min-w-0">
+                        <ToolInput
+                          input={(part as ToolUIPart).input || {}}
+                          className="min-w-0 overflow-x-auto"
+                        />
                         <ToolOutput
                           output={(part as ToolUIPart).output}
                           errorText={(part as ToolUIPart).errorText}
+                          className="min-w-0 overflow-x-auto"
                         />
                       </ToolContent>
                     </Tool>
