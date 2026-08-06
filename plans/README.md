@@ -34,13 +34,13 @@ These were chosen by the repo owner. Plans assume them.
 | 003  | Model pipeline state as a content project | P1 | M | 002 | DONE (merged to `main` as `ce2b0b1`) |
 | 004  | API routes for skills, projects, and skill-pinned chat | P1 | M | 003 | DONE (merged to `main` as `aa1fb74`) |
 | 005  | UI shell — skill gallery and project list | P2 | M | 004 | DONE (merged to `main` as `0636153`) |
-| 006  | UI — project workspace (chat, stage rail, artifacts) | P2 | L | 005 | TODO |
+| 006  | UI — project workspace (chat, stage rail, artifacts) | P2 | L | 005 | DONE (unmerged — branch `advisor/006-ui-project-workspace`, head `24e780e`) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale)
 
-**006 is executable now** — and it is the last plan. 005 is merged, so
-`src/components/kessel-run/` and `/kessel-run` exist on `main`.
+**All six plans are executed and approved.** 006 is the last one and is
+approved but unmerged. After merging, the pipeline works end to end.
 
 > Anyone pulling `main` at or after `87fa9fd` must run `npm install` before
 > `npm test` will work — the merge added `vitest` and `vite-tsconfig-paths` to
@@ -157,8 +157,6 @@ with nothing enforcing it. Plan 004 exercises these functions through HTTP
 routes and is the natural place to cover it. Do not let 004 land without a test
 that a project belonging to another `resourceId` is not readable.
 
-## Reconcile log
-
 ### 004 — executed, approved, and merged (`aa1fb74`)
 
 Executed against base `236b0e6` (current `main`, verified). Every done criterion
@@ -264,6 +262,73 @@ observability store file. It is non-fatal — Mastra retries, the build exits 0,
 and all routes generate — but it has appeared in four consecutive plans and is
 loud enough to mask a real error. Worth fixing eventually: skip the observability
 store when building, or give each process its own DuckDB path.
+
+### 006 — executed, revised once, approved (unmerged)
+
+Executed against base `00583fc` (current `main`, verified). Head `24e780e`.
+
+| Done criterion | Result on re-run |
+|---|---|
+| `npm test` | exit 0, 36 passed (30 prior + 6 new) |
+| `npm run typecheck` / `lint` / `build` | all exit 0; lint 9 warnings / 0 errors |
+| Scope | exactly the 9 in-scope files, plus the 2 revised |
+| `ai-elements/`, `ui/`, `mastra/`, `api/` | untouched |
+
+**The browser walkthrough (plan step 8) was performed by the reviewer**, since
+an executor has no browser. The executor was told to skip it, and did — it did
+not fabricate any part of it. Results:
+
+1. Workspace renders: 8 stages incomplete, 3 standalone below a separator,
+   progress bar at 0, artifacts empty state. ✅
+2. Pinned Anchor, sent a message. A `skill` tool call rendered, and expanding it
+   showed the RESULT was the real `# Kessel Run — Stage 1: Anchor` SKILL.md
+   body. ✅ **This is the first end-to-end proof of the pinning mechanic** —
+   plan 002's resolver, plan 004's `requestContext`, and plan 006's transport
+   body function all working together.
+3. The reply behaved like the Anchor stage (asked publication, audience, format,
+   goal) rather than generic chat. ✅
+4. The agent wrote `anchor` to working memory with all 9 fields; the rail flipped
+   Anchor to complete and an "Anchor" tab appeared in the artifacts panel
+   **without a reload**, confirming `onFinish` refresh. ✅
+5. Reload preserved both messages (API returns user + assistant) and artifacts. ✅
+6. Pinned Ideation and sent a second message: the agent announced "Moving to
+   Stage 2: Ideation" and did **not** re-ask what the piece was about. ✅ This
+   proves the pin is live on the second message — the exact failure the plan's
+   maintenance note warns about, where a plain-object `body` freezes the pin at
+   its first value with no error of any kind.
+
+**One defect found and fixed (revision round 1).** The workspace scrolled
+horizontally and pushed the artifacts panel entirely off-screen as soon as a
+skill tool result rendered — measured at a 1440px viewport, `scrollWidth` 4266
+vs `clientWidth` 1440, with the chat column at 3594px. Cause: flex children
+default to `min-width: auto` and refuse to shrink below their content, and skill
+markdown has very long lines.
+
+This was **a gap in the plan, not executor error** — step 6 only required
+`overflow-x-auto` on the *artifact* body, but the *chat pane's* tool output is
+what overflowed. Fixed in `24e780e` with `min-w-0` down the flex chain in
+`project-workspace.tsx` and `project-chat.tsx`, and `overflow-x-auto` passed to
+`ToolInput`/`ToolOutput` via their supported `className` prop rather than editing
+the vendored component. Re-measured after the fix: `scrollWidth` 1440 =
+`clientWidth`, no horizontal scroll, three columns intact.
+
+**Hydration warnings: VERIFIED CLEAN.** With console tracking active across full
+reloads of both `/kessel-run/projects/<id>` and `/kessel-run`, zero hydration
+warnings and zero console errors. This also closes the item left open by plan
+005.
+
+**NOT VERIFIED — the 375px viewport check.** The browser tooling resized the
+window but the page viewport stayed at 1440, so the narrow-width test never
+actually ran. The `lg:` breakpoints stack the columns below 1024px and `min-w-0`
+is now applied throughout, so the risk is low — but it is unverified, not
+passing. Worth one manual check in a narrow window.
+
+**Observation, not a defect:** the agent wrote `anchor` but left `currentStage`
+null, despite its instructions saying to set it. Nothing depends on it —
+`stageIsComplete` reads the artifact field — but `currentStage` is currently
+unreliable and should not be built on without fixing the agent instruction first.
+
+## Reconcile log
 
 ### 2026-07-30 — commit `6e39653`
 
