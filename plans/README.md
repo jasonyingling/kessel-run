@@ -34,13 +34,33 @@ These were chosen by the repo owner. Plans assume them.
 | 003  | Model pipeline state as a content project | P1 | M | 002 | DONE (merged to `main` as `ce2b0b1`) |
 | 004  | API routes for skills, projects, and skill-pinned chat | P1 | M | 003 | DONE (merged to `main` as `aa1fb74`) |
 | 005  | UI shell — skill gallery and project list | P2 | M | 004 | DONE (merged to `main` as `0636153`) |
-| 006  | UI — project workspace (chat, stage rail, artifacts) | P2 | L | 005 | DONE (unmerged — branch `advisor/006-ui-project-workspace`, head `24e780e`) |
+| 006  | UI — project workspace (chat, stage rail, artifacts) | P2 | L | 005 | DONE (merged to `main` as `d4be903`) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale)
 
-**All six plans are executed and approved.** 006 is the last one and is
-approved but unmerged. After merging, the pipeline works end to end.
+**All six plans are executed, approved, and merged.** The pipeline works end to
+end, verified in a browser against a live model.
+
+Open items, none blocking:
+
+1. **375px viewport unverified** (plan 006). The browser tooling would not change
+   the page viewport, so the narrow-width check never ran. `lg:` breakpoints
+   stack the columns and `min-w-0` is applied throughout, so risk is low.
+2. **`currentStage` is never written.** The agent's instructions tell it to set
+   `currentStage` when a stage completes; in practice it writes the artifact
+   field and leaves `currentStage` null. Nothing depends on it —
+   `stageIsComplete` reads the artifact field — but do not build on it before
+   fixing the agent instruction.
+3. **DuckDB lock contention during `npm run build`.** Next's parallel build
+   workers each initialize Mastra and fight over `mastra.duckdb`. Non-fatal, but
+   loud enough to mask a real error. Fix by skipping the observability store at
+   build time or giving each process its own DB path.
+4. **`vite-tsconfig-paths` is redundant** under Vitest 4 (Vite supports
+   `resolve.tsconfigPaths` natively). Drop it next time that config is touched.
+5. **Deferred UI work** carried from the plans: markdown rendering in the
+   artifacts panel, copy-to-clipboard, draft export, project rename/delete,
+   dark-mode toggle, and pagination on the project list.
 
 > Anyone pulling `main` at or after `87fa9fd` must run `npm install` before
 > `npm test` will work — the merge added `vitest` and `vite-tsconfig-paths` to
@@ -263,7 +283,7 @@ and all routes generate — but it has appeared in four consecutive plans and is
 loud enough to mask a real error. Worth fixing eventually: skip the observability
 store when building, or give each process its own DuckDB path.
 
-### 006 — executed, revised once, approved (unmerged)
+### 006 — executed, revised once, approved, and merged (`d4be903`)
 
 Executed against base `00583fc` (current `main`, verified). Head `24e780e`.
 
