@@ -25,6 +25,63 @@ These were chosen by the repo owner. Plans assume them.
    skills primitive is for: progressive disclosure, one memory/tool config,
    and continuity across stages inside a single thread.
 
+Added 2026-08-21, chosen by the repo owner while planning 007 and 008:
+
+5. **Renumber rather than fractional stages.** Interview takes Stage 2 and
+   everything from Ideation up shifts by one (Ideation 3 … Polish 8). Rejected:
+   slotting Interview in as "Stage 1.5", which would have avoided ~76 mechanical
+   edits but left a fractional stage in something intended to be published as a
+   framework. Also rejected: folding Interview into Ideation's slot, which loses
+   the separation between capturing raw material and structuring it.
+6. **Browser Web Speech API for dictation**, via the already-vendored and
+   currently unused `src/components/ai-elements/speech-input.tsx`. No new
+   dependency, no backend, no per-minute cost. Firefox and Safari get no
+   dictation until someone adds a transcription route; that is an accepted
+   tradeoff, not an oversight.
+7. **Draft is hard-constrained to the transcript, with a connective-tissue
+   allowance.** Every claim, story, number, and judgement must trace to a
+   transcript line; transitions and framing sentences that carry no new claim
+   may be authored, but each section reports its sourcing counts so an inflating
+   connective count surfaces a thin interview rather than hiding it.
+8. **The skills are built for Claude, and `src/mastra/skills/` is the source of
+   truth for both surfaces.** Authoring never happens in the installed plugin
+   directory — it is Anthropic-managed, read-only, and its path embeds session
+   UUIDs. Delivery is `npm run skills:package` producing `.skill` files, sent to
+   Claude, installed with the Save-skill button.
+9. **Personal parameters live in a local filesystem workspace.** Chosen over
+   Notion and over bundling the files inside the skill folders. Notion would
+   reach the Claude desktop and web apps too, but plain files diff cleanly,
+   git-track, and make the lessons loop trivial; bundling would mean every
+   `.skill` reinstall reverts the author's own accumulated corrections. Accepted
+   cost: on surfaces without filesystem access the workspace is unreachable, so
+   every skill carries an explicit fallback.
+10. **That workspace is the Obsidian vault at `/Users/miniying/The Rock`**, not a
+   fresh `~/kessel-run/` directory (2026-08-25). The vault is already a Claude
+   Code project — `CLAUDE.md` plus a working project-scoped skill at
+   `.claude/skills/triage-clippings/` — so Kessel Run skills installed there are
+   live with no packaging step, and the Previously on Tech archive (47 issues at
+   `10 - Projects/Previously on Tech/NNNN - Title/Issue.md`) is on disk for the
+   voice derivation to read.
+
+   **This supersedes the `~/kessel-run/` layout in plan 010 as written.** The
+   vault's own rules govern, and three of them contradict that layout: filenames
+   use spaces and title case rather than hyphenated slugs, every created note
+   needs `title`/`type`/`created`/`updated`/`tags` frontmatter, and everything
+   belongs inside the PARA structure. The mapping instead is:
+
+   | Kessel Run concept | Vault location |
+   |---|---|
+   | Run artifacts for a piece | `10 - Projects/<Publication>/<Piece>/` — beside the existing `Issue.md` for Previously on Tech |
+   | Personal parameters | `Meta/Kessel Run/` |
+   | Oracle spikes | `40 - Ideas/Content Ideas/` |
+
+   Hard vault rules every Kessel Run skill must honor, from the vault's
+   `CLAUDE.md`: never modify a Previously on Tech `Issue.md`; never delete a note
+   (archive to `60 - Archives/`); append rather than overwrite substantial
+   content; check for an existing note before creating one; tags lowercase and
+   hyphenated. Plan 010 must be revised against this before it is executed —
+   plan 014 already reflects it.
+
 ## Execution order & status
 
 | Plan | Title | Priority | Effort | Depends on | Status |
@@ -35,14 +92,71 @@ These were chosen by the repo owner. Plans assume them.
 | 004  | API routes for skills, projects, and skill-pinned chat | P1 | M | 003 | DONE (merged to `main` as `aa1fb74`) |
 | 005  | UI shell — skill gallery and project list | P2 | M | 004 | DONE (merged to `main` as `0636153`) |
 | 006  | UI — project workspace (chat, stage rail, artifacts) | P2 | L | 005 | DONE (merged to `main` as `d4be903`) |
+| 007  | Interview stage + transcript-constrained Draft | P1 | L | — | TODO |
+| 008  | Push-to-talk dictation in the project chat input | P1 | S | — | TODO |
+| 009  | Ship the skills to Claude as installable `.skill` files | P1 | M | — | TODO |
+| 010  | Workspace + run directory; stop using the human as state bus | P1 | L | — | NEEDS REVISION (workspace is the vault, not `~/kessel-run/` — see decision 10) |
+| 011  | `kessel-run-voice` — derive a voice guide from the archive | P2 | M | 009, 010 | TODO |
+| 012  | `kessel-run-lessons` — learn from your final edits | P1 | M | 009, 010 | TODO |
+| 013  | `kessel-run-oracle` + vault — solve the blank page | P2 | L | 009, 010 | TODO |
+| 014  | Interview skill into the Obsidian vault (fast path) | P0 | S | — | DONE (merged to `main` as `f4ba001`) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
-REJECTED (with one-line rationale)
+NEEDS REVISION (with one-line reason) | REJECTED (with one-line rationale)
 
-**All six plans are executed, approved, and merged.** The pipeline works end to
+**Plans 001–006 are executed, approved, and merged.** The pipeline works end to
 end, verified in a browser against a live model.
 
-Open items, none blocking:
+**Plans 007 and 008 are new** (written 2026-08-21 against `490545a`, `plan`
+variant — no audit was run). They come from a gap analysis comparing Kessel Run
+against the 10X "content machine" workflow. The finding they act on:
+
+> The interview isn't a stage. It's a material-sourcing discipline that makes a
+> later stage unnecessary.
+
+Kessel Run's Personalize stage exists to find paragraphs that read like nobody
+wrote them and then ask the questions that should have been asked before
+drafting started. Plan 007 moves that questioning to the front — a panel-driven
+Interview stage that captures the author's answers verbatim — and constrains
+Draft to that transcript, so the generic prose Personalize removes never gets
+written. Plan 008 adds the microphone that makes the interview worth doing,
+because spoken answers carry the specificity that typed ones edit out.
+
+**Plans 009–013 target the skills as Claude skills** (written 2026-08-21 against
+`490545a`). Recon established something the earlier plans assumed away: all 11
+`SKILL.md` files in `src/mastra/skills/` are **byte-identical** to the copies
+installed in Claude's `anthropic-skills` plugin. The repo is not a fork of the
+skills — it is the same artifact, serving two runtimes:
+
+| | This app | Claude directly |
+|---|---|---|
+| Loads skills from | `SKILL_PATHS` in `catalog.ts` | installed `.skill` folders |
+| Pipeline state | Mastra working memory | the workspace + run directory (plan 010) |
+| Filesystem | none | Claude Code / Cowork yes, desktop and web maybe |
+| Connectors | none | Gmail, Calendar, Drive, Notion, Todoist |
+
+`src/mastra/skills/` is the source of truth for both. Two consequences run
+through every plan from 009 on: anything a skill is told to do must degrade
+gracefully when there is no filesystem, or the app's agent will misbehave; and
+installing a `.skill` **replaces** the folder, so anything personal that lives
+inside a skill directory gets reverted on the next install.
+
+That second one already bit. The installed `kessel-run-anchor` carries
+`references/publications.md` — three hand-written publication profiles — and the
+repo copy does not, so the file was one packaging run away from being destroyed.
+Plan 009 restores it and adds the test that catches a repeat. Plan 010 moves
+personal parameters out of the skill folders entirely, which is the structural
+fix.
+
+One more finding worth recording: `grep` shows Anchor is the **only** skill that
+names `references/publications.md`. Draft, Personalize, and Polish all treat the
+voice profile as a hard constraint — "the voice profile is not a suggestion, it
+is a constraint" — without any stated way to find it. Inside one long
+conversation it half-works because Anchor's output is still in context. Invoked
+as separate skills, which is how they are actually used, Draft has been writing
+in a voice it never read. Plan 010 fixes that.
+
+Open items from 001–006, none blocking:
 
 1. **375px viewport unverified** (plan 006). The browser tooling would not change
    the page viewport, so the narrow-width check never ran. `lg:` breakpoints
@@ -66,6 +180,56 @@ Open items, none blocking:
 > `npm test` will work — the merge added `vitest` and `vite-tsconfig-paths` to
 > `package.json`, but an existing `node_modules` from before that commit will
 > not have them.
+
+## Recommended execution order (revised 2026-08-25)
+
+Numbering is historical; **this is the order to actually run them in.** The goal
+that sets it: get a usable interview running in the Obsidian vault first, then
+build outward. The skills-only workflow and the app are two paths, and the skills
+path goes first.
+
+### Track A — skills in the vault (do this one)
+
+| Order | Plan | Why here |
+|---|---|---|
+| 1 | **014** | The only thing blocking an interview tonight. S effort, no dependencies, no renumber. |
+| 2 | **010** (revised for the vault) | Workspace + run artifacts, so later stages read what earlier ones wrote instead of asking. |
+| 3 | **007** | Promotes Interview to Stage 2, renumbers, and constrains Draft to the transcript. Do this once the interview questions have settled from real use. |
+| 4 | **012** | Lessons loop. Needs a `Final` to diff against, so it needs at least one piece to have gone all the way through. |
+| 5 | **011** | Voice derivation. Cheap now — the corpus is 47 issues on disk, no connector needed. |
+| 6 | **013** | Oracle + vault. Largest, and least urgent while there is a topic backlog. |
+| — | **009** | Optional. Only needed to run the skills outside Claude Code in the vault — the Claude app on a phone, or claude.ai. Not on the critical path. |
+
+### Track B — the app
+
+| Order | Plan | Why here |
+|---|---|---|
+| — | **008** | App-only dictation. Claude has its own; only matters if interviews move into the app's chat. |
+| — | app-side work generally | Deferred behind Track A. |
+
+**007 sits at position 3, not 1, on purpose.** It is an L-effort renumber across
+76 stage references plus a schema change, and none of it is needed to run an
+interview. Running a few real interviews first will change the panel questions,
+and it is cheaper to change them in a standalone skill than after they are wired
+into eight renumbered stages.
+
+**009 is genuinely optional now.** The vault's `.claude/skills/` directory makes
+packaging unnecessary for the primary workflow — a skill dropped there is live
+immediately. Packaging only earns its place when the skills need to work away
+from the vault.
+
+## Direction, not planned
+
+Recorded so it is not lost, explicitly not actionable yet:
+
+- **The app as an MCP server.** Instead of two parallel implementations, the
+  Next.js app could expose aggregation and data services over MCP — link banks,
+  archive search, published-piece metrics, the Oracle's connector scans — and the
+  skills would consume them. Models would then do only what models are good at:
+  the interview, summarization, and the writing. That splits the system along a
+  better seam than "app version vs. skills version" and would retire most of
+  Track B as currently conceived. Worth revisiting once Track A has been used
+  enough to know which data the skills keep wishing they had.
 
 ## Execution log
 
@@ -283,6 +447,63 @@ and all routes generate — but it has appeared in four consecutive plans and is
 loud enough to mask a real error. Worth fixing eventually: skip the observability
 store when building, or give each process its own DuckDB path.
 
+### 014 — executed, approved, and merged 2026-08-25 (`f4ba001`)
+
+Executed by a Sonnet subagent in an isolated worktree against `490545a` (current
+`main` tip; drift check returned empty). Reviewed by re-running every done
+criterion independently rather than trusting the executor's report.
+
+| Done criterion | Result on re-run |
+|---|---|
+| `npm test` | exit 0, `36 passed (36)` |
+| `npm run typecheck` | exit 0, no output |
+| `npm run lint` | exit 0, `9 problems (0 errors, 9 warnings)` |
+| `npm run build` | exit 0 (6 DuckDB lock lines, pre-existing) |
+| `grep -c "Stage "` in the new SKILL.md | `0` |
+| description length / angle brackets | `617` / `False` |
+| `npm run skills:install` with no `KESSEL_RUN_VAULT` | exit 1, usage message |
+| scratch-vault install | `OK`; installed copy byte-identical to source |
+| Vault untouched | only `triage-clippings` present, mtime Aug 17, zero `kessel-run-*` dirs |
+| Scope | exactly the 6 in-scope files; `package-lock.json` unchanged |
+
+**The SKILL.md is byte-identical to the plan's fenced block** — verified by
+extracting the block from the plan and diffing programmatically, 10,285
+characters on both sides. That was the main risk on a plan whose payload is
+prose: an executor paraphrasing instructions it thought it was summarizing.
+
+**Test teeth verified by the reviewer, not the executor's report.** Renaming
+`kessel-run-interview` to `kessel-run-interviews` fails exactly two cases —
+`lists exactly the skills present on disk` and `names every directory after its
+frontmatter name` — and nothing else. Restored afterwards, 36/36.
+
+The catalog diff is exactly as specified: `stage: null`, union member after
+`kessel-run-anchor`, entry appended after `kessel-run-analyze`, `PIPELINE_SKILLS`
+still 8, and the `numbers pipeline stages 0..7` assertion untouched. Plan 007's
+renumber is unobstructed.
+
+**One documented deviation, approved on merit.** The executor used this session's
+scratchpad directory instead of the literal `/tmp/fake-vault` the plan named, per
+an environment instruction preferring the scratchpad over `/tmp`. Same behavior,
+same result; the reviewer re-ran the check in its own scratch directory and got
+`OK`.
+
+**Merged** at the repo owner's direction as `f4ba001`, a `--no-ff` merge of
+`advisor/014-interview-skill-into-vault` (5 commits) matching the
+`Merge plan NNN:` convention used by 004–006. The merged tree was confirmed
+byte-identical to the reviewed branch — `git diff advisor/014-interview-skill-into-vault HEAD`
+returns empty — so the tree that passed 36/36 in the worktree is exactly what is
+on `main`.
+
+**The post-merge gates were NOT re-run in the main tree.** `node_modules` there
+predates `87fa9fd` and has no `vitest`, and installing would mutate the working
+tree. The tree-identity check above is the substitute, and it is stronger than a
+re-run would be. Run `npm install && npm test` before relying on the suite
+locally.
+
+**Follow-up noted, not acted on**: `npm install` in the worktree reported 16
+npm-audit vulnerabilities. Out of scope for this plan and unverified against the
+main tree — worth one `npm audit` run before it matters.
+
 ### 006 — executed, revised once, approved, and merged (`d4be903`)
 
 Executed against base `00583fc` (current `main`, verified). Head `24e780e`.
@@ -391,14 +612,38 @@ Nothing was rejected. No finding was fixed independently.
 - **004 before 005/006** because the UI fetches those endpoints. 005 and 006
   could be done by two executors in parallel *after* 004 lands, but 006
   imports the skill-card component 005 creates, so sequential is safer.
+- **007 and 008 are independent** of each other and of everything above — 001–006
+  are all merged, and the two touch disjoint files (007 is skills, catalog,
+  schema, agent; 008 is one component plus a new lib module). They can run in
+  parallel or in either order. 007 is listed first because dictation without an
+  interview to dictate into is a button nobody presses.
+- **Neither 007 nor 008 needs `.env`.** No step calls a live model, so both are
+  fully verifiable inside an execution worktree. The symlink convention below
+  is still worth applying out of habit.
+- **009 first among the skill plans.** It creates the packaging path and the
+  upload-readiness test that 010–013 all rely on, and its step 1 restores
+  `publications.md` before anything can package over it.
+- **010 before 011, 012, and 013.** All three read or write workspace files, and
+  010 is what defines the workspace and propagates the shared block into every
+  skill. 011, 012, and 013 are independent of each other after 010 lands and can
+  run in parallel.
+- **013 changes `WORKSPACE_BLOCK` and re-propagates it.** If 011 or 012 is in
+  flight at the same time, they will conflict in every `SKILL.md`. Land 013
+  either before or after them, not alongside.
+- **007 ships to Claude through 009.** Plan 007 creates the Interview skill in
+  `src/mastra/skills/`, which is the source of truth for both surfaces; 009's
+  `npm run skills:package` picks it up automatically with no extra work.
+- **008 is app-only.** Claude has its own dictation, so the microphone in plan
+  008 only matters for interviews run in this app's chat. If interviews are going
+  to happen in Claude, 008 is optional — it is small and independent either way.
 
 ## Drift detection
 
-Every plan stamps `Planned at: commit 6e39653`. That commit contains the full
+Plans 001–006 stamp `Planned at: commit 6e39653`; plans 007–013 stamp `490545a`. That commit contains the full
 Next.js + Mastra app, so the ordinary drift check works normally:
 
 ```bash
-git diff --name-only 6e39653..HEAD -- <the files listed in the plan's scope>
+git diff --name-only <the plan's own Planned-at SHA>..HEAD -- <the files listed in the plan's scope>
 ```
 
 Anything that comes back changed, check the plan's "Current state" excerpt
@@ -461,6 +706,34 @@ non-interactive shells these tools spawn.
   schema-typed working memory already does this, is scoped to the thread, is
   readable via `memory.getWorkingMemory()`, and the agent can update it through
   a built-in tool with no custom write path to secure.
+- **Author or edit skills in Claude's installed plugin directory.** Rejected: it
+  is Anthropic-managed and regenerated from the account's synced skills, it is
+  not a git repo, and its path contains session UUIDs that change. Edits there
+  are lost on the next sync.
+- **Store the workspace in Notion** (considered while planning 010–013).
+  Rejected in favour of a local filesystem workspace — see decision 9. Revisit if
+  Kessel Run starts being run from the Claude desktop or web app, where a
+  filesystem workspace is unreachable.
+- **Duplicate a shared `references/workspace.md` into all twelve skill folders**
+  (considered for plan 010). Rejected: twelve copies of a file with no mechanism
+  to keep them in sync is the drift problem, restated. The block lives in
+  `src/lib/kessel-run/workspace.ts` and a test asserts every `SKILL.md` contains
+  it verbatim.
+- **Seed `content-lessons.md` from the existing Previously on Tech voice rules**
+  (considered for plan 012). Rejected as a plan step: every entry in that log is
+  supposed to be confirmed by the author at the moment it is captured, and bulk
+  pre-filling undermines the confirm step the rest of the design rests on.
+  Reasonable as a human step, one rule at a time.
+- **Add jsdom and component tests for the chat input** (considered for plan 008).
+  Rejected: `vitest.config.ts` deliberately runs `environment: "node"` with
+  `include: ["src/**/*.test.ts"]`, and the one piece of real logic in the
+  dictation wiring is extracted into a plain module that tests without a DOM.
+  The rest is prop wiring that a browser walkthrough covers better than jsdom
+  would.
+- **Delete the Personalize stage now that Draft is transcript-constrained**
+  (considered for plan 007). Rejected for now: it is the right long-term call if
+  Personalize stops catching anything, but that needs evidence from a few runs
+  through the new pipeline, and removing it means a second renumber.
 - **Convert the skills to inline `createSkill()` calls.** Rejected as the
   primary approach: it would fork the markdown into TypeScript template
   literals and guarantee drift from the source files. Filesystem skills keep
