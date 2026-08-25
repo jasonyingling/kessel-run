@@ -15,6 +15,7 @@ export const SKILLS_DIR = './src/mastra/skills';
 export type KesselRunSkillName =
   | 'kessel-run-research'
   | 'kessel-run-anchor'
+  | 'kessel-run-interview'
   | 'kessel-run-ideation'
   | 'kessel-run-hook'
   | 'kessel-run-architecture'
@@ -127,6 +128,14 @@ export const KESSEL_RUN_SKILLS: readonly KesselRunSkill[] = [
     optional: false,
     timeTarget: '10–15 min',
     summary: 'Review post-publish performance and extract lessons.',
+  },
+  {
+    name: 'kessel-run-interview',
+    label: 'Interview',
+    stage: null,
+    optional: false,
+    timeTarget: '10–15 min',
+    summary: 'Answer a panel of interviewers out loud; capture it verbatim.',
   },
 ] as const;
 
