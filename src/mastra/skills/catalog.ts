@@ -14,6 +14,7 @@ export const SKILLS_DIR = './src/mastra/skills';
 
 export type KesselRunSkillName =
   | 'kessel-run-start'
+  | 'kessel-run-lessons'
   | 'kessel-run-research'
   | 'kessel-run-anchor'
   | 'kessel-run-interview'
@@ -154,6 +155,14 @@ export const KESSEL_RUN_SKILLS: readonly KesselRunSkill[] = [
     optional: false,
     timeTarget: 'Varies by source material',
     summary: 'Create a named editorial voice profile from writing samples and preferences.',
+  },
+  {
+    name: 'kessel-run-lessons',
+    label: 'Lessons',
+    stage: null,
+    optional: false,
+    timeTarget: '5–10 min',
+    summary: 'Turn accepted draft edits into confirmed publication or author voice lessons.',
   },
 ] as const;
 

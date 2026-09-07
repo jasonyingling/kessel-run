@@ -1,6 +1,6 @@
 # Kessel Run writing skills
 
-Kessel Run has **14 skills: eight numbered stages (0–7) and six standalone skills**. The numbers describe writing methods, not a required sequence. Start from your selected publication voice and available material; use only the stages the piece needs.
+Kessel Run has **15 skills: eight numbered stages (0–7) and seven standalone skills**. The numbers describe writing methods, not a required sequence. Start from your selected publication voice and available material; use only the stages the piece needs.
 
 The maintained skill folders are in [src/mastra/skills](../../src/mastra/skills/). Each contains `SKILL.md` and bundled references. Keep the folder together when copying it to a compatible skill environment. These instructions do not install a filesystem or browsing connector in ChatGPT; delivery and runtime access must be verified separately.
 
@@ -50,6 +50,7 @@ Your publications can be Previously on Tech, View From The Pine and The Greatest
 | 7 | Polish | Editorial review, targeted fixes and separate scorecard |
 | Standalone | Start / Resume | Load context and choose the next useful action |
 | Standalone | Voice | Create or refine a publication/author profile |
+| Standalone | [Lessons](../kessel-run-lessons.md) | Confirm scoped voice improvements from accepted edits |
 | Standalone | Interview | Gather missing material verbatim |
 | Standalone | Review | Audit existing content for freshness |
 | Standalone | Repurpose | Make independent renditions |

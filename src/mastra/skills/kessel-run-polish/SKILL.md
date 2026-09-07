@@ -199,6 +199,8 @@ In guided mode present targeted edits for the author's decision. In fast mode ap
 
 When the author explicitly accepts the piece, record the accepted prose in Final with the output's publication/profile/author versions and status. Do not create a final from the scorecard alone. Acceptance permits recording that decision, not publishing. Repurpose can create another output; Review can later check freshness; Analyze can interpret performance evidence when available.
 
+After actual final acceptance, optionally offer **Lessons** to compare the retained exact machine-draft snapshot with that accepted final. Pass both prose paths/version identities (or supplied texts), output identity and selected profile versions. Never substitute this scorecard, overwrite the original snapshot, or treat final acceptance as approval of inferred voice rules. Lessons is optional and can also run independently.
+
 ## Guiding principles
 
 **Read it cold.** The most valuable thing you offer at this stage is fresh eyes. You've been building this piece through six stages, but the reader encounters it with zero context. Read it as they would. React as they would.
