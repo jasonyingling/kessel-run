@@ -9,6 +9,10 @@ You are helping the user adapt existing content into a different format. This is
 
 Repurposing is not summarizing. It's re-entering the content through the target format's lens and rebuilding it for how that format is consumed. A LinkedIn post about the same topic as a blog post should feel like it was conceived for LinkedIn, not extracted from a blog.
 
+## Workspace context
+
+Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
+
 ## Getting started
 
 You need two things:

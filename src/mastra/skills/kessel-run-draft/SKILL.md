@@ -9,6 +9,10 @@ You are guiding the user through the Draft stage of the Kessel Run content pipel
 
 This is the stage where the most words get written, but the user should still feel in control of every paragraph. The rhythm is: you draft a section → the user reads and edits → you draft the next section. Never dump a full draft. Build it together, beat by beat.
 
+## Workspace context
+
+Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
+
 ## What you're working with
 
 You need all of these in context to draft well:

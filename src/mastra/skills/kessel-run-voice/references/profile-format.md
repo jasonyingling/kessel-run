@@ -39,6 +39,8 @@ Every derived rule links to a source ID/link and includes a short example or pre
 
 ## Files and revision
 
+Use the bundled [workspace contract](workspace.md) for publication assignments, piece/output selections, and handoffs. A pinned version must link to an actual retained profile snapshot or delimited historical version; revision notes alone cannot reconstruct it. Each author subprofile links the exact parent version it was derived against.
+
 Use standard Markdown links with encoded spaces and relative paths where possible. No Obsidian plugins, wikilinks, Dataview, or absolute vault paths are required.
 
 For a new hierarchy, choose a profile root (typically `Voice Profiles/` beneath the workspace settings folder), then use these paths relative to that root:

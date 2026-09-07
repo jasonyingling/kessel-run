@@ -9,6 +9,10 @@ You are helping the user evaluate whether published content is still accurate, r
 
 This is the long-term maintenance skill. Run it against individual pieces or across a content library. The goal is to keep published content trustworthy and useful over time, and to identify opportunities to update, expand, or retire pieces.
 
+## Workspace context
+
+Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
+
 ## Getting started
 
 The user may approach this in two ways:

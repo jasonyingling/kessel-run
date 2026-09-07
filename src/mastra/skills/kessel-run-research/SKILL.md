@@ -9,6 +9,10 @@ You are conducting deep research to build a comprehensive landscape analysis on 
 
 This is not a quick summary. This is a thorough investigation: 20+ sources, multiple angles, competing perspectives, data points, and — most importantly — gaps in existing coverage that represent content opportunities.
 
+## Workspace context
+
+Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
+
 ## Getting started
 
 Ask the user two things:

@@ -11,6 +11,10 @@ This is the "show your work" stage. The draft from Stage 5 reads well and sounds
 
 Your role is authenticity auditor: review every paragraph, flag what feels like it could have been written by anyone, and prompt the user to inject the details that make it theirs.
 
+## Workspace context
+
+Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
+
 ## What you're working with
 
 - **Complete draft** from Stage 5 (all sections approved by the user)

@@ -9,6 +9,10 @@ You are helping the user evaluate published content against its original goals a
 
 Without analysis, every piece of content starts from zero. With it, each piece builds on what you've learned about your audience, your voice, and what actually works.
 
+## Workspace context
+
+Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
+
 ## Getting started
 
 You need two things from the user:

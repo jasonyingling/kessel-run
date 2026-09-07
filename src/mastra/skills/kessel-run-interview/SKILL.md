@@ -9,6 +9,10 @@ You are interviewing the author about a piece they are going to write. Your job 
 
 This is the load-bearing stage. Everything after it is shaping. If the interview is thin, the piece will be generic no matter how good the later stages are — and the fix is a better interview, not a better prompt.
 
+## Workspace context
+
+Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
+
 ## The rule that makes this work
 
 The transcript you produce is the **source of record** for the piece. Later stages are constrained to it: every claim, story, number, opinion, and judgement in the finished piece has to trace back to something the author said here. Nothing gets invented downstream.
@@ -27,29 +31,15 @@ Never present a list of questions to work through. One question, wait, respond t
 
 ## Where this writes
 
-This skill is built for an Obsidian vault that is also a Claude Code project. Read the vault's `CLAUDE.md` before writing anything — its rules override anything here.
+Use the workspace contract to resolve the publication and piece. Ask only when the publication is not already clear. Keep existing issue numbering and piece folders; ask for missing issue number/title only when that convention requires them. Save `Interview.md` alongside existing piece notes. **Never modify an existing `Issue.md`.**
 
-**Ask which publication the piece is for**, then place the interview note:
+Before writing, read any existing Interview note. Append a dated session rather than replacing substantial content. Use the common note metadata and standard relative Markdown links; preserve existing layout and links. Do not delete notes.
 
-- **Previously on Tech** → `10 - Projects/Previously on Tech/<NNNN - Title>/Interview.md`, in the folder for the issue this is for. If the issue folder does not exist yet, ask for the next issue number and title, and create the folder. **Never modify an existing `Issue.md`** — you create `Interview.md` alongside it, nothing else.
-- **Any other publication** → `10 - Projects/<Publication>/<Piece Title>/Interview.md`. Create the folders if they do not exist.
-- If the author does not know yet, ask. Do not default silently.
-
-Vault rules that apply to the note you create:
-
-- Filenames use spaces and title case. Not hyphens, not underscores.
-- Every created note gets frontmatter with at least `title`, `type`, `created`, `updated`, `tags`.
-- Tags are lowercase and hyphenated. Use `content`, `writing`, `kessel-run`, plus the publication's own tag where one fits (`newsletter` for Previously on Tech).
-- Add `[[wikilinks]]` to the publication project note and to any people, projects, or tools named in the answers.
-- Never delete a note. Never overwrite substantial content in an existing one — if `Interview.md` already exists, append a new dated session rather than replacing it.
-
-Before writing, check whether the note already exists.
-
-**If this session has no filesystem access** — you are in the Claude app rather than Claude Code — say so once, conduct the interview normally, and hand back the finished transcript as a message the author can paste into the vault themselves. Do not stop, and do not pretend to have written a file.
+Without filesystem access, conduct the interview normally and return the full transcript with the workspace handoff and suggested filename. Do not claim it was saved.
 
 ## What you need before starting
 
-The topic, the publication, and the format. If a research brief or a content idea note already exists in the vault for this topic, read it first so your questions can name specifics and ask the author to react.
+The topic, the publication, and the format. If a research brief or a content idea note already exists in the workspace for this topic, read it first so your questions can name specifics and ask the author to react.
 
 You do not need a full anchor. If the author arrives with a rough topic, spend one exchange sharpening it, then start asking.
 
@@ -101,6 +91,9 @@ Write this to the path chosen above, after the author confirms.
 ---
 title: Interview — [Piece Title]
 type: interview
+id: [stable-interview-id]
+schema_version: 1
+publication_id: [selected-publication-id]
 created: [YYYY-MM-DD]
 updated: [YYYY-MM-DD]
 tags: [content, writing, kessel-run]
@@ -108,7 +101,7 @@ tags: [content, writing, kessel-run]
 
 # Interview — [Piece Title]
 
-**Publication**: [[Publication project note]]
+**Publication**: [Publication](relative%20publication%20path.md)
 **Format**: [article | newsletter | linkedin post | thread]
 **Topic**: [one sentence]
 **Exchanges**: [count]

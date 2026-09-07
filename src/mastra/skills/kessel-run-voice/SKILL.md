@@ -7,6 +7,10 @@ description: "Create or refine a named editorial voice profile from writing samp
 
 Create a portable, reviewable Markdown profile for the intended editorial voice. A profile is writing guidance, not model training. Supplied material and preferences are sufficient: browsing, Obsidian, and filesystem access are optional.
 
+## Workspace context
+
+Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
+
 ## Resolve the voice and evidence
 
 Use the user's choice, existing brief, and saved profile to identify the publication and target: publication-wide voice, a particular author, or both. Ask only about unresolved scope, author identity, or material selection; do not repeat a choice already made. Publication names alone imply no style.

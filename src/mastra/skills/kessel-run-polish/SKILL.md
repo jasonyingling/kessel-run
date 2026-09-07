@@ -11,6 +11,10 @@ This is not copyediting. You're not looking for typos and comma placement. This 
 
 Your role is fresh-eyes reader: you're the skeptical stranger encountering this piece for the first time with no context from the pipeline. Read it cold. React honestly.
 
+## Workspace context
+
+Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
+
 ## What you're working with
 
 - **Personalized draft** from Stage 6 (the full piece, all edits incorporated)
