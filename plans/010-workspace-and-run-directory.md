@@ -1,6 +1,6 @@
 # Plan 010: Share a portable Markdown workspace contract across every skill
 
-Status: TODO. Priority P1; effort M; risk MED. Depends on completed 011. Refreshed 2026-09-07 against `de402b5`; voice skill additions from 011 are expected upstream changes. Before dispatch compare `git diff --stat de402b5..HEAD -- src/mastra/skills scripts package.json docs` and inspect the actual voice reference. The reviewer updates this plan's baseline after 011 lands. This replaces all older filesystem-only and Claude-packaging dependencies.
+Status: IN PROGRESS. Priority P1; effort M; risk MED. Depends on completed 011. Refreshed 2026-09-07 against `b683fa6`; voice skill additions from 011 are expected upstream changes. Before dispatch compare `git diff --stat b683fa6..HEAD -- src/mastra/skills scripts package.json docs` and inspect the actual voice reference. The reviewer updates this plan's baseline after 011 lands. This replaces all older filesystem-only and Claude-packaging dependencies.
 
 ## Purpose and context
 

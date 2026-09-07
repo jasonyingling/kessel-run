@@ -121,8 +121,8 @@ Added 2026-08-21, chosen by the repo owner while planning 007 and 008:
 | 007  | App Interview stage + transcript schema | P2 | L | Skill flow 015 | DEFERRED — skill method changes handled by 015; app follows content validation |
 | 008  | App push-to-talk dictation | P2 | S | — | DEFERRED — app work follows skill validation |
 | 009  | Portable packaging and safe skill installation | P1 | M | 010, 011, 012, 015 | TODO — refreshed for skill delivery |
-| 010  | Shared portable Markdown workspace | P1 | M | 011 | TODO — refreshed for execution |
-| 011  | Generic voice-profile creation and sparse bootstrapping | P1 | M | — | IN PROGRESS — isolated executor, reviewer gate before merge |
+| 010  | Shared portable Markdown workspace | P1 | M | 011 | IN PROGRESS — isolated workspace executor |
+| 011  | Generic voice-profile creation and sparse bootstrapping | P1 | M | — | DONE — reviewed and merged b683fa6; real editorial validation pending |
 | 012  | Confirmed profile-scoped lessons from edits | P1 | M | 010, 011, 015 | TODO — refreshed for execution |
 | 013  | `kessel-run-oracle` + vault — solve the blank page | P2 | L | Pending refresh (see review) | NEEDS REVISION (workspace, capability gating, and delivery dependencies; defer) |
 | 014  | Interview skill into the Obsidian vault (fast path) | P0 | S | — | DONE (merged to `main` as `f4ba001`) |
@@ -792,3 +792,7 @@ non-interactive shells these tools spawn.
   literals and guarantee drift from the source files. Filesystem skills keep
   the markdown canonical. See plan 002 for the deployment caveat this creates
   and how it is handled.
+
+## Execution update — 2026-09-07
+
+011 approved and merged as `b683fa6` (executor `b156ce2`). Root reran all 36 tests, nonincremental typecheck, lint (9 existing warnings), skill validator and diff check; reviewed full diff and synthetic artifacts. Provenance navigation tightened after a targeted rerun. Real archive/ChatGPT/editorial acceptance is still pending.

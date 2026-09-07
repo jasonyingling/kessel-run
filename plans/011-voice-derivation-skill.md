@@ -12,7 +12,7 @@
 - Depends on: none; supplied text and an explicit output location work before plans 009/010
 - Category: direction
 - Planned at: commit `0c2e18e`, refreshed 2026-09-07
-- Status: TODO
+- Status: DONE — merged b683fa6; synthetic implementation gate passed, real editorial validation pending
 
 ## Why this matters
 
