@@ -17,9 +17,10 @@ Start with `kessel-run-start` to begin, resume or find the next useful action. S
 | Edit before acceptance | kessel-run-polish | Revised prose and separate scorecard |
 | Adapt a piece | kessel-run-repurpose | Independent outputs with explicit target voices |
 | Check old content | kessel-run-review | Verified findings or named freshness gaps |
+| Learn from accepted edits | [kessel-run-lessons](../kessel-run-lessons.md) | Confirm publication/author voice lessons from exact draft and final |
 | Assess performance | kessel-run-analyze | Evidence-based, profile-scoped lesson proposals |
 
-Numbered methods remain Research0, Anchor1, Ideation2, Hook3, Architecture4, Draft5, Personalize6 and Polish7. The other six skills are standalone. None requires running every earlier method.
+Numbered methods remain Research0, Anchor1, Ideation2, Hook3, Architecture4, Draft5, Personalize6 and Polish7. The other seven skills are standalone (15 total). None requires running every earlier method.
 
 ## Useful requests
 
