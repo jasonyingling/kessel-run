@@ -1,5 +1,10 @@
 # Plan 007: Add an Interview stage that captures the author's own words, and constrain Draft to them
 
+> **Reconciled 2026-09-06 at `0c2e18e`: NEEDS REVISION (014 landed; reconcile source rules, skill adaptation, and guide scope).**
+> See [the current reconciliation](2026-09-06-reconciliation.md) for the specific
+> changes needed. The historical steps below are not ready for executor dispatch;
+> the original Planned-at stamp is retained so unresolved drift stays visible.
+
 > **Executor instructions**: Follow this plan step by step. Run every
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
@@ -638,7 +643,7 @@ Every claim, opinion, story, example, number, name, date, and judgement in this 
 
 You may write **connective tissue**: transitions, section lead-ins, and framing sentences that carry no new claim, written in the user's voice. That allowance exists so you are not forced to bolt quotes together. It is not a loophole. A sentence that asserts anything — that something is common, that it matters, that most people get it wrong — is a claim, not connective tissue, and it needs a transcript line behind it.
 
-The hook, the bridge, and the closing are exempt. Those are authored.
+The hook, the bridge, and the closing may be authored, but they are not exempt from source discipline. Any factual or personal claim in them needs the same source support as a claim in the body.
 
 When you need something the transcript does not have:
 

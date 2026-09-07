@@ -1,459 +1,209 @@
-# Plan 011: Add `kessel-run-voice`, which derives a voice guide from what the author actually published
+# Plan 011: Create a voice profile from representative writing in any source format
 
-> **Executor instructions**: Follow this plan step by step. Run every
-> verification command and confirm the expected result before moving to the
-> next step. If anything in the "STOP conditions" section occurs, stop and
-> report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md` — unless a reviewer dispatched you and told you they
-> maintain the index.
+> Follow this plan within its scope, verify each step, and report incomplete behavioral checks honestly. This replaces the former archive-specific plan 011; it does not depend on unfinished packaging or workspace plans. Do not install into the real vault or write to a WordPress site during implementation.
 >
-> **Drift check (run first)**:
-> ```
-> git diff --stat 490545a..HEAD -- src/mastra/skills src/lib/kessel-run
-> ```
-> On a mismatch against the "Current state" excerpts, treat it as a STOP
-> condition. Files created by plans 007, 009, and 010 appearing is those plans
-> landing, not drift.
-
-> **Note (2026-08-25)**: the workspace this plan reads and writes is the Obsidian
-> vault, not `~/kessel-run/`. See decision 10 in `plans/README.md` and the mapping
-> in `plans/014-interview-skill-into-vault.md`. Plan 010 must be revised for the
-> vault first; the paths named here inherit whatever that revision settles on.
+> Drift check: `git diff --stat 0c2e18e..HEAD -- src/mastra/skills docs/kessel-run-voice.md`. Compare working-tree changes as well. The baseline is twelve skills, eight pipeline stages and four standalone skills. If other skill work has landed, preserve it and reconcile counts rather than restoring old counts.
 
 ## Status
 
-- **Priority**: P2
-- **Effort**: M
-- **Risk**: LOW
-- **Depends on**: plans/009-package-skills-for-claude.md,
-  plans/010-workspace-and-run-directory.md
-- **Category**: direction
-- **Planned at**: commit `490545a`, 2026-08-21
+- Priority: P1 — first executable skill refinement
+- Effort: M
+- Risk: LOW for instruction/metadata changes; editorial quality needs user validation
+- Depends on: none; supplied text and an explicit output location work before plans 009/010
+- Category: direction
+- Planned at: commit `0c2e18e`, refreshed 2026-09-07
+- Status: TODO
 
 ## Why this matters
 
-`kessel-run-anchor/references/publications.md` holds three publication profiles.
-They are specific and opinionated — "No em dashes", "No hedging", "The hook IS
-the post on LinkedIn". They are also entirely hand-written, which means they
-describe how the author *believes* they write.
+The desired writing voice belongs to a selected profile, not necessarily the account owner. The user's publications are Previously on Tech, View From The Pine (sports blog), and The Greatest Ever Reviews. View From The Pine has an existing WordPress archive that the user wants to use as evidence, but the skill must also accept Markdown, pasted writing, and articles from other sites. The user supplied https://viewfromthepine.com and explicitly wants both an overall publication writing profile and subprofiles for particular authors. Do not infer a sports voice from the name.
 
-Draft treats them as law: "The voice profile is not a suggestion — it is a
-constraint. Every sentence you write should be filterable through the profile."
-A constraint that strict deserves evidence behind it.
+Deliver a reusable `kessel-run-voice` skill that produces a reviewable Markdown profile, grounded in representative writing and approved editorial preferences. It must work with supplied text without a connector or Obsidian. WordPress is an optional read-only acquisition path, not the core product or an implementation prerequisite.
 
-The author has the evidence sitting unused: roughly 40 issues of Previously on
-Tech in Notion, a Weller Avenue archive, and LinkedIn history. A derivation pass
-over that corpus produces a voice guide where every claim cites a real sentence
-the author actually published, and it will contradict the hand-written profile in
-at least a couple of places. Those contradictions are the valuable part.
+## Current state and conventions
 
-This plan adds the skill that runs that pass. It is deliberately a skill rather
-than a one-time script: voice drifts, the archive grows, and this should be
-re-runnable once or twice a year.
-
-## Current state
-
-### The hand-written profile this skill produces evidence for or against
-
-`src/mastra/skills/kessel-run-anchor/references/publications.md` (restored by
-plan 009) carries three profiles — Previously on Tech, LinkedIn, Weller Avenue —
-each with `Type`, `Voice`, `Audience`, `Mission`, `Default framing`,
-`Hook preferences`, `Format notes`. Extract from the first:
-
-```
-## Previously on Tech
-
-**Type**: Newsletter
-**Voice**: Casual, exploratory, conversational. Short paragraphs. Present tense for immediacy. Concrete numbers over vague claims. Parenthetical asides are welcome. No em dashes. No corporate jargon. No hedging ("I think," "perhaps"). Direct but not aggressive.
-**Audience**: Tech-curious builders — developers, agency folks, indie makers, people interested in AI/tech but who value practical application over hype. Assume familiarity with AI tools but not deep ML theory.
-```
-
-Every one of those claims is checkable against 40 published issues. None of them
-currently is.
-
-### Where the output goes
-
-Plan 010 established the workspace. `WORKSPACE_BLOCK` in
-`src/lib/kessel-run/workspace.ts` names two files this skill writes:
-
-```
-  publications.md       per-publication voice, audience, mission, format notes
-  voice.md              derived voice guide, if one has been built
-```
-
-and states the precedence rule: the workspace copy wins over the starter copy
-bundled in the Anchor skill.
-
-### The skill file format to match
-
-`src/mastra/skills/kessel-run-research/SKILL.md` is the closest structural
-sibling — a research-shaped skill that gathers, synthesizes, and emits a
-structured document. Match its shape: two-key frontmatter (`name`, a
-double-quoted single-line `description`), an `# Kessel Run — <Label>` heading,
-the workspace block, then sections, an `## Output:` section with a fenced
-template, and a closing `## Guiding principles` with a `**Name the next step.**`
-item.
-
-Standalone skills (Review, Repurpose, Analyze) use `# Kessel Run — <Label>` with
-**no** stage number. This skill is standalone — it runs outside a piece's
-pipeline — so it takes that form.
-
-### Catalog registration
-
-`src/mastra/skills/catalog.ts` requires a `KesselRunSkillName` union member and a
-`KESSEL_RUN_SKILLS` entry with `stage: null` for standalone skills:
-
-```ts
-  {
-    name: 'kessel-run-analyze',
-    label: 'Analyze',
-    stage: null,
-    optional: false,
-    timeTarget: '10–15 min',
-    summary: 'Review post-publish performance and extract lessons.',
-  },
-```
-
-`catalog.test.ts` asserts skill counts, so those assertions move by one.
-
-### Repo conventions to match
-
-- `src/mastra/` — single quotes, semicolons. `catalog.test.ts` — double quotes,
-  semicolons.
-- The frontmatter `description` must stay under 1024 characters and contain no
-  `<` or `>` — enforced by `skill-package.test.ts` from plan 009.
-
-## Commands you will need
-
-| Purpose | Command | Expected on success |
-|---|---|---|
-| Install | `npm install` | exit 0 |
-| Tests | `npm test` | exit 0, all pass |
-| Typecheck | `npm run typecheck` | exit 0, no output |
-| Lint | `npm run lint` | exit 0, `9 problems (0 errors, 9 warnings)` |
-| Build | `npm run build` | exit 0 |
-| Package skills | `npm run skills:package` | exit 0 |
+- Canonical instructions live at `src/mastra/skills/<name>/SKILL.md`. Use the existing two-field YAML frontmatter and standalone heading pattern from `kessel-run-interview/SKILL.md`:
+  ```markdown
+  ---
+  name: kessel-run-interview
+  description: "Standalone Kessel Run skill: interviews the author ..."
+  ---
+  # Kessel Run — Interview
+  ```
+  The ellipsis above abbreviates the existing long description; do not copy it as unfinished metadata.
+- `src/mastra/skills/catalog.ts` contains the name union and `KESSEL_RUN_SKILLS`. Standalone entries have `stage: null`. `SKILL_PATHS` derives from all catalog entries, so this new skill must remain useful in the app without browsing or file access.
+- `catalog.test.ts` checks directory/catalog identity, metadata, and counts: twelve total, eight numbered, four standalone. Its tests do not establish editorial quality.
+- `src/mastra/agents/kessel-run-agent.ts` supplies skills and working memory, with no configured web tools. Do not pretend the app can fetch an archive or save a persistent profile. In that environment operate on supplied samples and return the profile text.
+- `scripts/install-skills-to-vault.sh` copies complete skill directories. Personal profiles must live outside installation folders, because replacement removes local edits.
+- There is no `workspace.ts`, shared profile loader, or `skills:package` script to call. Do not depend on imagined outputs of older TODO plans.
+- TypeScript in `src/mastra/` uses single quotes and semicolons; existing test files use double quotes. Match each file. This plan does not edit Next.js application code.
 
 ## Scope
 
-**In scope**:
+In scope:
 
-- `src/mastra/skills/kessel-run-voice/SKILL.md` (create)
+- `src/mastra/skills/kessel-run-voice/SKILL.md` (new)
+- `src/mastra/skills/kessel-run-voice/references/profile-format.md` (new)
+- `src/mastra/skills/kessel-run-voice/references/source-acquisition.md` (new)
 - `src/mastra/skills/catalog.ts`
 - `src/mastra/skills/catalog.test.ts`
-- `src/lib/kessel-run/workspace.ts` (one entry in `RUN_FILE_BY_SKILL`)
-- `docs/kessel-run-workspace.md` (one paragraph)
-- `plans/README.md` (status row only)
+- `docs/kessel-run-voice.md` (new; invocation and behavioral acceptance report)
+- `plans/README.md` (011 status only unless the reviewer owns it)
 
-**Out of scope**:
+Out of scope: other writing skills, app/API/schema changes, shared workspace bootstrap, dependency changes, custom crawlers/parsers, WordPress plugins or writes, live account connections, whole-archive downloads, real vault writes/installations, automatically generating all three personal profiles, and inferred customer targeting. A plain-text/profile result in chat is sufficient without a filesystem.
 
-- **Actually running the derivation.** This plan ships the skill; it does not
-  produce `voice.md`. An executor has no access to the author's Notion or their
-  published archive, and inventing a voice guide would be worse than not having
-  one. Running it is a human step, recorded in "Maintenance notes".
-- Rewriting `references/publications.md`. The skill writes the workspace copy at
-  runtime; the bundled starter stays as-is.
-- `src/mastra/projects/schema.ts` and `STAGE_ARTIFACT_FIELD` — this is a
-  standalone skill with no pipeline stage and no working-memory artifact.
-- Every other `SKILL.md`. Plan 010 already pointed Draft, Personalize, and Polish
-  at `<workspace>/voice.md`; nothing further is needed here.
-- The weather demo and `/chat`.
+## Commands
+
+Run from the repository root. Existing dependencies are installed; do not install merely to update Markdown.
+
+| Purpose | Command | Expected |
+|---|---|---|
+| Catalog consistency | `npm test -- src/mastra/skills/catalog.test.ts` | Pass, thirteen skills / eight pipeline / five standalone |
+| Full regression | `npm test` | Pass; baseline is 36 tests, no required test-count increase |
+| Typecheck | `npm run typecheck -- --incremental false` | Exit 0 |
+| Lint | `npm run lint` | Exit 0; baseline 9 vendored warnings, no new errors |
+| Change hygiene | `git diff --check` | Exit 0 |
+| Scope inspection | `git status --short` | Executor changes confined to scope; preserve pre-existing user changes |
+
+No production build or live model key is needed for static checks. Behavioral evaluation requires an instruction-following model and supplied samples; it is separate from static checks and must be reported as passed, failed, or not run.
 
 ## Git workflow
 
-- Branch: `advisor/011-voice-derivation-skill`
-- Commit per step. Message style from `git log`: short imperative sentence.
-- Do NOT push or open a PR unless the operator instructed it.
+If branching, use `codex/011-voice-profile-skill`. Do not commit, push, publish, or install unless separately instructed. Preserve the current uncommitted planning documents.
 
 ## Steps
 
-### Step 1: Write the skill
+### 1. Author a concise generic entry skill
 
-Create `src/mastra/skills/kessel-run-voice/SKILL.md` with the content below.
-Insert the rendered `WORKSPACE_BLOCK` from `src/lib/kessel-run/workspace.ts`
-where the placeholder line says so — the exact text, so
-`workspace-block.test.ts` passes — followed by
-`You do not own a run-directory file. Read what is there; write nothing to it.`
+Create `SKILL.md` named `kessel-run-voice`. Suggested description: “Create or refine a named editorial voice profile from writing samples, article URLs, voice interviews, or explicit preferences. Use to establish how a publication should sound before drafting, or update an existing profile.” The heading is `# Kessel Run — Voice Profile` with no pipeline number.
 
-`````markdown
+Define the following behavior, using concise prose rather than a questionnaire:
+
+1. Resolve the publication/profile and whether the target is an individual author, publication-wide editorial voice, or both. Support a publication base profile with author subprofiles. For View From The Pine the user has explicitly chosen both, so do not ask that scope question again. Use an explicit user choice or existing brief; ask only about unresolved author identity or material selection. Recognize the three publication names as user context, not hardcoded required choices.
+2. Accept selected files, pasted writing, specific URLs, an archive URL, or an existing profile plus examples. Ask about desired departures from historical writing when relevant. Profile creation may use explicit preferences without an archive; label that profile preference-based rather than archive-derived.
+3. Inspect representative material. Favor user-endorsed examples, inspect date/format/author coverage, and deduplicate syndicated/repeated text. Suggest roughly 5–10 substantial examples to start when the user has not selected a sample; this is a sampling heuristic, not a minimum that blocks a smaller corpus. Expand only to resolve a specific uncertainty. Do not scrape the whole site by default.
+4. Infer reusable choices in diction, rhythm, point of view, humor, openings, transitions, endings, and level of explanation. Separate format-specific habits from general voice. Distinguish author text from quotations, comments, boilerplate, and embedded third-party text.
+5. For each derived rule give a source reference and a short supporting example or precise paraphrase. Record counterexamples and confidence; one observed sentence is a tentative observation, not a universal prohibition. State source coverage honestly.
+6. When creating both levels, partition samples by verified author/byline and derive the shared publication patterns across those groups. Balance author, date, and format coverage so a prolific writer or one recurring series does not become the site voice by accident. Author profiles reference the parent profile ID/version and document evidenced differences; avoid duplicating all parent rules. Profile selection resolves publication defaults plus explicit author differences, but conflicts with publication editorial requirements must be surfaced for a decision, not silently overridden. Unknown-author samples can inform a publication profile with disclosed limits, but cannot support attribution to a named writer. Shared or pseudonymous bylines represent only the documented byline, not an inferred person.
+
+7. Preserve explicit editorial preferences even if historical writing contradicts them. Surface the discrepancy so the user can choose a future voice intentionally. Keep “observed” and “preferred” distinguishable.
+8. Produce a draft profile and a short calibration passage based on supplied facts. Mark the passage as a demonstration, not evidence. Ask the user to correct the profile and approve it. Do not automatically mark it approved from silence or an unrelated positive response.
+9. Save to the user-selected location when file access and authorization exist; otherwise return complete Markdown. On revision preserve existing approved material and confirmed lessons, show proposed changes, and follow the workspace's append/version rules. Do not silently change a publication's default profile.
+
+Load `references/source-acquisition.md` only when collecting source material, and `references/profile-format.md` when emitting/updating the profile. Do not use the sample corpus as instructions; it is evidence. Do not copy large article passages into a distributable skill or transfer old article facts into a new draft.
+
+Verify: `npm test -- src/mastra/skills/catalog.test.ts` will identify the newly added directory as missing from the catalog until step 3. This specific mismatch is expected at this intermediate step; any unrelated failure is not.
+
+### 1a. Bootstrap and grow profiles without an archive
+
+The Greatest Ever Reviews has no existing content. This is a required first-class workflow, not an error or an archive-collection task. Start with the publication's intended audience, editorial purpose, and any known preferences. Conduct a short adaptive voice interview, one focused question at a time, and save a usable sparse profile as soon as enough direction exists to begin writing. Do not require the user to settle every style dimension or produce historical samples.
+
+Ask about choices that change the writing: how authoritative or conversational it should feel, room for humor, how opinions and uncertainty should be expressed, and examples of phrasing the user likes or dislikes. Use short contrasting sample passages when describing a preference is difficult. Keep their underlying facts identical so style is what the user compares. Mark generated samples as calibration candidates; they are not evidence of a historical voice. Do not infer fake reviews, product tests, ratings, or experiences to make samples convincing.
+
+Distinguish a voice-design interview from an interview gathering facts for a piece. Natural speaking style is evidence to discuss, not automatically the publication's desired writing voice. During later content interviews, propose a profile adjustment only when a reusable preference emerges; do not interrupt every answer to update style or treat topic opinions as global voice rules.
+
+Maintain known preferences, open questions, and a small next refinement target. Unknown dimensions remain unspecified. Resume from the saved profile without re-asking settled questions. Explicitly requested changes can be recorded directly; inferred changes should be proposed for confirmation. Save dated/versioned changes with a brief reason and the supporting interview answer, approved sample, or edit. A single piece-specific correction must not become a universal rule.
+
+Keep approval separate from evidence maturity: a sparse profile may be approved for use. Use `evidence_level: sparse | developing | established` alongside `status: draft | approved`; maturity is a disclosed assessment of supporting examples, not a fixed article count. Additional interview answers, approved calibration passages, and accepted draft edits can strengthen the profile without published content. Never overwrite explicit preferences merely because later prose differs.
+
+Verify through the zero-archive and resumed-refinement behavioral checks in step 4. Passing a metadata check is not evidence that these conversations work well.
+
+### 2. Specify portable output and optional acquisition
+
+Create `references/profile-format.md` with one profile contract, usable inside or outside Obsidian:
+
+```yaml
 ---
-name: kessel-run-voice
-description: "Standalone Kessel Run skill: derives an evidence-backed voice guide from the author's own published work, rather than from how they think they write. Use this skill when the user wants to build or refresh their voice profile, calibrate the pipeline against what actually performs, or check whether their stated voice rules match their real ones. Also trigger when the user says things like 'build my voice guide,' 'what does my writing actually sound like,' 'derive my voice from my newsletter,' 'update my publication profiles,' 'analyze my past posts,' or 'why does the draft not sound like me.' Produces voice.md and an evidence-backed publications.md in the Kessel Run workspace, which every drafting stage then reads."
+title: View From The Pine
+id: view-from-the-pine-voice
+type: voice-profile
+schema_version: 1
+version: 1
+status: draft
+evidence_level: sparse
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+tags: [kessel-run, voice-profile]
 ---
-
-# Kessel Run — Voice
-
-You are deriving the author's voice guide from what they have actually published, not from what they say about their writing.
-
-This distinction is the whole point. A hand-written voice guide describes how someone believes they write. A derived one describes how they write when it lands. The two disagree in interesting places, and the disagreements are the most useful output of this stage.
-
-[INSERT WORKSPACE_BLOCK HERE]
-
-You do not own a run-directory file. Read what is there; write nothing to it.
-
-## What you need before starting
-
-A corpus, per publication. Ask the author where each lives and how to reach it:
-
-- **Previously on Tech** — the newsletter archive. Roughly 40 issues, in Notion.
-- **Weller Avenue** — the long-form blog archive.
-- **LinkedIn / X** — recent posts, and whichever ones they consider their best.
-
-You need at least 10 pieces per publication to derive anything worth trusting. Below that, say so and offer to derive a provisional guide clearly labelled as thin, rather than pretending 4 posts establish a pattern.
-
-Ask which pieces performed best and how they know — opens, replies, comments, inbound, whatever signal they actually have. If they have no performance data, say so in the output and derive from the full corpus instead of a top slice. Do not silently substitute "most recent" for "best".
-
-## The derivation
-
-Work publication by publication. For each:
-
-### 1. Read before you generalize
-
-Read the actual pieces. Not summaries, not titles — the prose. Everything below has to cite a real sentence, so you need the sentences.
-
-### 2. Hook formulas that worked
-
-Pull the opening 1–3 sentences of every piece. Group them into recurring shapes and name each shape. For each formula, quote two real openings verbatim and note which pieces they came from. Rank by the performance signal if there is one.
-
-Then name the openings that appear once and never again. A shape the author tried and abandoned is information.
-
-### 3. Structures that worked
-
-For each piece, record its skeleton — section count, what the second section does, where the story lands relative to the argument, how it closes. Name the recurring structures. Note the typical length and how much it varies.
-
-### 4. Recurring language patterns
-
-This is the highest-value section and the easiest to fake. Rules:
-
-- Every pattern gets **at least two verbatim quotes** from different pieces.
-- A pattern that appears in one piece is not a pattern. Drop it.
-- Count, do not estimate. "Uses second person in 31 of 38 issues" is a finding. "Often uses second person" is a vibe.
-- Cover sentence length and rhythm, paragraph length, person and tense, punctuation habits (including whether the author actually avoids em dashes or only believes they do), contractions, hedging, technical register, humor, and how they handle numbers.
-
-### 5. Anti-patterns, derived
-
-What is *absent* from the corpus matters as much as what is present. Look specifically for constructions the author never uses despite being common in the genre. Quote a near-miss where they could have used one and did something else instead.
-
-### 6. Topic categories
-
-Cluster the corpus by subject. Note the proportions, and which categories correlate with the performance signal.
-
-### 7. Core DNA and the number one rule
-
-Compress everything above into a short statement of what makes this voice recognizable, and a single rule that, if followed, gets a draft most of the way there. Both must be defensible from the evidence you just gathered.
-
-### 8. Where the derived guide contradicts the stated one
-
-Read the author's existing `publications.md`. For every claim in it, mark:
-
-- **Confirmed** — the corpus backs it. Cite the evidence.
-- **Contradicted** — the corpus does not back it. Quote the counterexamples and say how often.
-- **Unverifiable** — nothing in the corpus speaks to it.
-
-Present the contradictions to the author before writing anything. Do not overwrite a stated rule on your own authority. A rule can be aspirational on purpose — "no em dashes" may be a habit they are actively breaking, and the corpus lagging behind is the expected result, not an error.
-
-## Output
-
-Two files, both written only after the author confirms.
-
-### `<workspace>/voice.md`
-
-```
-# Voice Guide — [Publication]
-
-*Derived [date] from [N] pieces spanning [date range]. Performance signal: [what was used, or "none available"].*
-
-## Executive summary
-[3–5 sentences on what this voice is]
-
-## Core DNA
-[One paragraph — what makes it recognizable]
-
-## The number one rule
-[One sentence]
-
-## Hook formulas that worked
-### [Formula name] — [N] pieces
-> [verbatim opening]
-> — [piece, date]
-> [verbatim opening]
-> — [piece, date]
-
-## Structures that worked
-[Named skeletons, with counts and typical lengths]
-
-## Recurring language patterns
-### [Pattern] — [N] of [total] pieces
-> [verbatim quote] — [piece]
-> [verbatim quote] — [piece]
-
-## Derived anti-patterns
-[Constructions absent from the corpus, with near-misses]
-
-## Topic categories
-[Clusters with proportions]
-
-## Best-performing pieces
-[Top 10 with one line each on what worked]
-
-## Against the stated profile
-| Stated claim | Verdict | Evidence |
-| --- | --- | --- |
 ```
 
-### `<workspace>/publications.md`
+The above is a template; actual outputs use real dates and an existing stable ID when revising. The skill must not pre-fill actual style rules based on the example title.
 
-Rewrite the profile for this publication with the derived evidence folded in, keeping the existing field structure (`Type`, `Voice`, `Audience`, `Mission`, `Default framing`, `Hook preferences`, `Format notes`) so the rest of the pipeline keeps working. Leave the other publications' sections untouched. Where a stated claim was contradicted and the author chose to keep it, mark it `(aspirational)` so downstream stages know it is a goal rather than an observation.
+For author subprofiles add `scope: author`, a stable `author_id`, `parent_profile_id`, and `parent_profile_version`; publication profiles use `scope: publication`. Put author notes in `Voice Profiles/<Publication>/Authors/<Author>.md` and the base at `Voice Profiles/<Publication>/Publication.md` when generating a new hierarchy. Reuse existing profile paths and IDs if already present rather than duplicating them. Show readable parent links and an Author Differences section. Missing author evidence yields a provisional profile or a clearly reported omission, not invented differences.
 
-## Guiding principles
+Use body headings: Voice Summary; Tone and Rhythm; Use; Avoid; Format Variations; Approved Examples; Confirmed Lessons; Sources and Confidence; Open Questions; Revision Notes. Mark not-yet-approved examples clearly rather than implying approval from the heading. Human-readable rules are the canonical rules; do not duplicate them into a hidden JSON representation.
 
-**Every claim cites a sentence.** If you cannot quote it, you cannot claim it. A derived guide with six evidenced patterns beats one with twenty asserted ones.
+Each derived rule references a source ID or link. Sources record title, URL or relative path, author/date when known, and whether full text was available. Use standard Markdown links with encoded spaces, no mandatory wikilinks/Dataview. Do not require the user's absolute vault path. In the existing vault the suggested profile destination is `Meta/Kessel Run/Voice Profiles/<Profile Name>.md`; check for an existing note before creating it. Outside the vault ask for or use the provided workspace destination. Existing notes must retain their content; follow append/revision conventions rather than replace substantial content.
 
-**Count, do not estimate.** Numbers are what make this document more trustworthy than the one it replaces.
+Create `references/source-acquisition.md`:
 
-**Never invent a quote.** If you could not read the corpus, say which parts you could not reach and derive only from what you did read. A guide with a stated gap is usable. A guide with a fabricated example poisons every draft that follows.
+- Supplied Markdown/plain text is a first-class input. Preserve source identity and paragraph structure; no special connector is required.
+- For URLs use available browsing/retrieval tools and inspect actual article text rather than search snippets. If retrieval fails or tools are unavailable, say what was not read and request supplied text/export. Continue with accessible samples when sufficient for the requested scope.
+- For a user-identified WordPress site, a public posts endpoint may provide article content and metadata. Discover/verify the actual endpoint rather than assume every site exposes it. Use read-only GET retrieval, author/category/date filters when appropriate, and bounded pagination. Preserve canonical article links and IDs. A feed or accessible article pages are fallbacks; an excerpt-only feed must not be represented as full articles.
+- Never merge distinct authors merely because their posts share a domain. Ask about scope when needed; a mixed publication-wide corpus is valid if that is the user's target, with variation represented explicitly. When the user requests both overall and author profiles, preserve author groupings and derive both levels; no extra scope question is needed.
+- Avoid downloading all media/comments/navigation or building a custom ingestion service in this iteration. If a deterministic extractor becomes necessary, report the scoped need separately.
 
-**Contradictions belong to the author.** Present them, let them decide. Your job is to show them what the archive says, not to overrule what they want their voice to become.
+Official WordPress documentation supports listing/filtering posts through its REST API. Verify behavior against the actual site at use time: https://developer.wordpress.org/rest-api/reference/posts/
 
-**Name the next step.** When the files are written: "Your voice guide is at `<workspace>/voice.md` and `publications.md` is updated. Draft, Personalize, and Polish all read these, so the next piece you run through the pipeline will be calibrated against your actual writing. Worth re-running this after another 10 or so pieces."
-`````
+Verify: after step 3, catalog/full tests pass. Before that, inspect every relative reference from `SKILL.md` and verify each target exists. No placeholders for invented tool names or unfinished guidance may remain in the skill files; placeholders in the explicitly labeled output template are intentional.
 
-**Verify**: `test -f src/mastra/skills/kessel-run-voice/SKILL.md` → exit 0
-**Verify**: `head -2 src/mastra/skills/kessel-run-voice/SKILL.md | tail -1 | cut -c1-20` → `name: kessel-run-voi`
-**Verify**: `grep -c "^# Kessel Run — Voice" src/mastra/skills/kessel-run-voice/SKILL.md` → `1`
-**Verify**: `grep -c "Stage " src/mastra/skills/kessel-run-voice/SKILL.md` → `0` (standalone skills carry no stage number)
+### 3. Register as a supplied-material-capable standalone skill
 
-### Step 2: Register it in the catalog
-
-In `src/mastra/skills/catalog.ts`:
-
-- Add `| 'kessel-run-voice'` to `KesselRunSkillName`, after `'kessel-run-analyze'`.
-- Append to `KESSEL_RUN_SKILLS`, after the `kessel-run-analyze` entry:
+Add `kessel-run-voice` to `KesselRunSkillName` and one catalog entry:
 
 ```ts
-  {
-    name: 'kessel-run-voice',
-    label: 'Voice',
-    stage: null,
-    optional: false,
-    timeTarget: '30–45 min',
-    summary: 'Derive a voice guide from what you actually published.',
-  },
+{
+  name: 'kessel-run-voice',
+  label: 'Voice Profile',
+  stage: null,
+  optional: false,
+  timeTarget: 'Varies by source material',
+  summary: 'Create a named editorial voice profile from writing samples and preferences.',
+},
 ```
 
-In `src/lib/kessel-run/workspace.ts`, add to `RUN_FILE_BY_SKILL`:
+Update only the total/standalone count expectations to thirteen/five. Keep eight pipeline stages and their ordering unchanged. Do not add schema fields or imply that the app saves a publication profile when it only returns Markdown in chat.
 
-```ts
-  "kessel-run-voice": null,
-```
+Verify: `npm test -- src/mastra/skills/catalog.test.ts`, then the full tests/typecheck/lint commands above all pass.
 
-**Verify**: `npm run typecheck` → exit 0, no output
+### 4. Exercise realistic behavior and document actual results
 
-### Step 3: Update the tests
+Create `docs/kessel-run-voice.md` explaining invocation with supplied Markdown, a known archive URL, and an existing profile. Clearly distinguish a saved Markdown profile from model training or automatic application by all other skills (shared loading is still plan 010). Describe the filesystem-free fallback.
 
-In `src/mastra/skills/catalog.test.ts`, the skill counts move by one:
+Run behavioral checks in a scratch workspace with synthetic, non-sensitive writing samples. Record actual input summaries, output locations, observations, and result for each case in this document. Do not claim they passed because the instructions mention the case:
 
-- `it("has 12 skills")` → `13` (or `has 11 skills` → `12` if plan 007 has not
-  landed — read the current value rather than assuming)
-- `it("splits into N pipeline stages and 3 standalone skills")` → the standalone
-  count becomes `4`; the pipeline count is unchanged
-- The stage-sequence assertion is unchanged — this skill has `stage: null`
+- Two clearly different profiles: output preserves their distinctions and source references; no cross-profile lesson leakage.
+- Multiple authors in an archive with no selected scope: skill asks which voice or publication-wide scope is intended before treating them as one author.
+- Publication plus author profiles: parent rules are backed by shared patterns, author differences cite that author's writing, parent ID/version resolves, and one prolific writer does not silently define every profile.
+- Zero archive (The Greatest Ever Reviews): conduct a voice interview, create a sparse profile with supported preferences and open questions, offer fact-consistent calibration samples, and allow explicit approval without requiring published articles.
+- Resume a sparse profile: read prior answers, ask only about unresolved choices, incorporate an approved edit with provenance, preserve unrelated rules, and keep approval separate from evidence maturity.
+- Content interview reveals a topic-specific opinion: do not automatically turn it into a global voice preference or copy the speaker's conversational habits into the publication voice.
+- Only two usable samples: profile is provisional and coverage is explicit, not a hard refusal or fabricated archive analysis.
+- Browsing unavailable: accepts pasted material; never claims it fetched URLs.
+- Archive includes boilerplate and quoted speech: they do not become the author's voice rules.
+- Existing approved “no em dashes” preference against examples containing em dashes: preference remains, discrepancy is flagged, no silent replacement.
+- Existing profile revision: approved content/lessons remain recoverable and approval status is not silently promoted.
 
-`workspace-block.test.ts` and `skill-package.test.ts` iterate the directories on
-disk and need no edit, but both will now cover the new skill — which is the point.
+If model execution is unavailable, mark behavioral validation NOT RUN and leave editorial acceptance pending; static tests alone do not certify quality. The actual View From The Pine run uses https://viewfromthepine.com with publication-wide and author subprofiles as explicitly requested. The public homepage was inspected during planning and shows multiple content series and dates; the REST endpoint and complete author coverage are not yet verified. Use available read tools to select and attribute full articles before deriving profiles. It is not a prerequisite for writing the generic skill, and must not be faked.
 
-**Verify**: `npm test` → exit 0, all pass
-**Verify**: `npm run skills:package` → exit 0, and `ls dist/skills/kessel-run-voice.skill` exists
+Verify: run the full command table, `git diff --check`, and inspect scope. A reviewer reads the behavioral outputs rather than trusting summary claims.
 
-### Step 4: Document it
+## Done criteria and acceptance
 
-Add a paragraph to `docs/kessel-run-workspace.md` under the `voice.md` entry:
-that `voice.md` is produced by the `kessel-run-voice` skill, that it is derived
-rather than authored, that it is worth re-running after roughly ten new pieces,
-and that Draft, Personalize, and Polish read it.
-
-**Verify**: `grep -c "kessel-run-voice" docs/kessel-run-workspace.md` → at least `1`
-
-### Step 5: Full verification
-
-**Verify**: `npm test` → exit 0, all pass
-**Verify**: `npm run typecheck` → exit 0, no output
-**Verify**: `npm run lint` → exit 0, `9 problems (0 errors, 9 warnings)`
-**Verify**: `npm run build` → exit 0
-**Verify**: `npm run skills:package` → exit 0
-**Verify**: `git status --porcelain` → only files from the in-scope list
-
-## Test plan
-
-No new test file. The three existing suites already cover a new skill by
-construction, and that coverage is worth stating explicitly because it is what
-makes adding a skill cheap:
-
-- `skill-package.test.ts` (plan 009) walks every directory — it checks this
-  skill's frontmatter keys, kebab-case name, description length, angle brackets,
-  single `SKILL.md`, and that any `references/` path it names exists.
-- `workspace-block.test.ts` (plan 010) checks the workspace block landed verbatim
-  and exactly once, and that the standalone run-file line is present.
-- `catalog.test.ts` checks the directory list matches the catalog and that the
-  frontmatter name equals the directory name.
-
-Changed assertions: the two count assertions in `catalog.test.ts`.
-
-Verification: `npm test` → all pass. Confirm by deleting the
-`"kessel-run-voice": null` line from `RUN_FILE_BY_SKILL` and checking that
-`workspace-block.test.ts` fails with `kessel-run-voice is not listed in
-RUN_FILE_BY_SKILL`, then restoring it.
-
-## Done criteria
-
-Machine-checkable. ALL must hold:
-
-- [ ] `npm test` exits 0, all pass
-- [ ] `npm run typecheck` exits 0 with no output
-- [ ] `npm run lint` exits 0 with `9 problems (0 errors, 9 warnings)`
-- [ ] `npm run build` exits 0
-- [ ] `npm run skills:package` exits 0 and `dist/skills/kessel-run-voice.skill` exists
-- [ ] `unzip -l dist/skills/kessel-run-voice.skill` lists exactly
-      `kessel-run-voice/SKILL.md`
-- [ ] `grep -c "Stage " src/mastra/skills/kessel-run-voice/SKILL.md` → `0`
-- [ ] `grep -c "kessel-run-voice" src/mastra/skills/catalog.ts` → `2`
-- [ ] No files outside the in-scope list are modified (`git status --porcelain`)
-- [ ] `plans/README.md` status row for 011 updated
+- New skill and its two linked reference files exist; name matches directory.
+- Catalog tests pass with thirteen skills, eight numbered stages, five standalone skills.
+- Full tests, typecheck, lint, and diff check pass with no new errors.
+- No dependencies, application routes, schema, other writing skills, or real vault files changed.
+- Docs explicitly state acquisition limitations and whether behavioral checks ran.
+- Behavioral acceptance remains separate: observed profile fidelity, evidence grounding, and preservation checks must pass before calling the skill editorially validated.
+- Plan index records implementation status and any pending behavioral/live-site validation honestly.
 
 ## STOP conditions
 
-Stop and report back (do not improvise) if:
+Stop and report if implementing the skill appears to require site writes, private-site credentials, a new dependency, or out-of-scope app changes. Missing browsing is a fallback case, not a reason to invent a tool or block supplied-text operation. When neither samples nor preferences exist, begin the voice interview. If the user supplies no direction and does not wish to answer, report the profile as incomplete rather than inventing a voice. Never invent archive locations, sample content, or publication voice characteristics.
 
-- `skill-package.test.ts` fails on the description length. The description above
-  is close to the limit; shorten it by cutting trigger phrases from the middle,
-  and report what you cut. Do not remove the leading "Standalone Kessel Run
-  skill:" sentence — the other standalone skills all use that opening and the
-  routing depends on it.
-- The current skill count in `catalog.test.ts` is not what step 3 expects. Read
-  the file and adjust by one from whatever is actually there; report the values.
-- You are tempted to write an example `voice.md` with real-looking quotes. Do
-  not. That is fabricated evidence about a person's writing, and it would be read
-  as authoritative by every later draft.
-- A step's verification fails twice after a reasonable fix attempt.
+## Maintenance
 
-## Maintenance notes
+Keep the profile format stable and version changes explicit. Workspace automation should later consume this contract instead of creating a second incompatible schema. Re-check WordPress retrieval docs when adding actual acquisition code. Profile lessons remain scoped; a source sample is evidence of style, not permission to invent personal experience. Future model evaluations should include sports commentary, newsletters, and reviews with user-approved profiles.
 
-For whoever owns this next:
-
-- **The skill is shipped, the guide is not.** Running the derivation is a human
-  step: install the packaged skill, open Claude with access to the Notion
-  archive, and invoke it. Expect 30–45 minutes and expect it to disagree with the
-  hand-written profile somewhere. Budget time to decide which claims are
-  aspirational and which were just wrong.
-- **Re-run it, do not hand-edit `voice.md`.** Corrections you make by hand belong
-  in `content-lessons.md` (plan 012), which is append-only and never regenerated.
-  `voice.md` is derived output and the next run overwrites it.
-- **The `(aspirational)` marker is load-bearing.** It is how a downstream stage
-  tells "this is how you write" from "this is how you want to write". If Draft
-  starts ignoring it, that is a Draft bug, not a voice-guide bug.
-- **A reviewer should scrutinize**: that the skill never instructs the model to
-  produce a quote it did not read, that the workspace block is verbatim, and that
-  the catalog counts moved by exactly one.
-- **Deferred out of this plan**: automatic corpus discovery (the skill asks where
-  the archive is rather than knowing), performance-data ingestion beyond whatever
-  the author reports, and per-format voice guides below the publication level.
+WordPress publishing and block-aware composition are separate future tool work: discover a site's available blocks/patterns and actual usage, draft with compatible structures, preview and validate, then publish only under an explicit publishing action. Public rendered HTML alone is insufficient evidence of all editable block structures. This plan does not build that tool.

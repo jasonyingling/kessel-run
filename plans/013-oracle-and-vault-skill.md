@@ -1,5 +1,10 @@
 # Plan 013: Add `kessel-run-oracle`, which finds the ideas so the pipeline stops starting from a blank page
 
+> **Reconciled 2026-09-06 at `0c2e18e`: NEEDS REVISION (workspace, capability gating, and delivery dependencies; defer).**
+> See [the current reconciliation](2026-09-06-reconciliation.md) for the specific
+> changes needed. The historical steps below are not ready for executor dispatch;
+> the original Planned-at stamp is retained so unresolved drift stays visible.
+
 > **Executor instructions**: Follow this plan step by step. Run every
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
