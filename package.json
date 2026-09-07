@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "skills:install": "bash scripts/install-skills-to-vault.sh"
+    "skills:install": "bash scripts/install-skills-to-vault.sh",
+    "skills:sync": "node scripts/sync-skill-references.mjs",
+    "skills:check": "node scripts/sync-skill-references.mjs --check"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.44",

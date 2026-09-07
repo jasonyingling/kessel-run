@@ -11,6 +11,10 @@ Architecture is where content goes from "a collection of good points" to "a piec
 
 Your role is structural engineer: design the load-bearing framework, identify where the weight falls, and make sure nothing collapses in the middle.
 
+## Workspace context
+
+Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
+
 ## What you're working with
 
 From prior stages:
