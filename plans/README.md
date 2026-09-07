@@ -118,16 +118,23 @@ Added 2026-08-21, chosen by the repo owner while planning 007 and 008:
 | 004  | API routes for skills, projects, and skill-pinned chat | P1 | M | 003 | DONE (merged to `main` as `aa1fb74`) |
 | 005  | UI shell — skill gallery and project list | P2 | M | 004 | DONE (merged to `main` as `0636153`) |
 | 006  | UI — project workspace (chat, stage rail, artifacts) | P2 | L | 005 | DONE (merged to `main` as `d4be903`) |
-| 007  | Interview stage + transcript-constrained Draft | P1 | L | Pending refresh (see review) | NEEDS REVISION (014 landed; reconcile source rules, skill adaptation, and guide scope) |
-| 008  | Push-to-talk dictation in the project chat input | P1 | S | Pending refresh (see review) | NEEDS REVISION (resolve disabled-state contradiction before execution) |
-| 009  | Ship the skills to Claude as installable `.skill` files | P1 | M | Pending refresh (see review) | NEEDS REVISION (retarget Claude packaging to ChatGPT distribution) |
-| 010  | Workspace + run directory; stop using the human as state bus | P1 | L | Pending refresh (see review) | NEEDS REVISION (define portable state plus ChatGPT, app, and optional vault adapters) |
-| 011  | Generic voice-profile creation from samples, files, or URLs | P1 | M | — (supplied material works independently) | TODO — refreshed 2026-09-07; first skill refinement |
-| 012  | `kessel-run-lessons` — learn from your final edits | P1 | M | Pending refresh (see review) | NEEDS REVISION (workspace, final-version write contract, and delivery dependencies) |
+| 007  | App Interview stage + transcript schema | P2 | L | Skill flow 015 | DEFERRED — skill method changes handled by 015; app follows content validation |
+| 008  | App push-to-talk dictation | P2 | S | — | DEFERRED — app work follows skill validation |
+| 009  | Portable packaging and safe skill installation | P1 | M | 010, 011, 012, 015 | TODO — refreshed for skill delivery |
+| 010  | Shared portable Markdown workspace | P1 | M | 011 | TODO — refreshed for execution |
+| 011  | Generic voice-profile creation and sparse bootstrapping | P1 | M | — | IN PROGRESS — isolated executor, reviewer gate before merge |
+| 012  | Confirmed profile-scoped lessons from edits | P1 | M | 010, 011, 015 | TODO — refreshed for execution |
 | 013  | `kessel-run-oracle` + vault — solve the blank page | P2 | L | Pending refresh (see review) | NEEDS REVISION (workspace, capability gating, and delivery dependencies; defer) |
 | 014  | Interview skill into the Obsidian vault (fast path) | P0 | S | — | DONE (merged to `main` as `f4ba001`) |
 
-Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
+| 015  | Start/resume and profile-aware writing flow | P1 | M | 010, 011 | TODO — skills only, no app renumber |
+
+**Authorized execution order (2026-09-07): 011 → 010 → 015 → 012 → 009.**
+User explicitly authorized isolated executor work, reviewer approval, commits, and
+merging. This supersedes historical skill prohibitions on reviewer git mutations.
+Source edits remain executor-owned. No remote push or publishing is requested.
+
+Status values: DEFERRED | TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 NEEDS REVISION (with one-line reason) | REJECTED (with one-line rationale)
 
 **Plans 001–006 are executed, approved, and merged.** The pipeline works end to
