@@ -1,6 +1,6 @@
 ---
 name: kessel-run-repurpose
-description: "Standalone Kessel Run skill: adapts existing content into other formats. Use this skill when the user wants to turn an article into a LinkedIn post, create a thread from a blog post, generate social posts from a newsletter, extract a video script from written content, create an email summary from a published piece, or generate any cross-format adaptation. Also trigger when the user says things like 'turn this into a LinkedIn post,' 'make a thread from this,' 'repurpose this,' 'I need a social version of this,' 'adapt this for Twitter,' or 'create a video script from this article.' Works with any content — does not require the Kessel Run pipeline. Feed it anything and tell it what format you want out."
+description: "Adapt existing content into independently editable outputs with selected formats and publication voices. Use for articles, newsletters, social posts, scripts or other renditions without overwriting the original."
 ---
 
 # Kessel Run — Repurpose
@@ -13,17 +13,27 @@ Repurposing is not summarizing. It's re-entering the content through the target 
 
 Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
 
+Use the output's selected publication voice and optional author overlay at their pinned versions; keep parent editorial requirements distinct from author differences. Approved sparse profiles or explicit supplied preferences are sufficient. Do not default to the account owner's voice. Ask only for unresolved choices after reading accessible state. Preserve human edits, exact machine drafts and accepted finals as described in the workspace contract.
+
+Use the Brief/output's mode: guided by default, fast when requested. Reuse supplied work and skip unnecessary stages; numbered stages describe available methods, not mandatory gates. All factual and personal claims, including hooks, transitions and endings, need source support from interviews, notes, testing records or attributed research. Profile examples supply style, not new facts. Claim-free connective language is allowed. Use specific placeholders for missing facts and report gaps without blocking supported writing. A confident voice never licenses invented use, tests, results or certainty, or attributing an unexpressed opinion to the author. Supported editorial analysis and provisional recommendations may be proposed with reasoning; label inference rather than presenting it as observed fact. Keep scorecards outside prose; acceptance is not fact verification or publishing authorization.
+
 ## Getting started
 
 You need two things:
 
 1. **The source content.** The user provides the original piece — pasted text, a link, a document, or a description of what they published. Read it fully. Identify the core insight, the strongest supporting points, the best story moments, and the most quotable lines.
 
-2. **The target format(s).** What does the user want to create? They may want one format or several. Ask if they have a publication profile for the target format — if they do, apply its voice, audience, and constraints.
+2. **The target format(s).** What does the user want to create? They may want one format or several. Resolve each target publication, voice/author version and output preset from explicit choices and defaults; ask only when ambiguous. A format alone does not select a publication.
+
+## Independent outputs
+
+For each rendition, create or resume its own Output note with complete publication/profile/author IDs and versions, format, destination, preset, revision links and status. Preserve the original and other outputs. Cross-publication adaptation requires an explicit target voice selection, not automatic transfer of the source voice or lessons. Confirm source claims against available supporting evidence; outdated or unsupported claims need attribution, a gap or omission, not blind copying. Descriptions of another person's use never become first-person experience.
+
+Use guided collaboration for substantive renditions unless fast is requested. In fast mode deliver complete requested renditions without stage approvals; still report material gaps. Short-format variants are optional when useful, not a quota. Keep exact drafts before edits and accepted finals separate.
 
 ## Target formats and how to adapt
 
-Each format has its own consumption pattern, structural norms, and audience expectations. Don't just compress or expand — restructure.
+These are editorial starting points, not verified current platform specifications. The selected preset and user constraints win. Restructure around the target reader; only use story, feedback, publication or relationship claims present in the sources.
 
 ### LinkedIn post
 
@@ -37,7 +47,7 @@ Each format has its own consumption pattern, structural norms, and audience expe
 - If the source has a strong personal story, lead with that. LinkedIn rewards personal-professional narrative.
 - End with a genuine question or invitation, not a hollow "Thoughts?" The engagement prompt should relate to the specific content.
 
-**Generate 2 variants**: One that leads with the insight, one that leads with a story moment. Let the user pick.
+Offer an insight or supported story variant when helpful; a single requested output is sufficient.
 
 ### Twitter/X thread
 
@@ -100,9 +110,9 @@ Each format has its own consumption pattern, structural norms, and audience expe
 
 **Re-hook for each format.** The hook that works for a newsletter doesn't work for LinkedIn doesn't work for a thread. Write a new hook optimized for the target format's consumption pattern.
 
-**Switch voice profiles when crossing publications.** If the source was written for the Weller Avenue blog and the target is a LinkedIn post, apply the LinkedIn publication profile's voice, not the blog's. Same person, different room.
+**Resolve the target voice explicitly.** Changing format does not necessarily change publication. Apply the selected target profile and author overlay, preserving parent requirements and evidence boundaries.
 
-**Generate multiple variants for short formats.** For LinkedIn posts, threads, and social posts, generate 2–3 variants with different angles or hooks. Short-form content is cheap to draft and the user benefits from choosing.
+**Generate variants when useful.** Respect requested output count and scope. Keep alternatives labeled rather than replacing the original.
 
 **Link back.** When the repurposed content can reference the original (LinkedIn post linking to blog, thread linking to newsletter), include the link. Cross-format repurposing builds a content ecosystem, not isolated posts.
 

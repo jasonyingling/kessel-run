@@ -1,6 +1,6 @@
 ---
 name: kessel-run-analyze
-description: "Standalone Kessel Run skill: post-publish analysis of content performance against its original goals. Use this skill when the user wants to evaluate how a published piece performed, understand what worked and what didn't, extract lessons for future content, compare performance across pieces, or build a feedback loop from published content back into the pipeline. Also trigger when the user says things like 'how did my post do,' 'analyze this piece,' 'what worked,' 'what can I learn from this,' 'content performance review,' 'was this successful,' or 'compare my last few posts.' This skill connects the end of the content lifecycle back to the beginning."
+description: "Assess published content against its goals using supplied performance evidence. Use to compare outcomes and propose publication-specific lessons without treating correlations as proven voice rules."
 ---
 
 # Kessel Run — Analyze
@@ -12,6 +12,10 @@ Without analysis, every piece of content starts from zero. With it, each piece b
 ## Workspace context
 
 Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
+
+Use the output's selected publication voice and optional author overlay at their pinned versions; keep parent editorial requirements distinct from author differences. Approved sparse profiles or explicit supplied preferences are sufficient. Do not default to the account owner's voice. Ask only for unresolved choices after reading accessible state. Preserve human edits, exact machine drafts and accepted finals as described in the workspace contract.
+
+Use the Brief/output's mode: guided by default, fast when requested. Reuse supplied work and skip unnecessary stages; numbered stages describe available methods, not mandatory gates. All factual and personal claims, including hooks, transitions and endings, need source support from interviews, notes, testing records or attributed research. Profile examples supply style, not new facts. Claim-free connective language is allowed. Use specific placeholders for missing facts and report gaps without blocking supported writing. A confident voice never licenses invented use, tests, results or certainty, or attributing an unexpressed opinion to the author. Supported editorial analysis and provisional recommendations may be proposed with reasoning; label inference rather than presenting it as observed fact. Keep scorecards outside prose; acceptance is not fact verification or publishing authorization.
 
 ## Getting started
 
@@ -69,7 +73,7 @@ Identify the elements that contributed to performance (positive or negative). Ev
 
 **Voice and authenticity**:
 - Did the personal elements land? (Comments that reference specific stories or details you shared)
-- Did it sound like you? (Qualitative assessment — did it feel right when you re-read it post-publish?)
+- Did it match the selected publication and author profile versions? (Qualitative assessment — did it feel right when you re-read it post-publish?)
 
 **Format and structure**:
 - Was the length right? (Completion rate, scroll depth)
@@ -95,6 +99,8 @@ The most valuable analysis output isn't "this post got X views" — it's "here's
 
 ### 5. Lessons for the pipeline
 
+Scope lessons to the publication, output format and selected author/profile versions. Performance correlations are hypotheses, not automatic writing rules. Preserve examples and evidence, distinguish topic/format lessons from voice lessons, and seek confirmation before storing inferred reusable voice changes. Never transfer lessons to another publication implicitly.
+
 Connect the analysis back to specific Kessel Run stages:
 
 **For future Research (Stage 0)**: "The data angle resonated most. Future research should prioritize finding specific stats and case studies over general landscape mapping."
@@ -119,7 +125,7 @@ If the user wants to compare performance across pieces, look for patterns:
 - **Voice patterns**: Do more personal pieces outperform more analytical ones? Or vice versa?
 - **Timing patterns**: Does day of week or time of day matter?
 
-Present patterns as hypotheses, not conclusions. Three data points suggest a trend. Two data points are a coincidence. One data point is an anecdote.
+Present patterns as hypotheses with actual sample size and confounders, not causal conclusions or fixed thresholds.
 
 ## Output: The analysis report
 

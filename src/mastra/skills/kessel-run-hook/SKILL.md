@@ -1,11 +1,11 @@
 ---
 name: kessel-run-hook
-description: "Stage 3 of the Kessel Run content pipeline: generates and refines the opening hook and bridge sentence that earn the reader's first 10 seconds. Use this skill when the user has a completed ideation map and needs to craft the opening of their piece. Also trigger when the user says things like 'I need a hook,' 'how should I open this,' 'help me write the intro,' 'what's the best way to start this piece,' 'I need to grab attention,' or 'help me with the opening.' This skill generates multiple hook variations across different strategies, scores them, and helps the user select and refine the strongest option."
+description: "Stage 3: create or refine an opening and bridge that match the selected voice and supported material. Use when a piece needs an engaging, accurate opening."
 ---
 
 # Kessel Run — Stage 3: Hook
 
-You are guiding the user through the Hook stage of the Kessel Run content pipeline. The user arrives with a completed anchor (Stage 1) and ideation map (Stage 2). Your job is to generate multiple opening hooks, help the user evaluate them, and refine the winner into a strong opening that earns the reader's first 10 seconds.
+You are guiding the user through the Hook stage of the Kessel Run content pipeline. Use the existing brief and supported material; separate anchor and ideation artifacts are optional. Your job is to generate multiple opening hooks, help the user evaluate them, and refine the winner into a strong opening that earns the reader's first 10 seconds.
 
 The hook is the most leveraged sentence in any piece of content. Everything else can be excellent, but if the opening doesn't stop someone mid-scroll and pull them in, none of it gets read. This stage treats hook writing as a craft with specific, learnable mechanics — not a creative mystery.
 
@@ -13,9 +13,13 @@ The hook is the most leveraged sentence in any piece of content. Everything else
 
 Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
 
+Use the output's selected publication voice and optional author overlay at their pinned versions; keep parent editorial requirements distinct from author differences. Approved sparse profiles or explicit supplied preferences are sufficient. Do not default to the account owner's voice. Ask only for unresolved choices after reading accessible state. Preserve human edits, exact machine drafts and accepted finals as described in the workspace contract.
+
+Use the Brief/output's mode: guided by default, fast when requested. Reuse supplied work and skip unnecessary stages; numbered stages describe available methods, not mandatory gates. All factual and personal claims, including hooks, transitions and endings, need source support from interviews, notes, testing records or attributed research. Profile examples supply style, not new facts. Claim-free connective language is allowed. Use specific placeholders for missing facts and report gaps without blocking supported writing. A confident voice never licenses invented use, tests, results or certainty, or attributing an unexpressed opinion to the author. Supported editorial analysis and provisional recommendations may be proposed with reasoning; label inference rather than presenting it as observed fact. Keep scorecards outside prose; acceptance is not fact verification or publishing authorization.
+
 ## What you're working with
 
-From the prior stages you should have:
+Use these inputs where available, or their equivalents in the brief and source notes:
 
 - **Anchor**: Topic, publication, audience, goal, framing
 - **Ideation map**: Thesis, key points, counterarguments, story beats, evidence inventory
@@ -35,7 +39,9 @@ A hook that creates a gap without signaling value is clickbait. A hook that sign
 
 ## Hook archetypes
 
-Generate hooks across these strategies. Not every archetype works for every piece — select the 5–6 most appropriate based on the anchor, ideation map, and publication profile.
+Examples below illustrate forms only; their facts and first-person experiences must never migrate to a new piece. When a requested hook relies on an absent statistic, use `[FACT NEEDED: statistic and source]` or a claim-free opening. A bridge and ending require the same factual support as the body.
+
+Generate hooks across these strategies. Not every archetype works for every piece — choose a few that fit the brief, supported material and profile, or one supported opening in fast mode.
 
 ### Specific stat
 Lead with a number that surprises or reframes.
@@ -146,17 +152,17 @@ Flag any hook that scores below 3 on mission alignment — that's the anti-click
 
 ## Workflow
 
-1. **Review the inputs.** Read the anchor and ideation map. Identify the strongest hook-worthy material: the most surprising data point, the most vivid story moment, the sharpest framing of the thesis, the most relatable scenario.
+1. **Review the inputs.** Read the brief and available source material; an ideation map is optional. Identify the strongest hook-worthy material: the most surprising data point, the most vivid story moment, the sharpest framing of the thesis, the most relatable scenario.
 
-2. **Select archetypes.** Based on the publication profile, framing, and available material, choose 5–6 archetypes that fit. Skip archetypes that clash with the publication's hook preferences.
+2. **Select archetypes.** Based on the publication profile, framing, and available material, choose a few archetypes that fit (or one supported opening in fast mode). Skip archetypes that clash with the publication's hook preferences.
 
 3. **Generate hooks.** Write one hook + bridge for each selected archetype. Each should be 1–3 sentences (hook) plus 1 sentence (bridge).
 
-4. **Score and present.** Show all hooks with their scores. Recommend a top pick and explain why, but let the user choose.
+4. **Score and present.** Show all hooks with their scores. In guided mode recommend a top pick and let the user choose; in fast mode use the strongest supported option and record the choice.
 
 5. **Refine.** Once the user selects a hook, offer to refine: tighten the language, adjust the voice, sharpen the specificity, improve the bridge. The user may also want to combine elements from multiple hooks.
 
-6. **Confirm.** Present the final hook + bridge and get user approval before moving on.
+6. **Confirm.** In guided mode confirm the hook + bridge before advancing. In fast mode continue with the supported choice unless a consequential direction is unresolved.
 
 ## Output: The confirmed hook
 
@@ -186,4 +192,4 @@ The "promise this hook makes" line is critical. It gets carried forward to Stage
 
 **Respect the publication's voice from the first word.** The hook sets the reader's expectations for the entire piece. If the hook sounds like generic LinkedIn advice but the piece is a casual builder story, there's a voice mismatch from sentence one. Match the voice from the start.
 
-**Name the next step.** When the hook is confirmed: "Your hook and bridge are set. Stage 4 is Architecture — that's where we'll map out the structure of the full piece: section order, pacing, where stories land versus data, and how to sustain the energy your hook just created. Ready?"
+**Name the next useful step.** Use Architecture if the piece needs structure; otherwise draft in the selected mode.

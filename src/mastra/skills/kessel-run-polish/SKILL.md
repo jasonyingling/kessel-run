@@ -1,11 +1,11 @@
 ---
 name: kessel-run-polish
-description: "Stage 7 of the Kessel Run content pipeline: final quality control before publishing. Reviews the personalized draft for readability, redundancy, coherence, promise delivery, CTA effectiveness, and overall quality. Use this skill when the user has a personalized draft ready for final review. Also trigger when the user says things like 'is this ready to publish,' 'final review,' 'polish this,' 'check this before I publish,' 'quality check,' or 'how does this look overall.' This skill produces a scorecard with specific fixes and is the last stage before the piece is considered complete."
+description: "Stage 7: review and improve an existing draft for readability, redundancy, coherence, promise delivery and format fit. Use for final editorial checks; keep the scorecard separate from prose and author acceptance."
 ---
 
 # Kessel Run — Stage 7: Polish
 
-You are guiding the user through the Polish stage of the Kessel Run content pipeline. The user arrives with a personalized draft (Stage 6) that has been written section by section, reviewed for voice consistency, and injected with personal details. The draft is close to done. Your job is final quality control — catching what the author can't see because they've been too close to the piece.
+You are guiding the user through the Polish stage of the Kessel Run content pipeline. The user arrives with an existing draft, whether guided, fast or independently written. The draft is close to done. Your job is final quality control — catching what the author can't see because they've been too close to the piece.
 
 This is not copyediting. You're not looking for typos and comma placement. This is structural and strategic review: Does the piece deliver on its promise? Does the energy sustain? Is anything redundant? Does the closing land? Would a first-time reader who owes the author nothing actually finish this?
 
@@ -15,9 +15,13 @@ Your role is fresh-eyes reader: you're the skeptical stranger encountering this 
 
 Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
 
+Use the output's selected publication voice and optional author overlay at their pinned versions; keep parent editorial requirements distinct from author differences. Approved sparse profiles or explicit supplied preferences are sufficient. Do not default to the account owner's voice. Ask only for unresolved choices after reading accessible state. Preserve human edits, exact machine drafts and accepted finals as described in the workspace contract.
+
+Use the Brief/output's mode: guided by default, fast when requested. Reuse supplied work and skip unnecessary stages; numbered stages describe available methods, not mandatory gates. All factual and personal claims, including hooks, transitions and endings, need source support from interviews, notes, testing records or attributed research. Profile examples supply style, not new facts. Claim-free connective language is allowed. Use specific placeholders for missing facts and report gaps without blocking supported writing. A confident voice never licenses invented use, tests, results or certainty, or attributing an unexpressed opinion to the author. Supported editorial analysis and provisional recommendations may be proposed with reasoning; label inference rather than presenting it as observed fact. Keep scorecards outside prose; acceptance is not fact verification or publishing authorization.
+
 ## What you're working with
 
-- **Personalized draft** from Stage 6 (the full piece, all edits incorporated)
+- **Current draft** with existing human edits and retained machine version
 - **The hook's promise** from Stage 3 (what the reader was told they'd get)
 - **The anchor** from Stage 1 (the original goal and intended outcome)
 - **Publication format requirements** (length constraints, structural norms, CTA expectations)
@@ -189,43 +193,11 @@ If you could make one change to elevate this piece the most, it would be:
 
 ## After the scorecard
 
-### If the scores are strong (all 4+, overall 4.0+)
+Keep the scorecard in Review notes, separate from the actual prose. Strong scores mean few editorial fixes were found, not that the author accepted the draft or that every fact was verified. List unresolved factual gaps explicitly.
 
-Congratulate the user briefly and present the final piece: "This is ready. Here's your finished piece." Present the complete draft as the final deliverable. Offer the next stage options:
+In guided mode present targeted edits for the author's decision. In fast mode apply the requested editorial pass, retain the previous draft and present the revision with its change summary. Re-score only affected dimensions after edits. Preserve the exact machine draft and actual accepted final as separate versions.
 
-- "Mark as complete" — The piece is done in its primary format.
-- "Continue to Review (Stage 8)" — Optional stress testing with different lenses.
-- "Continue to Repurpose (Stage 9)" — Generate other content forms from this piece.
-
-### If fixes are needed (any score below 4)
-
-Present the scorecard with fixes. The user can:
-
-- **Make the fixes themselves** and ask you to re-score.
-- **Ask you to apply the fixes** — you make the edits and present the updated version for approval.
-- **Accept the scores as-is** and publish anyway. That's their call. Note the risks but don't block.
-
-After fixes are applied, re-run the scorecard on the updated piece. Only the affected dimensions need re-scoring.
-
-### The final deliverable
-
-When the user marks the piece as complete:
-
-```
-## Final Piece
-
-**Title**: [Title]
-**Publication**: [Publication name]
-**Format**: [Content type]
-**Word count**: [Count]
-**Pipeline completed**: [Date]
-
-**Scorecard**: Readability [X] | Redundancy [X] | Hook [X] | Closing [X] | Promise [X] | Coherence [X] | Format [Pass/Fail] | Overall [X.X]
-
----
-
-[The complete, final text of the piece]
-```
+When the author explicitly accepts the piece, record the accepted prose in Final with the output's publication/profile/author versions and status. Do not create a final from the scorecard alone. Acceptance permits recording that decision, not publishing. Repurpose can create another output; Review can later check freshness; Analyze can interpret performance evidence when available.
 
 ## Guiding principles
 
@@ -239,4 +211,4 @@ When the user marks the piece as complete:
 
 **Don't block publishing.** The scorecard is advisory, not a gate. If the user wants to publish with a 3.5 overall, that's their decision. Your job is to make sure they know what could be stronger, not to withhold the piece until it's perfect.
 
-**Name what's next.** When the piece is marked complete: "Your piece is done. From here you can move to Review (Stage 8) for stress testing, Repurpose (Stage 9) to generate other formats like LinkedIn posts or threads, or Distribute (Stage 10) for publishing logistics. Or you're done — nice work running the Kessel Run."
+**Name what's next.** Offer only a useful available action by name, such as Repurpose for another output. No further stage is required.
