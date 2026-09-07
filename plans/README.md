@@ -122,10 +122,10 @@ Added 2026-08-21, chosen by the repo owner while planning 007 and 008:
 | 009  | Portable packaging and safe skill installation | P1 | M | 010, 011, 012, 015 | TODO — refreshed for skill delivery |
 | 010  | Shared portable Markdown workspace | P1 | M | 011 | DONE — reviewed and merged f90282d; 40 tests pass |
 | 011  | Generic voice-profile creation and sparse bootstrapping | P1 | M | — | DONE — reviewed and merged b683fa6; real editorial validation pending |
-| 012  | Confirmed profile-scoped lessons from edits | P1 | M | 010, 011, 015 | TODO — refreshed for execution |
+| 012  | Confirmed profile-scoped lessons from edits | P1 | M | 010, 011, 015 | IN PROGRESS — isolated lessons executor |
 | 013  | `kessel-run-oracle` + vault — solve the blank page | P2 | L | Pending refresh (see review) | NEEDS REVISION (workspace, capability gating, and delivery dependencies; defer) |
 | 014  | Interview skill into the Obsidian vault (fast path) | P0 | S | — | DONE (merged to `main` as `f4ba001`) |
-| 015  | Start/resume and profile-aware writing flow | P1 | M | 010, 011 | IN PROGRESS — isolated writing-flow executor |
+| 015  | Start/resume and profile-aware writing flow | P1 | M | 010, 011 | DONE — reviewed and merged 4882762; 14 skills |
 
 **Authorized execution order (2026-09-07): 011 → 010 → 015 → 012 → 009.**
 User explicitly authorized isolated executor work, reviewer approval, commits, and
@@ -798,3 +798,5 @@ non-interactive shells these tools spawn.
 011 approved and merged as `b683fa6` (executor `b156ce2`). Root reran all 36 tests, nonincremental typecheck, lint (9 existing warnings), skill validator and diff check; reviewed full diff and synthetic artifacts. Provenance navigation tightened after a targeted rerun. Real archive/ChatGPT/editorial acceptance is still pending.
 
 010 approved and merged as `f90282d` (executor `bacfbdd`). Root reran 40 tests, typecheck, lint (9 existing warnings), reference check and diff check. Fixed a dangling-symlink write escape during review; regression verifies no target or earlier copy is written. Synthetic workspace/handoff reviewed; real host integration remains pending. Next: 015.
+
+015 approved and merged as `4882762` (executor `b253e72`). Root reran 40 tests, typecheck, lint (9 existing warnings), reference and diff checks, validated Start metadata, reviewed source changes and synthetic resume/fast/guided/two-output/handoff/hook artifacts. Review clarified proportional hooks and evidence-based editorial judgments. User content acceptance and hosted runtime checks remain separate. Next: 012.

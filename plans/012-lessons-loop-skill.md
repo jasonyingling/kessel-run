@@ -1,6 +1,6 @@
 # Plan 012: Turn accepted edits into scoped, reviewable voice lessons
 
-Status TODO; P1; effort M; risk LOW. Depends on 010,011,015. Baseline de402b5 plus upstream implementations; reviewer stamps at dispatch. Replaces old Claude filesystem-only plan. This skill works in Markdown workspace or from supplied draft/final text.
+Status IN PROGRESS; P1; effort M; risk LOW. Depends on 010,011,015. Baseline `4882762`; all upstream implementations reviewed and merged. Replaces old Claude filesystem-only plan. This skill works in Markdown workspace or from supplied draft/final text.
 
 ## Purpose and current state
 
@@ -8,7 +8,7 @@ User wants voice profiles for publications and author subprofiles, including spa
 
 ## Scope
 
-Create src/mastra/skills/kessel-run-lessons/SKILL.md and generated references/workspace.md; edit catalog.ts and catalog.test.ts for a standalone skill; edit kessel-run-polish/SKILL.md only to point to the optional lessons follow-up, and kessel-run-voice/references/profile-format.md only if the existing lesson format lacks provenance/status fields needed below. Create docs/kessel-run-lessons.md with invocation and observed behavioral checks. No app/schema, other skill files, dependencies, publishing, installing into real vault, or auto-populating personal profiles. Root owns plan status.
+Create src/mastra/skills/kessel-run-lessons/SKILL.md and generated references/workspace.md; edit catalog.ts and catalog.test.ts for a standalone skill; edit kessel-run-polish/SKILL.md only to point to the optional lessons follow-up, and kessel-run-voice/references/profile-format.md only if the existing lesson format lacks provenance/status fields needed below. Create docs/kessel-run-lessons.md with invocation and observed behavioral checks. Update docs/kessel-run/README.md and QUICK-REFERENCE.md only for the new standalone Lessons entry, link and skill counts (15 total / 8 numbered / 7 standalone), preserving the writing-flow guide. Historical validation counts in docs/kessel-run-writing-flow.md remain the actual 015 results. No app/schema, other skill files, dependencies, publishing, installing into real vault, or auto-populating personal profiles. Root owns plan status.
 
 ## Behavior to implement
 
