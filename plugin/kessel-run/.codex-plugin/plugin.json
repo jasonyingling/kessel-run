@@ -1,0 +1,24 @@
+{
+  "name": "kessel-run",
+  "version": "0.1.0",
+  "description": "Publication voice profiles and resumable Markdown content workflows.",
+  "author": {
+    "name": "Kessel Run"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Kessel Run",
+    "shortDescription": "Write with publication-specific voices",
+    "longDescription": "Create voice profiles, resume content from source notes, and refine independent outputs in a portable Markdown workspace.",
+    "developerName": "Kessel Run",
+    "category": "Productivity",
+    "defaultPrompt": [
+      "Create a sparse voice profile for my publication.",
+      "Resume my piece using its saved voice and sources.",
+      "Compare my draft and final for reusable voice lessons."
+    ],
+    "capabilities": [
+      "Write"
+    ]
+  }
+}

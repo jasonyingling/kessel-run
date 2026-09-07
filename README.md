@@ -1,38 +1,44 @@
-# kessel-run
+# Kessel Run
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Kessel Run is a set of publication-aware writing skills and an evolving Next.js app. The skills use plain Markdown workspaces with publication voices, optional author profiles, source notes and independent outputs. Obsidian is optional; SaaS workspace development follows content-quality validation.
 
-## Getting Started
+## Use the skills
 
-First, run the development server:
+Canonical skills live in [src/mastra/skills](src/mastra/skills/). Keep each skill folder and its references together. Build the distributable plugin with:
+
+```bash
+npm run skills:check
+npm run skills:package
+```
+
+The validated folder is `build/kessel-run/kessel-run`; its companion `manifest.json` lists payload hashes. This builds files, not a host/account installation. See [delivery instructions](docs/kessel-run-skills.md) for explicit local destinations, backups, the legacy Claude wrapper and ChatGPT/plugin distinctions.
+
+After the skills are available in your host, select one and ask:
+
+- **kessel-run-voice:** “Create a sparse voice profile for The Greatest Ever Reviews through an interview.”
+- **kessel-run-start:** “Resume this View From The Pine Brief using its saved Jason and parent voice versions.”
+- **kessel-run-lessons:** “Compare this exact machine draft with my accepted final and propose reusable profile lessons.”
+
+ChatGPT uses `@` skill selection; Codex CLI/IDE supports `$` or `/skills`. Local installation and plugin distribution are distinct. [Official OpenAI skill guidance](https://learn.chatgpt.com/docs/build-skills)
+
+Read the [writing guide](docs/kessel-run/README.md), [workspace structure](docs/kessel-run-workspace.md) and [vault conventions](docs/kessel-run-vault.md). Personal content stays outside installed skill folders. Without file tools, supply the relevant profiles and sources and use a full resumable Markdown handoff.
+
+## Run the app locally
+
+With dependencies installed and your existing local configuration in place:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [localhost:3000](http://localhost:3000). The app does not yet implement the full Markdown workspace persistence or provide file/browsing tools merely because a skill asks for them.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Repository checks:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm test
+npm run typecheck -- --incremental false
+npm run lint
+```
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Implementation plans and review status are in [plans](plans/README.md). Packaging tests and synthetic writing exercises establish limited technical behavior; actual publication quality still needs human review.
