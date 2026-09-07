@@ -1,75 +1,38 @@
-# Kessel Run in the Obsidian vault
+# Kessel Run in a Markdown or Obsidian vault
 
-`/Users/miniying/The Rock/` is an Obsidian vault that is also a Claude Code
-project — it has its own `.claude/skills/` directory and its own `CLAUDE.md`
-with vault-specific agent rules. That vault is the workspace for the
-**skills-only** Kessel Run workflow: no app, no database, just Claude Code
-running in the vault with the Kessel Run skills installed as project-scoped
-skills.
+The vault holds publications, voice profiles and content. Installed skills hold reusable instructions. The same Markdown workspace works without Obsidian; no plugin or `CLAUDE.md` is required by the workspace contract. Select your actual root/home note instead of assuming a particular machine path.
 
-This document records how the two repos relate, so future work here does not
-have to rediscover it.
+## Source and installation
 
-## Source of truth vs. installs
+[src/mastra/skills](../src/mastra/skills/) is canonical. Edits made directly to an installed skill will be replaced on the next changed install, with the full older directory retained in a backup outside discovery. Replacement is not a merge of custom instructions.
 
-`src/mastra/skills/` in this repo is the **source of truth** for every Kessel
-Run skill. The copies that end up in the vault are **installs**, not
-originals. Editing a `SKILL.md` inside the vault directly will work until the
-next install overwrites it — always edit here and reinstall.
-
-## Installing skills into the vault
+For the legacy Claude Code destination, a user may run:
 
 ```bash
-KESSEL_RUN_VAULT="$HOME/The Rock" npm run skills:install [skill-name ...]
+KESSEL_RUN_VAULT="/absolute/path/to/existing/vault" npm run skills:install
 ```
 
-- With no skill names, every `kessel-run-*` skill in `src/mastra/skills/` is
-  installed.
-- The script (`scripts/install-skills-to-vault.sh`) refuses to run without
-  `KESSEL_RUN_VAULT` set, and refuses to target a directory that has no
-  `CLAUDE.md` (i.e. does not look like a Claude Code project).
-- Skills are project-scoped: they land in `<vault>/.claude/skills/<name>/`,
-  which is exactly where `triage-clippings`, the vault's other existing
-  skill, already lives.
-- The script only copies. It never deletes anything already in the vault,
-  matching the vault's own rule that agents never delete notes.
+Optional trailing names select individual skills. The wrapper validates that the vault directory exists and installs into `<vault>/.claude/skills/<name>/`. The shared installer validates the batch, stages copies, and preserves changed installs under `<vault>/.claude/.kessel-run-skill-backups/` with unique names. It prints each backup path. Unchanged installs are skipped; a failed activation restores that skill's original. Earlier successful replacements remain reported. No publication notes are changed.
 
-This is a manual, user-run step — an executor working in this repo must never
-run it against the real vault, only against a scratch directory.
+This command is Claude-specific. [Portable installation and plugin packaging](kessel-run-skills.md) cover other destinations and distinguish local folders from ChatGPT account availability. Implementation tests use scratch directories only; the user's real vault has not been installed or modified.
 
-## Where pipeline artifacts land in the vault
+## Workspace locations
 
-| Artifact | Vault location |
+Existing folders, IDs, numbering and links take precedence. For a new Obsidian layout, the home note links settings under `Meta/Kessel Run/` and pieces under `10 - Projects/`:
+
+| Material | Suggested location |
 | --- | --- |
-| Interview transcripts, drafts, and other per-piece run artifacts | `10 - Projects/<Publication>/<Piece>/` (for Previously on Tech specifically: `10 - Projects/Previously on Tech/<NNNN - Title>/`) |
-| Personal voice/parameters used across pieces | `Meta/Kessel Run/` (once plan 010 lands) |
-| Oracle/research spikes and loose content ideas | `40 - Ideas/Content Ideas/` |
+| Publication defaults | `Meta/Kessel Run/Publications/<Name>.md` |
+| Publication voice | `Meta/Kessel Run/Voice Profiles/<Publication>/Publication.md` |
+| Author differences | `Meta/Kessel Run/Voice Profiles/<Publication>/Authors/<Author>.md` |
+| Output format presets | `Meta/Kessel Run/Output Presets/<Name>.md` |
+| Brief and sources | `10 - Projects/<Publication>/<Piece>/` |
+| Independent outputs | `<Piece>/Outputs/<Output>/Output.md`, Draft, Review and accepted Final |
 
-## Vault rules Kessel Run skills must honor
+Keep existing flat Draft/Final notes where they are; record explicit per-output profile versions in Brief. Previously on Tech can retain existing issue-numbered folders. Never modify `Issue.md`, delete notes or overwrite substantial content. Preserve dated sessions or separate revisions with current-version links. New notes use readable Markdown links and the common metadata defined in the [workspace contract](../src/mastra/skill-references/workspace.md); don't rewrite old notes merely to add metadata.
 
-These come from the vault's own `CLAUDE.md` and are non-negotiable for any
-skill running there:
+## Writing and learning
 
-- **Frontmatter is required.** Every note a skill creates gets at least
-  `title`, `type`, `created`, `updated`, `tags`.
-- **Filenames use spaces and title case**, not hyphens or underscores (daily
-  notes are the one fixed exception: `YYYY-MM-DD.md`).
-- **Never modify an existing `Issue.md`** in Previously on Tech without
-  explicit instruction. Those files carry no frontmatter and are off limits
-  regardless of the frontmatter rule above.
-- **Never delete notes.** Move to `60 - Archives/` instead.
-- **Never overwrite substantial content in an existing note.** Append a new
-  dated section instead of replacing what is there.
-- **Never create a duplicate note.** Check whether a note already exists
-  before creating one.
-- Tags are lowercase and hyphenated (`content`, `writing`, `newsletter`,
-  `kessel-run`).
+Start / Resume finds the next useful action from saved selections and sources. An Interview is optional when notes or attributed research suffice. Draft supports guided sections or complete fast prose; Voice can establish an approved sparse profile before any archive exists. Lessons compares the exact machine draft with an accepted final and proposes profile-scoped changes for confirmation. Profile history and the selected author/parent versions remain explicit.
 
-## Relationship to the rest of the pipeline
-
-The vault workflow currently runs the Kessel Run skills as standalone tools —
-there is no app, no `projectStateSchema`, no stage rail, and no transcript
-field wiring them together. That infrastructure (stage renumbering, the
-Interview transcript becoming a constraint on Draft, the workspace convention
-that ties runs together) is separate, later work. Nothing about running
-skills in the vault today depends on it landing first.
+These skills do not depend on app state or stage renumbering. Without filesystem access, use supplied material and a complete Markdown handoff containing rules, inputs and current prose; the skill cannot read a Mac vault by path alone.
