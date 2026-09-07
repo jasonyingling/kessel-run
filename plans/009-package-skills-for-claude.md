@@ -1,6 +1,6 @@
 # Plan 009: Package the canonical skills for portable and ChatGPT use
 
-Status IN PROGRESS; P1; effort M; risk MED (filesystem installation). Depends on010,011,012,015. Baseline `510b90b`; all four dependency plans are reviewed and merged. Replaces the obsolete Claude-only .skill plan. User authorized build/commits/merges; real vault installation, account publication and marketplace mutation are not part of this executor's scope.
+Status DONE; P1; effort M; risk MED (filesystem installation). Depends on010,011,012,015. Baseline `510b90b`; all four dependency plans are reviewed and merged. Replaces the obsolete Claude-only .skill plan. User authorized build/commits/merges; real vault installation, account publication and marketplace mutation are not part of this executor's scope.
 
 ## Purpose/current state
 

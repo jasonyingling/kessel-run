@@ -119,7 +119,7 @@ Added 2026-08-21, chosen by the repo owner while planning 007 and 008:
 | 006  | UI — project workspace (chat, stage rail, artifacts) | P2 | L | 005 | DONE (merged to `main` as `d4be903`) |
 | 007  | App Interview stage + transcript schema | P2 | L | Skill flow 015 | DEFERRED — skill method changes handled by 015; app follows content validation |
 | 008  | App push-to-talk dictation | P2 | S | — | DEFERRED — app work follows skill validation |
-| 009  | Portable packaging and safe skill installation | P1 | M | 010, 011, 012, 015 | IN PROGRESS — isolated delivery executor |
+| 009  | Portable packaging and safe skill installation | P1 | M | 010, 011, 012, 015 | DONE — reviewed and merged 3766b06; 53 tests pass |
 | 010  | Shared portable Markdown workspace | P1 | M | 011 | DONE — reviewed and merged f90282d; 40 tests pass |
 | 011  | Generic voice-profile creation and sparse bootstrapping | P1 | M | — | DONE — reviewed and merged b683fa6; real editorial validation pending |
 | 012  | Confirmed profile-scoped lessons from edits | P1 | M | 010, 011, 015 | DONE — reviewed and merged 510b90b; 15 skills |
@@ -804,3 +804,7 @@ non-interactive shells these tools spawn.
 A bounded live-source exercise of 011 read seven rendered View From The Pine articles (three 2024 solo pieces, four 2018 roundtables), producing draft/sparse publication and four author profiles in `/private/tmp/kessel-vftp-validation/`. Root inspected publication/Jason profiles, source register and report. Internal contribution labels took precedence over the page-level byline. Other authors have narrow historical coverage; meaningful calibration and editorial approval remain pending. No profiles installed or defaults changed.
 
 012 approved and merged as `510b90b` (executor `41c9e41`, correction `7dd9a1b`). Root reran 40 tests, typecheck, lint (9 existing warnings), reference/metadata/diff checks and reviewed comparison decisions, profile revisions, no-file handoff and targeted replay. A stale open question was corrected without losing predecessor history. Next: 009 delivery.
+
+009 approved and merged as `3766b06` (executor `4ff7cd0`). Root reviewed all nine scoped files, reran 53 tests, typecheck, lint (9 existing warnings), reference/package/plugin/15 skill validations and diff checks. Real-source rebuild kept an identical 33-file manifest. Independent review reproduced and verified the fix for Mac filesystem case-alias overlap; source notes survive both existing and missing-child aliases. Partial installation failures now report earlier successful backups. Scratch CLI backup/no-op evidence reviewed.
+
+All five authorized skill implementation plans (011, 010, 015, 012, 009) are reviewed and merged. The main checkout generates the validated distribution under `build/kessel-run/`; it contains 15 canonical skills. Working source and plans are committed. No remote push, actual vault/account/marketplace install, or SaaS implementation was performed. Next product gate is real publication content review and host installation/recognition; synthetic walkthroughs and package validators do not claim those gates passed.
