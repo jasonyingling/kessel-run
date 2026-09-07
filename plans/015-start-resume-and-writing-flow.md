@@ -1,6 +1,6 @@
 # Plan 015: Start or resume content with the selected voice and reliable sources
 
-Status TODO; P1; effort M; risk MED. Depends on 010 and 011. Baseline `de402b5` plus their reviewed commits (reviewer stamps at dispatch). This is the skills-only replacement for plan007's method changes; app transcript schema and stage renumber are deferred. Scope is explicit below.
+Status IN PROGRESS; P1; effort M; risk MED. Depends on 010 and 011. Baseline `f90282d`; both upstream implementations are reviewed and merged. This is the skills-only replacement for plan007's method changes; app transcript schema and stage renumber are deferred. Scope is explicit below.
 
 ## Purpose and current state
 
