@@ -16,6 +16,7 @@ export type KesselRunSkillName =
   | 'kessel-run-research'
   | 'kessel-run-anchor'
   | 'kessel-run-interview'
+  | 'kessel-run-voice'
   | 'kessel-run-ideation'
   | 'kessel-run-hook'
   | 'kessel-run-architecture'
@@ -136,6 +137,14 @@ export const KESSEL_RUN_SKILLS: readonly KesselRunSkill[] = [
     optional: false,
     timeTarget: '10–15 min',
     summary: 'Answer a panel of interviewers out loud; capture it verbatim.',
+  },
+  {
+    name: 'kessel-run-voice',
+    label: 'Voice Profile',
+    stage: null,
+    optional: false,
+    timeTarget: 'Varies by source material',
+    summary: 'Create a named editorial voice profile from writing samples and preferences.',
   },
 ] as const;
 

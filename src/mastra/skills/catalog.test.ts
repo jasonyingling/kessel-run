@@ -24,8 +24,8 @@ describe("skill catalog", () => {
     expect(skillDirs).toEqual([...KESSEL_RUN_SKILLS].map(s => s.name).sort());
   });
 
-  it("has 12 skills", () => {
-    expect(KESSEL_RUN_SKILLS).toHaveLength(12);
+  it("has 13 skills", () => {
+    expect(KESSEL_RUN_SKILLS).toHaveLength(13);
   });
 
   it("names every directory after its frontmatter name", () => {
@@ -41,9 +41,9 @@ describe("skill catalog", () => {
     }
   });
 
-  it("splits into 8 pipeline stages and 4 standalone skills", () => {
+  it("splits into 8 pipeline stages and 5 standalone skills", () => {
     expect(PIPELINE_SKILLS).toHaveLength(8);
-    expect(STANDALONE_SKILLS).toHaveLength(4);
+    expect(STANDALONE_SKILLS).toHaveLength(5);
   });
 
   it("numbers pipeline stages 0..7 with no gaps or duplicates", () => {
