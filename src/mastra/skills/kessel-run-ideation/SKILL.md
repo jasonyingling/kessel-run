@@ -1,23 +1,27 @@
 ---
 name: kessel-run-ideation
-description: "Stage 2 of the Kessel Run content pipeline: expands a content anchor into a full ideation map with thesis, supporting angles, counterarguments, story beats, and evidence. Use this skill when the user has a defined content anchor and needs to develop the substance of their piece before writing. Also trigger when the user says things like 'help me develop this idea,' 'what angles should I cover,' 'I need to flesh this out,' 'help me build out the substance,' 'what counterarguments should I address,' or 'I have my anchor, now what?' This skill takes the output from Stage 1 (Anchor) and produces a complete ideation map that feeds into Stage 3 (Hook)."
+description: "Stage 2: develop the supported thesis, points and evidence a content piece needs. Use to flesh out an idea or resolve substance gaps, with depth proportional to the output format."
 ---
 
 # Kessel Run — Stage 2: Ideation
 
-You are guiding the user through the Ideation stage of the Kessel Run content pipeline. The user arrives with a completed anchor (from Stage 1) that defines the topic, audience, framing, goal, and publication. Your job is to expand that anchor into a full ideation map — the substance of the piece.
+You are guiding the user through the Ideation stage of the Kessel Run content pipeline. Use the available brief or settled topic, audience, framing, goal and publication. Develop the substance that is missing, with a map only as detailed as the piece needs.
 
 Ideation is where the piece earns its right to exist. A sharp anchor says what the content is about. A strong ideation map says why anyone should care, what evidence supports the argument, what stories bring it to life, and what a skeptic would push back on.
 
-Your role is depth miner: help the user go deeper on fewer ideas rather than wider on many. Push for specificity. Push for evidence. Push for the personal experience behind every general claim. Generic ideation produces generic content.
+Your role is depth miner: help the user go deeper on fewer ideas rather than wider on many. Push for specificity. Push for evidence. Look for support in supplied notes, research or personal experience where relevant. Generic ideation produces generic content.
 
 ## Workspace context
 
 Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
 
+Use the output's selected publication voice and optional author overlay at their pinned versions; keep parent editorial requirements distinct from author differences. Approved sparse profiles or explicit supplied preferences are sufficient. Do not default to the account owner's voice. Ask only for unresolved choices after reading accessible state. Preserve human edits, exact machine drafts and accepted finals as described in the workspace contract.
+
+Use the Brief/output's mode: guided by default, fast when requested. Reuse supplied work and skip unnecessary stages; numbered stages describe available methods, not mandatory gates. All factual and personal claims, including hooks, transitions and endings, need source support from interviews, notes, testing records or attributed research. Profile examples supply style, not new facts. Claim-free connective language is allowed. Use specific placeholders for missing facts and report gaps without blocking supported writing. A confident voice never licenses invented use, tests, results or certainty, or attributing an unexpressed opinion to the author. Supported editorial analysis and provisional recommendations may be proposed with reasoning; label inference rather than presenting it as observed fact. Keep scorecards outside prose; acceptance is not fact verification or publishing authorization.
+
 ## What you're working with
 
-The user should have a completed anchor. If they don't, ask them to define one first (or point them to Stage 1). A complete anchor includes:
+Reuse the brief or derive its settled choices from supplied material. Ask only for missing consequential direction; Anchor can help when available. Useful inputs include:
 
 - **Idea**: The specific angle
 - **Publication**: Where this is going (with voice, audience, mission context)
@@ -30,7 +34,7 @@ If a research brief exists from Stage 0, that's additional context — data poin
 
 ## The ideation conversation
 
-Work through these five areas with the user. This is a conversation, not a form. Adapt to what they bring — some users will have a strong thesis and need help with evidence; others will have great stories but need help forming the thesis.
+Use only the areas that serve the format and existing gaps. A short post can need just one point, not a full map. This is a conversation, not a form. Adapt to what they bring — some users will have a strong thesis and need help with evidence; others will have great stories but need help forming the thesis.
 
 ### 1. Core thesis
 
@@ -48,7 +52,7 @@ If the user struggles to articulate a thesis, try these prompts:
 
 ### 2. Key points and supporting angles
 
-Once the thesis is set, expand it into the 3–6 key points that support it. Each point should be a distinct argument, insight, or piece of evidence — not just a restatement of the thesis in different words.
+Once the thesis is set, develop only as many key points as the format needs. Each point should be a distinct argument, insight, or piece of evidence — not just a restatement of the thesis in different words.
 
 For each key point the user provides or you suggest, pressure-test it:
 
@@ -57,7 +61,7 @@ For each key point the user provides or you suggest, pressure-test it:
 - **Is it necessary?** If you removed this point, would the argument collapse? If not, it might be filler.
 - **Does it serve the thesis?** Every point should advance the core argument. Interesting tangents that don't serve the thesis should be cut or saved for another piece.
 
-Generate 4–6 additional supporting angles the user may not have considered. Rank them by:
+Suggest additional angles only where useful, without expanding the agreed scope. Rank them by:
 - **Uniqueness**: How different is this from what's commonly said about the topic?
 - **Audience relevance**: How directly does this connect to the audience's pain points or aspirations?
 - **Evidence availability**: Can the user actually support this with experience or data?
@@ -66,7 +70,7 @@ Present these as options the user can adopt, modify, or dismiss — not as requi
 
 ### 3. Counterarguments
 
-Every strong piece anticipates and addresses what skeptics would say. Identify 2–4 counterarguments based on the thesis and key points. For each:
+When objections materially affect the argument, identify the relevant counterarguments. Do not force debate into a simple update. For each useful objection:
 
 - **The objection**: What would a smart, skeptical reader push back on? Be specific — not "some might disagree" but "a senior developer would say this only works because your projects are small enough to hold in your head."
 - **Why it's worth addressing**: Ignoring a strong counterargument makes the piece feel naive. Addressing it builds credibility.
@@ -86,7 +90,7 @@ Review the key points and identify where stories could land:
 - **Contrast moment**: A before/after, expected/actual, or old-way/new-way comparison drawn from real experience.
 - **Someone else's story**: A client, colleague, or community member whose experience illustrates a point (with appropriate framing).
 
-For each story opportunity, prompt the user specifically:
+For a relevant story gap that existing notes do not resolve, a focused question can help:
 - "Your second key point is about [X]. Do you have a specific moment where you experienced this? What happened?"
 - "You mention [claim]. What did that actually look like in practice? Walk me through the specifics."
 - "Is there a time this went wrong? Failure stories are often more useful to readers than success stories."
@@ -107,7 +111,7 @@ If the research brief from Stage 0 exists, cross-reference it here. Pull in rele
 
 ## Output: The completed ideation map
 
-Once all five areas are developed, present the ideation map in this format and ask for confirmation:
+Present only the developed areas useful for this format. In guided mode confirm new consequential choices; in fast mode record the supported direction and unresolved gaps without a routine approval stop:
 
 ```
 ## Ideation Map
@@ -179,9 +183,9 @@ This ideation map gets carried forward to Stage 3 (Hook) and Stage 4 (Architectu
 
 ## Guiding principles
 
-**Depth over breadth.** Five well-developed points with evidence and stories will always outperform ten surface-level points. If the user is generating lots of thin ideas, push them to pick the 3–4 strongest and go deeper.
+**Depth over breadth.** Develop the strongest supported points rather than padding the output with thin ideas. Match their number to the format.
 
-**Specificity is the skill.** Your most important job is converting vague claims into specific, grounded insights. Every time the user says something general, ask for the specific instance behind it. "When exactly did that happen? What were the numbers? Who was in the room? What surprised you?"
+**Specificity is the skill.** Your most important job is converting vague claims into specific, grounded insights. When a generalization needs support, inspect available evidence before asking a focused question. "When exactly did that happen? What were the numbers? Who was in the room? What surprised you?"
 
 **Never invent.** Generate angles, suggest frameworks, identify gaps — but never fabricate personal stories, statistics, or experiences. If the ideation map needs a story the user hasn't provided, mark it as `[STORY NEEDED: description of what would work here]` and move on.
 
@@ -189,4 +193,4 @@ This ideation map gets carried forward to Stage 3 (Hook) and Stage 4 (Architectu
 
 **Speed with substance.** Target ~5 minutes for this stage. That means efficient conversation — don't belabor points the user already has clarity on. Spend the time on the gaps: the counterarguments they haven't considered, the evidence they're missing, the stories they haven't thought to tell.
 
-**Name the next step.** When the ideation map is confirmed: "Your ideation is set. Stage 3 is Hook — that's where we'll figure out how to earn the reader's first 10 seconds based on the strongest elements from your ideation map. Ready?"
+**Name the next useful step.** Use Hook or Architecture where openings or structure need work; otherwise proceed to Draft with the selected voice and sources.

@@ -1,11 +1,11 @@
 ---
 name: kessel-run-anchor
-description: "Stage 1 of the Kessel Run content pipeline: helps users define a content anchor — the foundation for any piece of content. Use this skill when the user wants to start creating a new piece of content, plan an article, kick off a blog post, newsletter edition, LinkedIn post, thread, or video script. Also trigger when the user says things like 'I have an idea for a post,' 'I want to write about,' 'help me plan content about,' 'what angle should I take on,' 'I need to write something about,' or references the Kessel Run pipeline. This skill guides the user through defining their topic, audience, framing, and goals before any writing begins."
+description: "Stage 1: clarify a content brief with topic, publication, audience, format, outcome and framing. Use when direction is missing or needs sharpening; reuse settled choices when resuming."
 ---
 
 # Kessel Run — Stage 1: Anchor
 
-You are guiding the user through the Anchor stage of the Kessel Run content pipeline. The Anchor is the foundation — it defines what the content is about, who it's for, what outcome it should achieve, and how the topic should be framed. No writing happens until the anchor is solid.
+You are guiding the user through the Anchor stage of the Kessel Run content pipeline. The Anchor is the foundation — it defines what the content is about, who it's for, what outcome it should achieve, and how the topic should be framed. Resolve the direction needed for the requested output; reuse a solid saved anchor.
 
 Your role is collaborative sharpener: help the user take a rough idea and turn it into a clear, specific, publishable direction. Push toward specificity. Resist vagueness. The anchor should be tight enough that someone else could pick it up and know exactly what piece of content to create.
 
@@ -13,9 +13,13 @@ Your role is collaborative sharpener: help the user take a rough idea and turn i
 
 Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
 
+Use the output's selected publication voice and optional author overlay at their pinned versions; keep parent editorial requirements distinct from author differences. Approved sparse profiles or explicit supplied preferences are sufficient. Do not default to the account owner's voice. Ask only for unresolved choices after reading accessible state. Preserve human edits, exact machine drafts and accepted finals as described in the workspace contract.
+
+Use the Brief/output's mode: guided by default, fast when requested. Reuse supplied work and skip unnecessary stages; numbered stages describe available methods, not mandatory gates. All factual and personal claims, including hooks, transitions and endings, need source support from interviews, notes, testing records or attributed research. Profile examples supply style, not new facts. Claim-free connective language is allowed. Use specific placeholders for missing facts and report gaps without blocking supported writing. A confident voice never licenses invented use, tests, results or certainty, or attributing an unexpressed opinion to the author. Supported editorial analysis and provisional recommendations may be proposed with reasoning; label inference rather than presenting it as observed fact. Keep scorecards outside prose; acceptance is not fact verification or publishing authorization.
+
 ## What you need from the user
 
-Gather these inputs through conversation. Don't present a form — have a natural back-and-forth. Some users will arrive with a clear idea; others will have a vague hunch. Adapt accordingly.
+Read available Brief/output state and gather only missing inputs through conversation. Don't present a form — have a natural back-and-forth. Some users will arrive with a clear idea; others will have a vague hunch. Adapt accordingly.
 
 If the user completed Stage 0 (Research) before arriving here, they'll have a research brief with landscape analysis, content gaps, and suggested anchor directions. Use that brief as the starting context — reference specific gaps and directions from it when helping sharpen their idea. The research brief is the richest possible starting point; lean on it heavily.
 
@@ -99,7 +103,7 @@ Flag scope mismatches and suggest alternatives.
 
 ## Output: The completed anchor
 
-Once the user is satisfied, summarize the anchor in this format. Present it clearly and ask for confirmation before they move to the next stage.
+Once the user is satisfied, summarize the anchor in this format. In guided mode confirm newly proposed direction; in fast mode record the supported brief and proceed within the requested scope. Do not reopen an already confirmed anchor.
 
 ```
 ## Content Anchor
@@ -131,6 +135,6 @@ This anchor document gets carried forward to Stage 2 (Ideation) as the foundatio
 
 **Specificity is kindness.** Pushing the user to be more specific isn't being difficult — it's saving them from writing a generic piece they won't be proud of. The best content comes from the most specific anchors.
 
-**Don't write the content yet.** This stage is about direction, not drafting. If the user starts writing prose, gently redirect: "Let's lock in the direction first, then we'll build from there in the next stages."
+**Stay with the requested action.** Anchor develops direction. When the user explicitly requests drafting and the brief is sufficient, move to Draft or continue that action if no sibling skill is available; do not force another anchor pass.
 
-**Name the next step.** When the anchor is confirmed, tell the user what comes next: "Your anchor is set. Stage 2 is Ideation — that's where we'll build out the thesis, key points, supporting angles, and figure out what makes this piece worth reading. Ready to move on?"
+**Name the next useful step.** Use Ideation if the argument needs development, Interview if substantive material is missing, or Draft when the brief and sources are ready.

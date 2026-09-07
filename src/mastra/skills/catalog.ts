@@ -13,6 +13,7 @@
 export const SKILLS_DIR = './src/mastra/skills';
 
 export type KesselRunSkillName =
+  | 'kessel-run-start'
   | 'kessel-run-research'
   | 'kessel-run-anchor'
   | 'kessel-run-interview'
@@ -43,12 +44,20 @@ export type KesselRunSkill = {
 
 export const KESSEL_RUN_SKILLS: readonly KesselRunSkill[] = [
   {
+    name: 'kessel-run-start',
+    label: 'Start / Resume',
+    stage: null,
+    optional: false,
+    timeTarget: 'Varies by saved context',
+    summary: 'Select the publication voice and continue from existing material.',
+  },
+  {
     name: 'kessel-run-research',
     label: 'Research',
     stage: 0,
     optional: true,
-    timeTarget: '20–30 min',
-    summary: 'Map the landscape and find content gaps before anything is written.',
+    timeTarget: 'Varies by evidence needed',
+    summary: 'Gather evidence or map a topic to the depth the piece needs.',
   },
   {
     name: 'kessel-run-anchor',
@@ -88,7 +97,7 @@ export const KESSEL_RUN_SKILLS: readonly KesselRunSkill[] = [
     stage: 5,
     optional: false,
     timeTarget: '~8 min',
-    summary: 'Write the piece section by section against the beat map.',
+    summary: 'Write guided sections or a complete fast draft from the selected voice and sources.',
   },
   {
     name: 'kessel-run-personalize',
@@ -96,7 +105,7 @@ export const KESSEL_RUN_SKILLS: readonly KesselRunSkill[] = [
     stage: 6,
     optional: false,
     timeTarget: '~3 min',
-    summary: 'Audit for authenticity and inject the writer’s own specifics.',
+    summary: 'Align the draft with its selected publication and author voice.',
   },
   {
     name: 'kessel-run-polish',
@@ -136,7 +145,7 @@ export const KESSEL_RUN_SKILLS: readonly KesselRunSkill[] = [
     stage: null,
     optional: false,
     timeTarget: '10–15 min',
-    summary: 'Answer a panel of interviewers out loud; capture it verbatim.',
+    summary: 'Gather missing source material through focused questions and verbatim answers.',
   },
   {
     name: 'kessel-run-voice',

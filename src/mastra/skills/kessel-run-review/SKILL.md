@@ -1,6 +1,6 @@
 ---
 name: kessel-run-review
-description: "Standalone Kessel Run skill: checks whether published content is still accurate, relevant, and serving its audience over time. Use this skill when the user wants to audit old content for freshness, check if a post from months ago still holds up, decide whether to update or retire a piece, review a content library for outdated material, or maintain evergreen quality. Also trigger when the user says things like 'is this still accurate,' 'should I update this post,' 'review my old content,' 'what needs refreshing,' 'content audit,' 'is this still relevant,' or 'check this piece for me.' This is the long-term maintenance skill — run it quarterly or whenever the landscape shifts."
+description: "Audit existing published content for accuracy, freshness, relevance and selected voice fit. Use to identify supported updates or retirement recommendations, with verification limits stated."
 ---
 
 # Kessel Run — Review
@@ -12,6 +12,10 @@ This is the long-term maintenance skill. Run it against individual pieces or acr
 ## Workspace context
 
 Before starting, read [the shared workspace contract](references/workspace.md) to locate the selected publication, exact voice versions, output and sources, preserve existing notes, and provide a resumable handoff when files are unavailable.
+
+Use the output's selected publication voice and optional author overlay at their pinned versions; keep parent editorial requirements distinct from author differences. Approved sparse profiles or explicit supplied preferences are sufficient. Do not default to the account owner's voice. Ask only for unresolved choices after reading accessible state. Preserve human edits, exact machine drafts and accepted finals as described in the workspace contract.
+
+Use the Brief/output's mode: guided by default, fast when requested. Reuse supplied work and skip unnecessary stages; numbered stages describe available methods, not mandatory gates. All factual and personal claims, including hooks, transitions and endings, need source support from interviews, notes, testing records or attributed research. Profile examples supply style, not new facts. Claim-free connective language is allowed. Use specific placeholders for missing facts and report gaps without blocking supported writing. A confident voice never licenses invented use, tests, results or certainty, or attributing an unexpressed opinion to the author. Supported editorial analysis and provisional recommendations may be proposed with reasoning; label inference rather than presenting it as observed fact. Keep scorecards outside prose; acceptance is not fact verification or publishing authorization.
 
 ## Getting started
 
@@ -31,7 +35,7 @@ Evaluate each piece across five lenses. Not every lens applies to every piece �
 
 Has anything stated as fact become incorrect since publishing?
 
-Search for and check:
+When retrieval tools are available, search for and check:
 - **Statistics and data points.** Are the numbers still current? Have newer studies superseded the ones cited?
 - **Tool and product references.** Do the tools mentioned still exist? Have they changed significantly? Have better alternatives emerged?
 - **Process and workflow descriptions.** Does the described process still work? Have APIs, interfaces, or methods changed?
@@ -39,7 +43,8 @@ Search for and check:
 - **Links.** Are the linked sources still live and still saying what they said? (Link rot is real.)
 
 **Verdict options:**
-- **Accurate**: Everything checks out. No updates needed.
+- **Verified within scope**: State exactly which claims and sources were checked and when.
+- **Unverified**: Tools or evidence are unavailable; distinguish supplied evidence from current verification.
 - **Minor corrections needed**: 1–2 details are outdated but the core content holds. Quick fixes.
 - **Significant updates required**: Multiple facts are outdated or a key claim is no longer true. Needs a rewrite of affected sections.
 - **Fundamentally outdated**: The premise of the piece is no longer valid. Consider retiring or doing a complete rewrite.
@@ -66,8 +71,8 @@ Consider:
 
 Does the piece still sound like the author?
 
-Writers evolve. The user's voice six months ago may differ from their voice today. Check:
-- Does the piece match the current publication voice profile?
+Compare against the output's pinned voice and author parent versions. If explicitly asked to compare with a newer profile, label that separate comparison and do not retarget the output silently. Check:
+- Does the piece match the selected profile versions?
 - Are there patterns or phrases the user has since abandoned?
 - Does it feel like the same author who's publishing now?
 
@@ -182,4 +187,4 @@ For a library audit, present a summary table:
 
 **Retiring content is okay.** Not everything needs to live forever. If a piece is outdated, irrelevant, and getting no traffic, retiring or archiving it is a legitimate choice. The user's published content is a portfolio — curation matters.
 
-**Use web search proactively.** When checking factual accuracy, search for the current state of referenced tools, stats, and claims. Don't rely on your training data for recency — verify.
+**Report retrieval honestly.** Use actual available tools for current facts; without them assess supplied evidence and list freshness checks as unverified. Never simulate a search or treat remembered facts as current verification. Recommendations to update or retire are not permission to modify published content.
