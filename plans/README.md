@@ -119,10 +119,10 @@ Added 2026-08-21, chosen by the repo owner while planning 007 and 008:
 | 006  | UI — project workspace (chat, stage rail, artifacts) | P2 | L | 005 | DONE (merged to `main` as `d4be903`) |
 | 007  | App Interview stage + transcript schema | P2 | L | Skill flow 015 | DEFERRED — skill method changes handled by 015; app follows content validation |
 | 008  | App push-to-talk dictation | P2 | S | — | DEFERRED — app work follows skill validation |
-| 009  | Portable packaging and safe skill installation | P1 | M | 010, 011, 012, 015 | TODO — refreshed for skill delivery |
+| 009  | Portable packaging and safe skill installation | P1 | M | 010, 011, 012, 015 | IN PROGRESS — isolated delivery executor |
 | 010  | Shared portable Markdown workspace | P1 | M | 011 | DONE — reviewed and merged f90282d; 40 tests pass |
 | 011  | Generic voice-profile creation and sparse bootstrapping | P1 | M | — | DONE — reviewed and merged b683fa6; real editorial validation pending |
-| 012  | Confirmed profile-scoped lessons from edits | P1 | M | 010, 011, 015 | IN PROGRESS — isolated lessons executor |
+| 012  | Confirmed profile-scoped lessons from edits | P1 | M | 010, 011, 015 | DONE — reviewed and merged 510b90b; 15 skills |
 | 013  | `kessel-run-oracle` + vault — solve the blank page | P2 | L | Pending refresh (see review) | NEEDS REVISION (workspace, capability gating, and delivery dependencies; defer) |
 | 014  | Interview skill into the Obsidian vault (fast path) | P0 | S | — | DONE (merged to `main` as `f4ba001`) |
 | 015  | Start/resume and profile-aware writing flow | P1 | M | 010, 011 | DONE — reviewed and merged 4882762; 14 skills |
@@ -800,3 +800,7 @@ non-interactive shells these tools spawn.
 010 approved and merged as `f90282d` (executor `bacfbdd`). Root reran 40 tests, typecheck, lint (9 existing warnings), reference check and diff check. Fixed a dangling-symlink write escape during review; regression verifies no target or earlier copy is written. Synthetic workspace/handoff reviewed; real host integration remains pending. Next: 015.
 
 015 approved and merged as `4882762` (executor `b253e72`). Root reran 40 tests, typecheck, lint (9 existing warnings), reference and diff checks, validated Start metadata, reviewed source changes and synthetic resume/fast/guided/two-output/handoff/hook artifacts. Review clarified proportional hooks and evidence-based editorial judgments. User content acceptance and hosted runtime checks remain separate. Next: 012.
+
+A bounded live-source exercise of 011 read seven rendered View From The Pine articles (three 2024 solo pieces, four 2018 roundtables), producing draft/sparse publication and four author profiles in `/private/tmp/kessel-vftp-validation/`. Root inspected publication/Jason profiles, source register and report. Internal contribution labels took precedence over the page-level byline. Other authors have narrow historical coverage; meaningful calibration and editorial approval remain pending. No profiles installed or defaults changed.
+
+012 approved and merged as `510b90b` (executor `41c9e41`, correction `7dd9a1b`). Root reran 40 tests, typecheck, lint (9 existing warnings), reference/metadata/diff checks and reviewed comparison decisions, profile revisions, no-file handoff and targeted replay. A stale open question was corrected without losing predecessor history. Next: 009 delivery.

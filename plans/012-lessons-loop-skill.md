@@ -1,6 +1,6 @@
 # Plan 012: Turn accepted edits into scoped, reviewable voice lessons
 
-Status IN PROGRESS; P1; effort M; risk LOW. Depends on 010,011,015. Baseline `4882762`; all upstream implementations reviewed and merged. Replaces old Claude filesystem-only plan. This skill works in Markdown workspace or from supplied draft/final text.
+Status DONE; P1; effort M; risk LOW. Depends on 010,011,015. Baseline `4882762`; all upstream implementations reviewed and merged. Replaces old Claude filesystem-only plan. This skill works in Markdown workspace or from supplied draft/final text.
 
 ## Purpose and current state
 
@@ -18,7 +18,7 @@ Create src/mastra/skills/kessel-run-lessons/SKILL.md and generated references/wo
 Only publication/author voice lessons are written back by this first version. Keep output-preset or piece-only observations in the output Review.md (or returned review text with no filesystem) without changing presets or promoting them to profile rules. Report those as local observations, not a profile version change.
 
 4. Present a compact reviewable list for confirmation, allowing accept some/all, edit, reject. Do not repeatedly ask when the user has already explicitly approved identified rules. Do not treat silence, acceptance of a draft, or permission to run the skill as automatic approval of inferred global rules.
-5. Apply only confirmed rules to the selected scope, preserve previous profile versions and existing approved rules. Conflicts with publication requirements must be resolved rather than silently overridden in an author profile. Author corrections stay with the author, promotion to publication requires explicit choice. Profile evidence maturity and approval are separate; unpublished accepted drafts can support learning.
+5. Apply only confirmed rules to the selected scope, preserve previous profile versions and existing approved rules. Conflicts with publication requirements must be resolved rather than silently overridden in an author profile. Author corrections stay with the author, promotion to publication requires explicit choice. Profile evidence maturity and approval are separate; unpublished accepted drafts can support learning. Reconcile affected Open Questions in the new current profile, preserving remaining uncertainty and unrelated questions; retain original wording in historical snapshots.
 6. Deduplicate against existing lessons and the same analyzed draft/final pair. Re-running with no new evidence creates no duplicates or spurious version bump. Rejected lessons are recorded as rejected with reason where given; never accidentally active in future reads. Explicitly distinguish active rules from pending/rejected/history.
 7. If files are absent, return a proposed Markdown patch/profile addition and state it isn't persisted; retain readable provenance in the handoff. Never claim another model was trained or a profile installed. Always report what changed and which profile/version is affected.
 
