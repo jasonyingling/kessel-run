@@ -89,10 +89,13 @@ gap:8px;
 background:var(--paper);
 border:1px solid transparent;
 box-shadow:var(--shadow-surface);
+scale:1;
 transition:background-color 150ms ease,color 150ms ease,box-shadow 150ms ease,scale 150ms cubic-bezier(0.23,1,0.32,1)}
+.pressable:not(.btn){scale:1;transition:scale 150ms cubic-bezier(0.23,1,0.32,1)}
 .btn.has-leading-icon{padding-left:15px}
 .btn.has-trailing-icon{padding-right:15px}
-.btn.is-pointer-pressed{scale:.96}
+.pressable.is-pointer-pressed{scale:.96}
+.btn .icon,.nav.active .icon{stroke-width:2}
 .btn.primary{
 background:#416ce0;
 color:white;
@@ -539,12 +542,13 @@ box-shadow:0 22px 100px #00000055,var(--shadow-surface);
 width:590px;
 max-width:calc(100vw - 40px);
 max-height:calc(100vh - 40px);
-overflow:auto;
-padding:30px;
+overflow:visible;
+padding:0;
 color:var(--ink);
 position:relative;
 margin:auto}
 dialog::backdrop{background:#020612b8;backdrop-filter:blur(3px)}
+#modal-body{max-height:calc(100vh - 40px);overflow:auto;padding:30px}
 .close{
 width:40px;
 height:40px;
@@ -635,8 +639,8 @@ color:#95a7c5}
 }
 
 @media (prefers-reduced-motion:reduce){
-  .btn,.nav,.card,.piece,.tab{transition:none}
-  .btn.is-pointer-pressed{scale:1}
+  .btn,.pressable,.nav,.card,.piece,.tab{transition:none}
+  .pressable.is-pointer-pressed{scale:1}
 }
 
 @media(min-width:1600px){
@@ -749,12 +753,13 @@ flex-wrap:wrap}
 display:block}
 }
 
+</style>
 
 </head>
 <body>
 <aside class="sidebar" id="sidebar"></aside><main><header class="topbar"><div class="crumb" id="crumb"></div><div class="row"><span class="demo">Interactive concept · sample content</span><button class="subtle-link" onclick="resetDemo()">Reset demo</button><div class="avatar" style="background:#243b60">J</div></div></header><div class="page" id="app"></div></main><div id="modal"></div><div id="toast" role="status" aria-live="polite"></div>
 <script>
-const icons={grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',pen:'<path d="m16 3 5 5-12 12-6 1 1-6Z M14 5l5 5"/>',voice:'<path d="M4 10v4m4-8v12m4-15v18m4-15v12m4-8v4"/>',check:'<path d="m5 12 4 4L19 6"/>',arrow:'<path d="M5 12h14m-5-5 5 5-5 5"/>',left:'<path d="M19 12H5m5 5-5-5 5-5"/>',plus:'<path d="M12 5v14M5 12h14"/>',close:'<path d="m6 6 12 12M18 6 6 18"/>',file:'<path d="M14 3H5v18h14V8ZM14 3v5h5M8 12h8M8 16h6"/>',layers:'<path d="m12 3 10 5-10 5L2 8ZM2 12l10 5 10-5M2 16l10 5 10-5"/>',book:'<path d="M12 5c-3-2-7-2-10-1v15c3-1 7-1 10 1 3-2 7-2 10-1V4c-3-1 7-1 10 1Zm0 0v15"/>',download:'<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>'};
+const icons={grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',pen:'<path d="m16 3 5 5-12 12-6 1 1-6Z M14 5l5 5"/>',voice:'<path d="M4 10v4m4-8v12m4-15v18m4-15v12m4-8v4"/>',check:'<path d="m5 12 4 4L19 6"/>',arrow:'<path d="M5 12h14m-5-5 5 5-5 5"/>',left:'<path d="M19 12H5m5 5-5-5 5-5"/>',plus:'<path d="M12 5v14M5 12h14"/>',close:'<path d="m6 6 12 12M18 6 6 18"/>',file:'<path d="M14 3H5v18h14V8ZM14 3v5h5M8 12h8M8 16h6"/>',layers:'<path d="m12 3 10 5-10 5L2 8ZM2 12l10 5 10-5M2 16l10 5 10-5"/>',book:'<path d="M12 5c-3-2-7-2-10-1v15c3-1 7-1 10 1 3-2 7-2 10-1V4c-3-1-7-1-10 1Zm0 0v15"/>',download:'<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>'};
 const icon=(n,weight='regular')=>`<svg class="icon ${weight==='semibold'?'icon-semibold':''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${weight==='semibold'?'2':'1.5'}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[n]||icons.file}</svg>`;
 const pubs=[{name:'Previously on Tech',short:'PT',color:'#8da3ff',bg:'#2b3157',description:'A little perspective on what comes next.',voice:'Established',version:'v3',rules:['Lead with what changes for the reader.','Be curious, without buying the hype.','Explain the tradeoff in plain language.']},{name:'View From The Pine',short:'VP',color:'#71b4da',bg:'#203951',description:'A seat on the bench. A point of view.',voice:'Developing',version:'v2',rules:['Have a point of view. Show your reasoning.','Write like a knowledgeable fan, not a press box.','Let humor follow the observation.']},{name:'The Greatest Ever Reviews',short:'GE',color:'#af92df',bg:'#362d50',description:'Find the things worth your time.',voice:'Starter',version:'v1',rules:['Make a clear recommendation, with a reason.','Be conversational and specific.','Separate personal experience from research.']}];
 let state={page:'home',pub:1,tab:'draft',filter:'all',mode:'guided',wizard:1,voiceTab:'profile',interview:0,answers:[],approved:false,lesson:false,author:'Publication voice',pieces:[{title:'The case for the quiet offseason',pub:1,status:'Drafting',format:'Article',text:'A busy offseason is easy to sell. A quiet one asks a harder question: what if the best move is giving the plan time to work?\n\nThere is a difference between standing still and staying patient. One avoids a decision. The other is a decision, and it deserves the same scrutiny as a splashy signing.\n\nThe useful question isn’t whether a team won the offseason. It’s whether the roster makes more sense than it did before. That takes more than a transaction tracker to answer.'},{title:'What happens after the AI demo?',pub:0,status:'Review',format:'Newsletter',text:'The demo is the easy part. The interesting question is what happens when the tool meets an ordinary Tuesday.\n\nFor this piece, we’re looking beyond the launch announcement: where does the work actually get easier, and where does the effort move?'},{title:'A better way to choose your next read',pub:2,status:'Ideas',format:'Review',text:''},{title:'The tools we keep coming back to',pub:0,status:'Ready',format:'Article',text:'A useful tool earns its place by making an ordinary task a little easier. Here are the questions we come back to when deciding what deserves a permanent spot.'}],current:0,output:0,outputs:['Article','Newsletter','Social post'],outputStatus:['Drafting','Not started','Not started'],outputDrafts:{},customTitle:'',customNotes:''};
@@ -764,7 +769,7 @@ let focusTimer=0,lessonTimer=0,modalInvoker=null,modalFocusKey='',pointerPressed
 function toastHost(){return document.getElementById('toast')}
 function toast(msg){toastHost().innerHTML=`<div class="toast">${esc(msg)}</div>`;clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>toastHost().innerHTML='',3500)}
 function cancelFocus(){clearTimeout(focusTimer);focusTimer=0}
-function focusKey(key){cancelFocus();focusTimer=setTimeout(()=>document.querySelector(`[data-focus-key="${key}"]`)?.focus(),0)}
+function focusKey(key){cancelFocus();focusTimer=setTimeout(()=>{const target=[...document.querySelectorAll('[data-focus-key]')].find(element=>element.dataset.focusKey===key)||document.querySelector('[data-focus-key="page-heading"]');target?.focus()},0)}
 function cancelLessonPrompt(){clearTimeout(lessonTimer);lessonTimer=0}
 function go(page,pub){cancelLessonPrompt();state.page=page;if(pub!==undefined)state.pub=pub;render({focusKey:'page-heading'});window.scrollTo(0,0)}
 function sidebar(){document.getElementById('sidebar').innerHTML=`<div class="brand row"><span class="brandmark" aria-hidden="true"><svg viewBox="0 0 32 32" width="27" height="27" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="16" cy="16" r="5"/><ellipse cx="16" cy="16" rx="14" ry="7" transform="rotate(-25 16 16)"/></svg></span>kessel run<span style="color:#7eaaff">.</span></div><div class="workspace row"><span class="avatar" style="border-radius:7px;background:#233352">J</span><div><b class="small">My workspace</b><div class="tiny muted" style="margin-top:3px">Personal workspace</div></div></div><nav>${[['home','grid','Overview'],['library','layers','All content'],['voices','voice','Voice studio']].map(([p,i,t])=>`<button class="nav ${state.page===p?'active':''}" onclick="go('${p}')">${icon(i)}${t}${p==='library'?`<span class="count">${state.pieces.length}</span>`:''}</button>`).join('')}</nav><div class="eyebrow side-label">Your publications</div><div class="pubnav">${pubs.map((p,i)=>`<button class="nav ${state.page==='publication'&&state.pub===i?'active':''}" onclick="go('publication',${i})"><span class="pub-dot" style="background:${p.color}"></span><span style="font-size:11px">${p.name}</span></button>`).join('')}</div><footer><div class="side-tip"><div class="row small"><span style="color:var(--green)">${icon('book')}</span><b>Your voice. Everywhere.</b></div><p>One publication voice, thoughtfully adapted to every format.</p><button class="textbtn" onclick="go('voices')">Explore your voices</button></div><div class="profile-user row"><div class="avatar">J</div><div><b class="small">Your editorial desk</b><div class="tiny muted">Kessel Run concept</div></div></div></footer>`}
@@ -783,7 +788,7 @@ function saveDraft(t){if(state.output===0)state.pieces[state.current].text=t;els
 function sampleDraft(){const piece=state.pieces[state.current];const existing=state.output===0?piece.text:state.outputDrafts[state.current+'-'+state.output];if(existing&&existing.trim()){toast('Your draft is preserved. Edit it directly, or create another output.');return}let text=pubs[state.pub].rules[0]+'\n\n'+(state.pub===1?'A quiet offseason is harder to judge than a busy one. The useful question is whether the plan makes sense, not whether it makes a headline.':state.pub===0?'A clever demo is one thing. A tool you still use on Friday is another. What changes when the novelty wears off?':'A confident verdict starts with a clear reason. What does this get right, who will appreciate it, and what should they know before choosing?');if(state.mode==='fast')text+='\n\n[Add the specific evidence and observations that support your point.]\n\nThe conclusion should follow the evidence. Give the reader a next step, and be clear about what remains unknown.';saveDraft(text);render();toast('Sample copy added. This is not an AI-generated or verified draft.')}
 function activeFocusKey(){return document.activeElement?.dataset?.focusKey||''}
 function clearPointerPress(){pointerPressed?.classList.remove('is-pointer-pressed');pointerPressed=null}
-function modal(body,focusTarget){cancelFocus();clearPointerPress();const replacementFocusKey=activeFocusKey();let dialog=document.querySelector('#modal dialog');if(!dialog){modalInvoker=document.activeElement instanceof HTMLElement?document.activeElement:null;modalFocusKey=replacementFocusKey;dialog=document.createElement('dialog');dialog.setAttribute('aria-modal','true');dialog.addEventListener('cancel',event=>{event.preventDefault();closeModal()});dialog.innerHTML='<div id="modal-body"></div><div id="dialog-toast-slot"></div>';document.getElementById('modal').append(dialog);document.getElementById('dialog-toast-slot').append(toastHost());document.getElementById('modal-body').innerHTML=body;dialog.setAttribute('aria-labelledby',lastDialogHeadingId);dialog.showModal()}else{dialog.querySelector('#modal-body').innerHTML=body;dialog.setAttribute('aria-labelledby',lastDialogHeadingId)}applyInteractionAttributes();const defaultTarget=body.includes('Review the answers')?'h2':'input,textarea,select,button:not([disabled])';const target=(focusTarget&&dialog.querySelector(focusTarget))||[...dialog.querySelectorAll('[data-focus-key]')].find(element=>element.dataset.focusKey===replacementFocusKey)||dialog.querySelector(defaultTarget);target?.focus()}
+function modal(body,focusTarget){cancelFocus();cancelLessonPrompt();clearPointerPress();const replacementFocusKey=activeFocusKey();let dialog=document.querySelector('#modal dialog');if(!dialog){modalInvoker=document.activeElement instanceof HTMLElement?document.activeElement:null;modalFocusKey=replacementFocusKey;dialog=document.createElement('dialog');dialog.setAttribute('aria-modal','true');dialog.addEventListener('cancel',event=>{event.preventDefault();closeModal()});dialog.innerHTML='<div id="modal-body"></div><div id="dialog-toast-slot"></div>';document.getElementById('modal').append(dialog);document.getElementById('dialog-toast-slot').append(toastHost());document.getElementById('modal-body').innerHTML=body;dialog.setAttribute('aria-labelledby',lastDialogHeadingId);dialog.showModal()}else{dialog.querySelector('#modal-body').innerHTML=body;dialog.setAttribute('aria-labelledby',lastDialogHeadingId)}applyInteractionAttributes();const defaultTarget=body.includes('Review the answers')?'h2':body.includes('A new piece of something good.')?(state.wizard===1?'#piece-title':'#format'):body.includes('Let’s find the voice.')?'#answer':null;const target=(focusTarget&&dialog.querySelector(focusTarget))||[...dialog.querySelectorAll('[data-focus-key]')].find(element=>element.dataset.focusKey===replacementFocusKey)||(defaultTarget&&dialog.querySelector(defaultTarget))||dialog.querySelector('input,textarea,select')||dialog.querySelector('h2,button:not([disabled])');target?.focus()}
 function closeModal(){cancelFocus();clearPointerPress();const dialog=document.querySelector('#modal dialog');if(!dialog)return;const invoker=modalInvoker,focusRestore=modalFocusKey;modalInvoker=null;modalFocusKey='';if(dialog.open)dialog.close();document.body.append(toastHost());dialog.remove();focusTimer=setTimeout(()=>{if(invoker?.isConnected)invoker.focus();else if(focusRestore)document.querySelectorAll('[data-focus-key]').forEach(element=>{if(element.dataset.focusKey===focusRestore)element.focus()})},0)}
 function titleRow(title){const id=`dialog-heading-${Date.now()}`;lastDialogHeadingId=id;return `<div class="row between"><h2 id="${id}" tabindex="-1">${title}</h2><button class="close" aria-label="Close dialog" onclick="closeModal()">${icon('close','semibold')}</button></div>`}
 function newPiece(){state.wizard=1;state.customTitle='';state.customNotes='';state.customFormat='Article';wizard()}
@@ -799,7 +804,7 @@ function approveVoice(){pubs[state.pub].rules.push(...state.answers.slice(-3).fi
 function importSamples(){modal(`${titleRow('Bring your existing voice.')}<p class="small muted" style="margin-top:12px">Use a website, documents, or pasted articles. Keep bylines attached so author voices stay distinct.</p><div class="field"><label for="site">Website or article URL</label><input id="site" type="url" value="${state.pub===1?'https://viewfromthepine.com':''}" placeholder="https://your-publication.com"></div><div class="field"><label for="sample">Or paste a writing sample</label><textarea id="sample" placeholder="Title, author, and article text…"></textarea></div><div class="note">Concept preview: importing would show readable articles, bylines, exclusions, and coverage before proposing a voice. This prototype does not fetch websites.</div><div class="dialog-footer"><button class="textbtn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="closeModal();toast('Import flow previewed. No website fetched or writing analyzed.')">Preview complete ✓</button></div>`)}
 function authorDetail(n){modal(`${titleRow(n+'’s voice')}<p class="small muted" style="margin-top:15px">Author subprofile · View From The Pine ${pubs[1].version}</p><div class="note" style="margin-top:18px">Shared publication rules form the foundation. Only supported differences belong here. This concept does not invent traits for a real author.</div><div class="rule"><h4>Evidence needed</h4><p>Verified bylines and representative writing samples.</p></div><button class="btn primary" onclick="importSamples()">Add this author’s writing →</button>`)}
 function reviewDraft(){let text=state.output===0?state.pieces[state.current].text:state.outputDrafts[state.current+'-'+state.output];if(!text?.trim()){toast('Add a draft before reviewing it.');return}state.outputStatus[state.output]='Review';if(state.output===0)state.pieces[state.current].status='Review';modal(`${titleRow('Give it an editor’s eye.')}<p class="small muted" style="margin-top:12px">${state.outputs[state.output]} · ${esc(state.pieces[state.current].title)}</p><div class="notice" style="margin-top:20px">Manual review checklist. The prototype has not analyzed the prose or verified its claims.</div>${['The piece sounds like the selected publication.','Factual claims are supported; open gaps are resolved.','Experience and opinions are honestly attributed.'].map((s,i)=>`<label class="checkline"><input class="review-check" type="checkbox" style="width:16px;flex:none;margin-top:3px" onchange="document.getElementById('approve-draft').disabled=document.querySelectorAll('.review-check:checked').length!==3">${s}</label>`).join('')}<div class="dialog-footer"><button class="textbtn" onclick="closeModal();render()">Keep editing</button><button id="approve-draft" class="btn primary" disabled onclick="approveDraft()">Approve this output</button></div>`)}
-function approveDraft(){state.outputStatus[state.output]='Ready';if(state.output===0)state.pieces[state.current].status='Ready';closeModal();render();toast('This output is approved. Other outputs still need their own review.');setTimeout(lessonPrompt,400)}
+function approveDraft(){state.outputStatus[state.output]='Ready';if(state.output===0)state.pieces[state.current].status='Ready';closeModal();render();toast('This output is approved. Other outputs still need their own review.');cancelLessonPrompt();lessonTimer=setTimeout(()=>{lessonTimer=0;lessonPrompt()},400)}
 function lessonPrompt(){modal(`${titleRow('Anything worth remembering?')}<p class="small muted" style="margin-top:12px">Turn an editorial decision into a reusable voice preference, only if you want it to apply beyond this piece.</p><div class="field"><label for="lesson">A lesson from your edits</label><textarea id="lesson" placeholder="For example: open reviews with a specific observation before giving the verdict."></textarea></div><div class="note">Applying a lesson creates a new publication profile version. This approved output keeps its current voice selection.</div><div class="dialog-footer"><button class="textbtn" onclick="closeModal()">Just this piece</button><button class="btn primary" onclick="saveLesson()">Save to publication voice</button></div>`)}
 function saveLesson(){let t=document.getElementById('lesson').value.trim();if(!t){toast('Write the preference you want to keep.');return}let p=pubs[state.pub];p.rules.push(t);p.version='v'+(Number(p.version.slice(1))+1);closeModal();toast('Confirmed lesson added to a new voice version.')}
 function addOutput(){modal(`${titleRow('Give the idea another form.')}<div class="field"><label for="output-name">Output format</label><select id="output-name"><option>Newsletter</option><option>Social post</option><option>Article</option><option>Review</option><option>Video script</option></select></div><div class="note">The new output starts with this publication’s voice and an independent draft.</div><div class="dialog-footer"><button class="textbtn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="state.outputs.push(document.getElementById('output-name').value);state.outputStatus.push('Not started');flow().versions.push(pubs[state.pub].version);flow().rules.push([...pubs[state.pub].rules]);flow().authors.push('Publication voice');closeModal();render()">Add output →</button></div>`)}
@@ -809,11 +814,58 @@ function download(name,text){let url=URL.createObjectURL(new Blob([text],{type:'
 function exportPiece(){let p=state.pieces[state.current];let t=state.output===0?p.text:state.outputDrafts[state.current+'-'+state.output]||'';download('kessel-run-draft.md',`# ${p.title}\n\nPublication: ${pubs[p.pub].name}\nOutput: ${state.outputs[state.output]}\nStatus: ${state.outputStatus[state.output]}\nVoice: ${flow().versions[state.output]} · ${state.author}\n\n${t}\n\n---\nExported from an interactive mockup. Sample content requires editorial and factual review.\n`);toast('Markdown draft exported.')}
 function exportVoice(){let p=pubs[state.pub];download('voice-profile.md',`# ${p.name}\n\nVersion: ${p.version}\nMaturity: ${p.voice}\n\n## Voice preferences\n\n${p.rules.map(r=>'- '+r).join('\n')}\n\n---\nPrototype profile: includes illustrative rules that need validation.\n`)}
 function resetDemo(){location.reload()}
-function normalizeActionIcons(){document.querySelectorAll('button').forEach(button=>{if(button.querySelector('.icon'))return;const label=button.textContent.trim();if(label.startsWith('+ ')){button.textContent=label.slice(2);button.insertAdjacentHTML('afterbegin',icon('plus','semibold')+' ')}else if(label.startsWith('← ')){button.textContent=label.slice(2);button.insertAdjacentHTML('afterbegin',icon('left','semibold')+' ')}else if(label.endsWith(' →')){button.textContent=label.slice(0,-2);button.insertAdjacentHTML('beforeend',' '+icon('arrow','semibold'))}else if(label.endsWith(' ✓')){button.textContent=label.slice(0,-2);button.insertAdjacentHTML('beforeend',' '+icon('check','semibold'))}});document.querySelectorAll('.check').forEach(mark=>{if(!mark.querySelector('.icon'))mark.innerHTML=icon('check','semibold')})}
-function applyInteractionAttributes(){normalizeActionIcons();document.querySelectorAll('.nav,.card,.tab,.choice').forEach(button=>button.dataset.static='');document.querySelectorAll('.nav.active').forEach(button=>button.setAttribute('aria-current','page'));document.querySelectorAll('.tab,.choice').forEach(button=>{button.setAttribute('aria-pressed',String(button.classList.contains('active')||button.classList.contains('selected')));button.dataset.focusKey=`choice-${button.textContent.trim()}`});document.querySelectorAll('.nav').forEach(button=>button.dataset.focusKey=`nav-${button.textContent.trim()}`);document.querySelectorAll('select,input,textarea').forEach(control=>{if(control.id||control.getAttribute('aria-label'))control.dataset.focusKey=`control-${control.id||control.getAttribute('aria-label')}`});document.querySelectorAll('.btn,.textbtn').forEach(button=>{button.dataset.focusKey||=`action-${button.textContent.trim()}`});document.querySelectorAll('.btn').forEach(button=>{const first=button.firstChild,last=button.lastChild;if(first?.nodeType===1&&first.classList.contains('icon'))button.classList.add('has-leading-icon');if(last?.nodeType===1&&last.classList.contains('icon'))button.classList.add('has-trailing-icon')});const heading=document.querySelector('.pagehead h1');if(heading){heading.setAttribute('data-focus-key','page-heading');heading.setAttribute('tabindex','-1')}}
-function render(options={}){const previousKey=document.activeElement?.dataset?.focusKey||'';clearPointerPress();sidebar();document.getElementById('crumb').innerHTML=`Workspace <span style="margin:0 10px;color:#526586">/</span> <strong>${{home:'Overview',library:'All content',publication:pubs[state.pub].name,voices:'Voice studio',piece:'Writing desk'}[state.page]}</strong>`;document.getElementById('app').innerHTML=({home,library,publication,voices,piece:editor}[state.page])();applyInteractionAttributes();const key=options.focusKey||previousKey;if(key)focusKey(key)}
-function eligiblePointerButton(target){return target.closest('button.btn:not([disabled]):not([data-static])')}
-document.addEventListener('pointerdown',event=>{const button=eligiblePointerButton(event.target);if(!button)return;clearPointerPress();pointerPressed=button;button.classList.add('is-pointer-pressed')});
+function normalizeActionIcons(){
+  document.querySelectorAll('button').forEach(button=>{
+    if(button.querySelector('.icon'))return;
+    const label=button.textContent.trim();
+    if(label.startsWith('+ ')){button.textContent=label.slice(2);button.insertAdjacentHTML('afterbegin',icon('plus','semibold')+' ')}
+    else if(label.startsWith('← ')){button.textContent=label.slice(2);button.insertAdjacentHTML('afterbegin',icon('left','semibold')+' ')}
+    else if(label.endsWith(' →')){button.textContent=label.slice(0,-2);button.insertAdjacentHTML('beforeend',' '+icon('arrow','semibold'))}
+    else if(label.endsWith(' ✓')){button.textContent=label.slice(0,-2);button.insertAdjacentHTML('beforeend',' '+icon('check','semibold'))}
+  });
+  document.querySelectorAll('.check').forEach(mark=>{if(!mark.querySelector('.icon'))mark.innerHTML=icon('check','semibold')});
+}
+function actionFocusKey(button,index){
+  const output=button.closest('.output');
+  const name=output?.querySelector('h3')?.textContent.trim();
+  if(name&&button.textContent.includes('Review'))return `author-review-${name}`;
+  if(name&&/(Create draft|Open draft)/.test(button.textContent))return `output-open-${name}`;
+  return `action-${index}`;
+}
+function applyInteractionAttributes(){
+  normalizeActionIcons();
+  document.querySelectorAll('.nav,.card,.tab,.choice,.piece').forEach(button=>button.dataset.static='');
+  document.querySelectorAll('.nav.active').forEach(button=>button.setAttribute('aria-current','page'));
+  document.querySelectorAll('.tab,.choice').forEach(button=>{
+    button.setAttribute('aria-pressed',String(button.classList.contains('active')||button.classList.contains('selected')));
+    button.dataset.focusKey=`choice-${button.textContent.trim()}`;
+  });
+  document.querySelectorAll('.nav').forEach(button=>button.dataset.focusKey=`nav-${button.textContent.trim()}`);
+  document.querySelectorAll('select,input,textarea').forEach(control=>{
+    if(control.id||control.getAttribute('aria-label'))control.dataset.focusKey=`control-${control.id||control.getAttribute('aria-label')}`;
+  });
+  document.querySelectorAll('.btn').forEach(button=>{
+    const label=button.textContent.trim();
+    if(label==='Guided'||label==='Fast draft'){
+      button.dataset.static='';
+      button.setAttribute('aria-pressed',String((label==='Guided')=== (state.mode==='guided')));
+    }
+    const first=button.firstChild,last=button.lastChild;
+    if(first?.nodeType===1&&first.classList.contains('icon'))button.classList.add('has-leading-icon');
+    if(last?.nodeType===1&&last.classList.contains('icon'))button.classList.add('has-trailing-icon');
+  });
+  document.querySelectorAll('button').forEach((button,index)=>{
+    if(button.closest('dialog'))return;
+    button.dataset.focusKey||=actionFocusKey(button,index);
+    button.classList.toggle('pressable',!button.hasAttribute('data-static'));
+  });
+  document.querySelectorAll('dialog button').forEach(button=>button.classList.toggle('pressable',!button.hasAttribute('data-static')));
+  const heading=document.querySelector('.pagehead h1');
+  if(heading){heading.setAttribute('data-focus-key','page-heading');heading.setAttribute('tabindex','-1')}
+}
+function render(options={}){cancelLessonPrompt();const previousKey=document.activeElement?.dataset?.focusKey||'';clearPointerPress();sidebar();document.getElementById('crumb').innerHTML=`Workspace <span style="margin:0 10px;color:#526586">/</span> <strong>${{home:'Overview',library:'All content',publication:pubs[state.pub].name,voices:'Voice studio',piece:'Writing desk'}[state.page]}</strong>`;document.getElementById('app').innerHTML=({home,library,publication,voices,piece:editor}[state.page])();applyInteractionAttributes();const key=options.focusKey||previousKey;if(key)focusKey(key)}
+function eligiblePointerButton(target){return target.closest('button.pressable:not([disabled]):not([data-static])')}
+document.addEventListener('pointerdown',event=>{if(event.button!==0)return;const button=eligiblePointerButton(event.target);if(!button)return;clearPointerPress();pointerPressed=button;button.classList.add('is-pointer-pressed')});
 document.addEventListener('pointerup',clearPointerPress);
 document.addEventListener('pointercancel',clearPointerPress);
 document.addEventListener('keydown',clearPointerPress);

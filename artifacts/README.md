@@ -25,7 +25,7 @@ The visual direction uses a cosmic blue palette, deep navy surfaces, cool blue a
 
 2026-09-15 source verification completed in the isolated implementation worktree:
 
-- Passed: one inline-script parse, static checks for the native-dialog lifecycle, toast legibility constraints, focus-key fallback, pointer/reduced-motion contracts, and `git diff --check`.
+- Passed: HTML structure parsing (one closed style, body, and script in the required order), CSS parsing with PostCSS, one inline-script parse, extracted helper checks for dialog focus/timer branches using DOM boundary mocks, and `git diff --check`. These source checks are not rendered-browser verification.
 - Not verified: all rendered browser acceptance, including dialog focus containment/restoration, toast computed colors and wrapping, pointer press/reduced-motion behavior, responsive viewport overflow, JavaScript console errors, physical touch, and animation-panel playback.
 
 The local-file browser URL policy blocked the required inspection. No alternate protocol, server, or browser surface was used. Responsive styles remain included, but browser validation is required before treating them as accepted.

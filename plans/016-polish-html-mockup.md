@@ -272,6 +272,6 @@ User invoked `improve execute plans/016`. Reviewer rechecked HEAD `63177e4`, bot
 
 - Isolated branch `codex/016-polish-html-mockup` was created from `63177e4`. The supplied untracked artifact hashes matched the plan before edits.
 - Completed: readable grouped CSS; toast foreground/viewport/safe-area constraints; shared dark-surface rings; pointer-gated stationary hover states; native `<dialog>` lifecycle with a modal-mounted persistent toast host; stable focus-key restoration; visible editor focus; reduced-motion pointer behavior; and the inline SVG action-icon family.
-- Source checks passed: `node /private/tmp/kessel-run-016-source-check.mjs` and `git diff --check`.
+- Source checks passed: `node /private/tmp/kessel-run-016-source-check.mjs` (HTMLParser structure, PostCSS, and inline script), `node /private/tmp/kessel-run-016-review-check.cjs` (extracted actual focus/timer branches with DOM boundary mocks), and `git diff --check`. These checks do not constitute rendered-browser verification.
 - Browser acceptance is **BLOCKED / Not verified**. The required local-file inspection is prevented by the stated browser URL policy. No alternate protocol, server, or browser surface was attempted. Required rendered checks remain outstanding: native modality, focus behavior, computed toast styles/wrapping, pointer state, responsive overflow, console errors, physical touch, and animation playback.
 - Deviation: `plans/README.md` was intentionally not changed; the reviewer owns the plan index.
