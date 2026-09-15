@@ -12,7 +12,7 @@
 - **Depends on:** none; this standalone concept does not require the deferred SaaS plans
 - **Category:** tech-debt / UI quality
 - **Planned at:** commit `63177e4`, 2026-09-15
-- **State:** IN PROGRESS — isolated executor dispatched 2026-09-15
+- **State:** BLOCKED — source implementation complete; required browser acceptance is blocked by the local-file browser URL policy, 2026-09-15
 
 ## Why this matters
 
@@ -267,3 +267,11 @@ Rules reconciled for this plan: better-ui's exact 0.96 press scale overrides Emi
 ## Execution dispatch — 2026-09-15
 
 User invoked `improve execute plans/016`. Reviewer rechecked HEAD `63177e4`, both artifact hashes, and the scoped git diff: no drift. A separate executor is implementing in an isolated worktree; the reviewer retains ownership of this checkout's index. The existing browser-policy restriction remains in force. Independent implementation and source checks proceed; browser-dependent acceptance stays unverified and cannot be inferred from source checks. No merge or source update to the original checkout is authorized by this execution workflow.
+
+## Execution record — 2026-09-15
+
+- Isolated branch `codex/016-polish-html-mockup` was created from `63177e4`. The supplied untracked artifact hashes matched the plan before edits.
+- Completed: readable grouped CSS; toast foreground/viewport/safe-area constraints; shared dark-surface rings; pointer-gated stationary hover states; native `<dialog>` lifecycle with a modal-mounted persistent toast host; stable focus-key restoration; visible editor focus; reduced-motion pointer behavior; and the inline SVG action-icon family.
+- Source checks passed: `node /private/tmp/kessel-run-016-source-check.mjs` and `git diff --check`.
+- Browser acceptance is **BLOCKED / Not verified**. The required local-file inspection is prevented by the stated browser URL policy. No alternate protocol, server, or browser surface was attempted. Required rendered checks remain outstanding: native modality, focus behavior, computed toast styles/wrapping, pointer state, responsive overflow, console errors, physical touch, and animation playback.
+- Deviation: `plans/README.md` was intentionally not changed; the reviewer owns the plan index.
