@@ -1,9 +1,15 @@
 # Plan 008: Add push-to-talk dictation to the project chat input
 
-> **Reconciled 2026-09-06 at `0c2e18e`: NEEDS REVISION (resolve disabled-state contradiction before execution).**
-> See [the current reconciliation](2026-09-06-reconciliation.md) for the specific
-> changes needed. The historical steps below are not ready for executor dispatch;
-> the original Planned-at stamp is retained so unresolved drift stays visible.
+> **Reconciled 2026-09-19 at `63177e4`: DEFERRED — app work follows real content validation.**
+> Dictation remains unimplemented: the chat has no `SpeechInput` and
+> `src/lib/kessel-run/dictation.ts` does not exist. Before dispatch, rewrite the
+> disabled-state design: the vendored speech component spreads `...props` after
+> `disabled={isDisabled}`, so a caller can override its internal readiness guard.
+> Define app-owned capability handling without editing the vendored component;
+> use detected capabilities rather than browser-brand assumptions. The two
+> component files are unchanged from the historical baseline, but this design
+> gap remains. Do not execute the historical steps below. The old Planned-at
+> stamp is retained; see [current reconciliation](2026-09-19-reconciliation.md).
 
 > **Executor instructions**: Follow this plan step by step. Run every
 > verification command and confirm the expected result before moving to the

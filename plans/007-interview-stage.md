@@ -1,9 +1,13 @@
 # Plan 007: Add an Interview stage that captures the author's own words, and constrain Draft to them
 
-> **Reconciled 2026-09-06 at `0c2e18e`: NEEDS REVISION (014 landed; reconcile source rules, skill adaptation, and guide scope).**
-> See [the current reconciliation](2026-09-06-reconciliation.md) for the specific
-> changes needed. The historical steps below are not ready for executor dispatch;
-> the original Planned-at stamp is retained so unresolved drift stays visible.
+> **Reconciled 2026-09-19 at `63177e4`: DEFERRED — app work follows real content validation.**
+> Plan 015 already delivered the skill method changes. Its eight numbered stages
+> (0–7), standalone Interview/Start skills, and flexible sourcing supersede this
+> plan's renumbering and mandatory-transcript instructions. The Interview skill
+> exists; `src/mastra/projects/schema.ts` still has no transcript field. A future
+> rewrite may scope app transcript persistence after content validation. Do not
+> execute the historical steps below. The original Planned-at stamp is retained
+> to expose drift; see [current reconciliation](2026-09-19-reconciliation.md).
 
 > **Executor instructions**: Follow this plan step by step. Run every
 > verification command and confirm the expected result before moving to the

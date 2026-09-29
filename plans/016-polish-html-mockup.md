@@ -12,7 +12,7 @@
 - **Depends on:** none; this standalone concept does not require the deferred SaaS plans
 - **Category:** tech-debt / UI quality
 - **Planned at:** commit `63177e4`, 2026-09-15
-- **State:** BLOCKED — source implementation complete; required browser acceptance is blocked by the local-file browser URL policy, 2026-09-15
+- **State:** MERGED — user-authorized fast-forward to `eca1ba9` on 2026-09-19; required browser acceptance remains unverified
 
 ## Why this matters
 
@@ -268,10 +268,80 @@ Rules reconciled for this plan: better-ui's exact 0.96 press scale overrides Emi
 
 User invoked `improve execute plans/016`. Reviewer rechecked HEAD `63177e4`, both artifact hashes, and the scoped git diff: no drift. A separate executor is implementing in an isolated worktree; the reviewer retains ownership of this checkout's index. The existing browser-policy restriction remains in force. Independent implementation and source checks proceed; browser-dependent acceptance stays unverified and cannot be inferred from source checks. No merge or source update to the original checkout is authorized by this execution workflow.
 
-## Execution record — 2026-09-15
+## Reviewer execution result — 2026-09-15
 
-- Isolated branch `codex/016-polish-html-mockup` was created from `63177e4`. The supplied untracked artifact hashes matched the plan before edits.
-- Completed: readable grouped CSS; toast foreground/viewport/safe-area constraints; shared dark-surface rings; pointer-gated stationary hover states; native `<dialog>` lifecycle with a modal-mounted persistent toast host; stable focus-key restoration; visible editor focus; reduced-motion pointer behavior; and the inline SVG action-icon family.
-- Source checks passed: `node /private/tmp/kessel-run-016-source-check.mjs` (HTMLParser structure, PostCSS, and inline script), `node /private/tmp/kessel-run-016-review-check.cjs` (extracted actual focus/timer branches with DOM boundary mocks), and `git diff --check`. These checks do not constitute rendered-browser verification.
-- Browser acceptance is **BLOCKED / Not verified**. The required local-file inspection is prevented by the stated browser URL policy. No alternate protocol, server, or browser surface was attempted. Required rendered checks remain outstanding: native modality, focus behavior, computed toast styles/wrapping, pointer state, responsive overflow, console errors, physical touch, and animation playback.
-- Deviation: `plans/README.md` was intentionally not changed; the reviewer owns the plan index.
+- **Worktree:** `/private/tmp/kessel-run-016`
+- **Branch:** `codex/016-polish-html-mockup`
+- **Commits:** `cc4734e` captures the verified untracked baseline; `8ba2bb7` implements polish; `eca1ba9` corrects the first review's findings.
+- **Scope:** Only `artifacts/kessel-run-app.html`, `artifacts/README.md`, and this plan changed in the executor branch. Worktree is clean. Original checkout artifact hashes still match the planning baseline. No merge or push occurred.
+
+### Changes reviewed
+
+| Principle | Before | After | Why / verification |
+| --- | --- | --- | --- |
+| Legible feedback | White text on pale toast, no width constraint | Navy text, viewport width limit, safe-area spacing; toast host belongs to the open native modal | Declared colors/structure inspected; rendered contrast, clipping, and live-region behavior **Not verified** |
+| Keyboard continuity | Replaced non-modal dialog, no return-focus lifecycle | Native `showModal()`, persistent modal shell, meaningful input/heading focus, focus lookup and restoration | Actual extracted helpers pass focused Node tests with DOM boundary mocks; native modality and keyboard traversal **Not verified** |
+| Motion restraint | Moving card hover, no deliberate press response | Stationary pointer-gated hover, exact 0.96 press scale, static mode/navigation controls, reduced-motion rules | Source/CSS inspected; rendered press/hover/reduced-motion states **Not verified** |
+| Surfaces and icons | Inconsistent elevation borders and action glyphs | Shared white shadow rings, preserved structural borders, consistent SVG icons and semibold weight | CSS and original SVG path preservation checked; visual alignment **Not verified** |
+| Interaction lifecycle | Unowned delayed lesson callback | Pending lesson prompt canceled on navigation, re-render, and new modal | Actual approval/navigation timer functions tested; selected output becomes Ready while another output retains its status |
+
+### Review corrections and independent evidence
+
+The first candidate passed a regex-based script check but omitted `</style>`. An independent Python `HTMLParser` read found no body or script element; that candidate was rejected. The revision restores the closing tag and adds real document-structure and CSS parsing. Review also corrected focus fallback, unsafe focus-selector construction, modal toast placement, disabled-to-enabled press handling, mode selection semantics, SVG path drift, and delayed lesson cancellation.
+
+Reviewer reran on final commit `eca1ba9`:
+
+1. `node /private/tmp/kessel-run-016-source-check.mjs` — PASS: exactly one closed style/body/script in order, PostCSS parsing, and inline JavaScript syntax. This temporary harness is outside the repository.
+2. `node /private/tmp/kessel-run-016-review-check.cjs` — PASS: extracted **actual artifact functions** for quoted focus keys, missing-key heading fallback, canceled focus restoration, independent output approval, navigation cancellation of the actual 400ms lesson timer, and modal replacement targets (title, format, same-step choice, interview answer, review heading, general input). These use lightweight boundary mocks, not a browser or a duplicate implementation.
+3. `git diff --check cc4734e..HEAD` — PASS; scoped changed-file list inspected; clean executor worktree.
+4. AST comparison against original artifact — publication data, initial state, escaping, badge helper, and existing SVG paths unchanged. Existing functions changed are limited to `toast`, `go`, `modal`, `closeModal`, `titleRow`, `approveDraft`, and `render`; the remaining workflow/rendering functions retain their original source.
+5. Original-checkout hashes — unchanged for both artifacts.
+
+App tests, lint/typecheck/build, production services, and broad repository audits were not run; they would not validate the standalone UI. Browser acceptance, viewport layouts, console errors, native focus containment/return, actual pointer and reduced-motion states, exports through the UI, physical touch, and slow-motion replay remain **Not verified**. The prior local-file URL security rejection was respected; no alternative server/protocol/browser surface was used to evade it.
+
+**Block** — implementation is available for review in the isolated branch, but the plan cannot be marked DONE until its required browser checks pass in an allowed environment. This is a verification block; the original checkout's mockup remains unchanged.
+
+## Reconciliation — 2026-09-19
+
+The reconciliation below records the pre-merge state. The subsequent authorized
+merge supersedes its branch-isolation and no-merge instructions; see the final
+section. Its browser-verification limits still apply.
+
+**BLOCKED, validation only.** Main remains `63177e4`. The existing clean worktree
+`/private/tmp/kessel-run-016` is still on `codex/016-polish-html-mockup` at
+`eca1ba9d588a72ffb09bd142617a547be49fbef1`. Both temporary source/review harnesses
+listed above and `git diff --check cc4734e..HEAD` passed again. These checks
+validate source structure and selected functions with mocks, not browser behavior.
+The original checkout's two artifact hashes still match the planning baseline.
+
+### Resume from the implementation
+
+1. Verify the worktree HEAD and clean status. The implemented HTML's SHA-256 is
+   `d7dfdea0e6919376dbdd02a1e0a1060022536692c9b0ffbd586e25ef3ef354f3`.
+   Reconcile any new changes before reviewing. Do not copy the original artifact
+   over this version or rerun the implementation steps against the baseline.
+2. Complete Gate B and the existing browser/workflow/viewport matrix in an
+   allowed review environment, recording actual results and remaining limits.
+   The previous browser-policy restriction remains in force in this session;
+   no browser retry or alternate protocol/server/surface was attempted during
+   reconciliation. Source checks cannot substitute for this acceptance.
+3. The harnesses under `/private/tmp` are temporary review aids, not durable
+   repository tests. If unavailable later, reconstruct checks from the current
+   artifact and documented criteria; do not claim a historical run as fresh evidence.
+4. Update the plan and index only after reviewing the results. Keep BLOCKED
+   while any required check is unverified. No merge or push is authorized by
+   this reconciliation; the polished implementation remains isolated.
+
+## Authorized merge — 2026-09-19
+
+The user authorized merging plan 016. `main` fast-forwarded from `63177e4` to
+`eca1ba9` with no conflicts. The polished HTML and its verification README are
+now in the main checkout. The original untracked artifact files and the fuller
+reviewer plan were backed up to
+`/private/tmp/kessel-run-016-premerge-3av966s1`; the reviewer plan was restored
+after merging so its execution and reconciliation evidence is preserved.
+
+This authorization permits merging with the documented verification gap; it
+does not establish that browser acceptance passed. The remaining work is the
+recorded browser matrix against the merged artifact in an allowed environment.
+No remote push occurred. Other pending planning changes were preserved.

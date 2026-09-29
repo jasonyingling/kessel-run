@@ -1,9 +1,18 @@
 # Plan 013: Add `kessel-run-oracle`, which finds the ideas so the pipeline stops starting from a blank page
 
-> **Reconciled 2026-09-06 at `0c2e18e`: NEEDS REVISION (workspace, capability gating, and delivery dependencies; defer).**
-> See [the current reconciliation](2026-09-06-reconciliation.md) for the specific
-> changes needed. The historical steps below are not ready for executor dispatch;
-> the original Planned-at stamp is retained so unresolved drift stays visible.
+> **Reconciled 2026-09-19 at `63177e4`: NEEDS REVISION; remains deferred.**
+> Dependencies 009 and 010 are DONE; missing dependencies no longer block this
+> plan. Its specification is stale: `src/lib/kessel-run/workspace.ts` and
+> `WORKSPACE_BLOCK` are not the current workspace implementation. The canonical
+> reference is `src/mastra/skill-references/workspace.md`, propagated by the
+> workspace sync/check tooling. Delivery now uses `build/kessel-run/kessel-run`
+> and its manifest, not the proposed `dist/skills/kessel-run-oracle.skill`.
+> Oracle remains unimplemented. A future rewrite must use portable publications,
+> profiles and outputs, plus capability checks for actually available sources;
+> a local vault is optional. Product prioritization and real content validation
+> precede that rewrite. Do not execute the historical steps or vault prerequisite
+> below. Preserve the old Planned-at stamp; see
+> [current reconciliation](2026-09-19-reconciliation.md).
 
 > **Executor instructions**: Follow this plan step by step. Run every
 > verification command and confirm the expected result before moving to the
