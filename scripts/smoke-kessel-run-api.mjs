@@ -1,0 +1,24 @@
+// Explicit billed test. Credentials remain in the authenticated server store.
+const origin = process.env.KESSEL_RUN_ORIGIN ?? 'http://127.0.0.1:3000';
+const url = new URL(origin);
+if (!['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)) throw new Error('Use the local loopback app');
+const pairing = process.argv[2];
+const source = process.argv[3] ?? 'saved';
+if (!pairing || !['saved', 'environment'].includes(source)) throw new Error('Usage: npm run app:smoke:api -- PAIRING_TOKEN saved|environment. This makes a billed synthetic request.');
+const headers = { origin, 'content-type': 'application/json', 'x-kr-csrf': 'local' };
+const paired = await fetch(`${origin}/api/kessel-run/local/pair`, { method: 'POST', headers, body: JSON.stringify({ token: pairing }) });
+if (!paired.ok) throw new Error('Pairing failed. Use a fresh launcher pairing token.');
+const cookie = paired.headers.get('set-cookie')?.split(';')[0];
+if (!cookie) throw new Error('Pairing did not return a session');
+headers.cookie = cookie;
+console.log('Running billed OpenAI synthetic stream/tool test with the selected server credential.');
+const response = await fetch(`${origin}/api/kessel-run/local/connection-test`, { method: 'POST', headers, body: JSON.stringify({ source, model: 'gpt-5' }), signal: AbortSignal.timeout(65000) });
+if (!response.ok) throw new Error('Selected credential test failed. No fallback was attempted.');
+const streamed = await response.text();
+if (streamed.includes('"type":"error"') || !streamed.includes('text-delta')) throw new Error('Stream did not complete successfully');
+const runId = response.headers.get('x-kr-run-id');
+const saved = await fetch(`${origin}/api/kessel-run/local/runs/${runId}`, { headers: { cookie } });
+if (!saved.ok) throw new Error('Persisted run reload failed');
+const run = await saved.json();
+if (run.status !== 'completed' || !run.candidateId || !run.response) throw new Error('Completed stream and saved candidate were not both recorded');
+console.log(JSON.stringify({ runId, status: run.status, candidateId: run.candidateId, provider: run.provider, model: run.model, usage: run.usage }));

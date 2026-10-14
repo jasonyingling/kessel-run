@@ -14,9 +14,13 @@
     "skills:sync": "node scripts/sync-skill-references.mjs",
     "skills:check": "node scripts/sync-skill-references.mjs --check",
     "skills:package": "node scripts/package-skills.mjs",
-    "skills:install:portable": "node scripts/install-skills.mjs"
+    "skills:install:portable": "node scripts/install-skills.mjs",
+    "app:dev": "node scripts/kessel-run-local.mjs dev",
+    "app:start": "node scripts/kessel-run-local.mjs start",
+    "app:smoke:api": "node scripts/smoke-kessel-run-api.mjs"
   },
   "dependencies": {
+    "@ai-sdk/provider-utils": "5.0.14",
     "@ai-sdk/react": "^4.0.44",
     "@base-ui/react": "^1.6.0",
     "@mastra/ai-sdk": "^1.7.0",
