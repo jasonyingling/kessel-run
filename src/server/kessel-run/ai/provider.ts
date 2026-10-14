@@ -8,7 +8,7 @@ import { Credentials, credentialSelection } from './credentials';
 
 // Deliberately small server-owned compatibility list; catalog discovery is not
 // evidence that a model supports this writing/tool protocol.
-export const supportedModels = ['gpt-5'] as const;
+export const supportedModels = ['gpt-5', 'gpt-5-mini'] as const;
 export const modelSelection = z.enum(supportedModels);
 export const turnSchema = z.object({
   message: z.string().min(1).max(24000),

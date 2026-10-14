@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { readFile } from 'node:fs/promises';
+import { readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 test('no-key manual publication, import, independent outputs, save and export', async ({ page, context }, testInfo) => {
   const errors: string[] = [];
+  await rm(join(process.env.KR_E2E_ROOT!, 'private', 'workspace.json'), { force: true });
   page.on('pageerror', error => errors.push(error.message));
   await context.addCookies([{ name: 'kr-local-session', value: process.env.KR_E2E_SESSION!, url: 'http://127.0.0.1:3197', httpOnly: true, sameSite: 'Strict' }]);
   await page.goto('/kessel-run');
@@ -37,6 +38,7 @@ test('no-key manual publication, import, independent outputs, save and export', 
   await page.getByRole('link', { name: 'Article output' }).click();
   await page.getByLabel('Output prose').fill('Human-supplied synthetic draft.');
   await page.getByRole('button', { name: 'Save prose' }).click();
+  await expect(page.getByRole('status')).toHaveText('Saved.');
   await page.reload();
   await expect(page.getByLabel('Output prose')).toHaveValue('Human-supplied synthetic draft.');
   const download = page.waitForEvent('download');

@@ -422,7 +422,8 @@ export class WorkspaceService {
       const draft = this.draftWrites(notes, output, parsed.prose, 'human', null);
       const write = changed(output, { currentRevision: draft.revision.id, acceptedRevision: null, status: 'drafting', revisions: [...data.revisions, draft.revision.id], revision_links: [...(Array.isArray(data.revision_links) ? data.revision_links : []), `[Revision](./Revisions/${draft.revision.id}.prose.md)`] }, parsed.prose);
       const navigation = await this.navigationWrite(output, `[Draft revision](./Revisions/${draft.revision.id}.prose.md)`);
-      return { writes: [...draft.writes, write, navigation], result: { id: parsed.outputId, revision: draft.revision.id, hash: hashText(write.text) } };
+      const acknowledged = this.context(notes.map(note => note === output ? parseNote(write.text, write.path) : note), parsed.outputId);
+      return { writes: [...draft.writes, write, navigation], result: { id: parsed.outputId, revision: draft.revision.id, hash: hashText(write.text), contextHash: acknowledged.contextHash } };
     });
   }
 

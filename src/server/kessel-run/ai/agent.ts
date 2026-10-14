@@ -13,13 +13,18 @@ import type { MastraModelConfig } from '@mastra/core/llm';
 
 export async function createWorkspaceAgent(
   selection: z.infer<typeof providerSelection>, service: WorkspaceService, grant: Grant,
-  options: { credentials?: Credentials; model?: MastraModelConfig } = {},
+  options: { credentials?: Credentials; model?: MastraModelConfig; signal?: AbortSignal; onOperation?: (name: ToolName, result: unknown) => Promise<void> } = {},
 ) {
   providerSelection.parse(selection);
   const model = options.model ?? { id: `openai/${selection.model}` as const, apiKey: await (options.credentials ?? new Credentials()).resolve(selection.source) };
   const tools = Object.fromEntries((Object.keys(toolSchemas) as ToolName[]).map(name => [name, createTool({
     id: name, description: descriptions[name], inputSchema: toolSchemas[name],
-    execute: async args => executeDomainTool(name, args, service, grant, 'model'),
+    execute: async args => {
+      options.signal?.throwIfAborted();
+      const result = await executeDomainTool(name, args, service, grant, 'model');
+      await options.onOperation?.(name, result);
+      return result;
+    },
   })]));
   const agent = new Agent({
     id: 'kessel-run-workspace', name: 'Kessel Run', model, tools, skills: [...SKILL_PATHS],

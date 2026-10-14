@@ -7,6 +7,8 @@ import { BookOpen, FileText, Settings, Feather } from 'lucide-react';
 import { localApi } from '@/lib/kessel-run/local-api';
 import type { Entity, OutputContext, WorkspaceOverview } from '@/lib/kessel-run/app-contracts';
 import { acknowledgeSave } from './editor-state';
+import { WritingPanel } from './writing-panel';
+import { MarkdownPreview } from './markdown-preview';
 
 export function AppButton({ static: stationary = false, ...props }: React.ComponentProps<typeof BaseButton> & { static?: boolean }) {
   return <BaseButton {...props} className={`kr-action ${props.className ?? ''}`} data-static={stationary || undefined} />;
@@ -41,9 +43,11 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
   const [external, setExternal] = useState<OutputContext | null>(null);
   const dirtyRef = useRef(false);
   const hashRef = useRef<string | null>(null);
+  const contextHashRef = useRef<string | null>(null);
   const [filter, setFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [revisionText, setRevisionText] = useState<string | null>(null);
+  const workspaceReady = state !== null;
 
   async function refresh() {
     const next = await localApi<WorkspaceOverview>('workspace');
@@ -53,9 +57,9 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
     if (outputId) {
       const saved = await localApi<OutputContext>('content', { action: 'context', input: { outputId } });
       if (dirtyRef.current) {
-        if (hashRef.current !== saved.output.hash) setExternal(saved);
+        if (hashRef.current !== saved.output.hash || contextHashRef.current !== saved.contextHash) setExternal(saved);
       } else {
-        setContext(saved); setEditor(saved.output.body); editorRef.current = saved.output.body; hashRef.current = saved.output.hash;
+        setContext(saved); setEditor(saved.output.body); editorRef.current = saved.output.body; hashRef.current = saved.output.hash; contextHashRef.current = saved.contextHash;
       }
     }
   }
@@ -75,12 +79,46 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
       if (outputId) {
         const saved = await localApi<OutputContext>('content', { action: 'context', input: { outputId } }, controller.signal);
         if (!mounted) return;
-        setContext(saved); setEditor(saved.output.body); editorRef.current = saved.output.body; hashRef.current = saved.output.hash;
+        let recovered: { prose: string; hash: string; contextHash: string } | null = null;
+        try { recovered = JSON.parse(sessionStorage.getItem(`kr-recovery:${next.workspace.id}:${outputId}`) ?? 'null'); } catch { /* Keep canonical content when the recovery buffer is invalid. */ }
+        const prose = recovered?.prose ?? saved.output.body;
+        dirtyRef.current = Boolean(recovered); setDirty(Boolean(recovered));
+        const base = recovered ? { ...saved, contextHash: recovered.contextHash, output: { ...saved.output, hash: recovered.hash } } : saved;
+        setContext(base); setEditor(prose); editorRef.current = prose; hashRef.current = base.output.hash; contextHashRef.current = base.contextHash;
+        if (recovered && (recovered.hash !== saved.output.hash || recovered.contextHash !== saved.contextHash)) setExternal(saved);
       }
     }
     void initialize().catch(error => { if (mounted) setMessage(error.message); });
     return () => { mounted = false; controller.abort(); };
   }, [outputId, pieceId]);
+
+  useEffect(() => {
+    if (!workspaceReady) return;
+    let active = true; let pending = false;
+    const poll = setInterval(() => {
+      if (pending) return;
+      pending = true;
+      void localApi<WorkspaceOverview>('workspace').then(async next => {
+        if (!active) return;
+        setState(next);
+        const selectedPiece = pieceId ?? next.outputs.find(value => value.id === outputId)?.pieceId;
+        if (selectedPiece) {
+          const material = await localApi<{ sources: Entity[]; artifacts: Entity[] }>('content', { action: 'piece-context', input: { pieceId: selectedPiece } });
+          if (active) setMaterials(material);
+        }
+        if (!outputId) return;
+        const saved = await localApi<OutputContext>('content', { action: 'context', input: { outputId } });
+        if (!active) return;
+        if (dirtyRef.current) {
+          if (hashRef.current !== saved.output.hash || contextHashRef.current !== saved.contextHash) setExternal(saved);
+        } else {
+          setContext(saved); setEditor(saved.output.body); editorRef.current = saved.output.body;
+          hashRef.current = saved.output.hash; contextHashRef.current = saved.contextHash;
+        }
+      }).catch(error => { if (active) setMessage(error.message); }).finally(() => { pending = false; });
+    }, 1500);
+    return () => { active = false; clearInterval(poll); };
+  }, [workspaceReady, outputId, pieceId]);
 
   const output = state?.outputs.find(value => value.id === outputId);
   const piece = state?.pieces.find(value => value.id === (pieceId ?? output?.pieceId));
@@ -128,11 +166,15 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
     setBusy(true); setMessage('Saving…');
     const submitted = editorRef.current;
     try {
-      await localApi('content', { action: 'editor', input: { operationId: crypto.randomUUID(), expectedHash: context.output.hash, expectedContextHash: context.contextHash, outputId, prose: submitted } });
+      const receipt = await localApi<{ hash: string; contextHash: string; revision: string }>('content', { action: 'editor', input: { operationId: crypto.randomUUID(), expectedHash: context.output.hash, expectedContextHash: context.contextHash, outputId, prose: submitted } });
       const saved = await localApi<OutputContext>('content', { action: 'context', input: { outputId } });
-      const acknowledged = acknowledgeSave(submitted, editorRef.current, saved.output.hash, saved.contextHash);
-      dirtyRef.current = acknowledged.dirty; setDirty(acknowledged.dirty);
-      setContext(saved); hashRef.current = acknowledged.baseHash; setExternal(null);
+      const acknowledged = acknowledgeSave(submitted, editorRef.current, receipt.hash, receipt.contextHash);
+      const intervened = saved.output.hash !== receipt.hash || saved.contextHash !== receipt.contextHash;
+      dirtyRef.current = acknowledged.dirty || intervened; setDirty(dirtyRef.current);
+      setContext(intervened ? { ...context, contextHash: receipt.contextHash, output: { ...context.output, hash: receipt.hash, body: submitted, currentRevision: receipt.revision } } : saved);
+      hashRef.current = acknowledged.baseHash; contextHashRef.current = receipt.contextHash; setExternal(intervened ? saved : null);
+      if (!dirtyRef.current) sessionStorage.removeItem(`kr-recovery:${state?.workspace.id}:${outputId}`);
+      else sessionStorage.setItem(`kr-recovery:${state?.workspace.id}:${outputId}`, JSON.stringify({ prose: editorRef.current, hash: receipt.hash, contextHash: receipt.contextHash }));
       setMessage(acknowledged.dirty ? 'Earlier text saved. Your newer edits still need saving.' : 'Saved.');
     } catch (error) { setMessage(error instanceof Error ? `${error.message} Your unsaved prose is retained in the editor.` : 'Save failed. Your prose remains in the editor.'); }
     finally { setBusy(false); }
@@ -162,9 +204,9 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
         {(form === 'profile' || form === 'source') && <Field label="Attribution / provenance"><input value={attribution} onChange={event => setAttribution(event.target.value)} /></Field>}
         {preview && <div><h3>Added metadata preview</h3><pre>{JSON.stringify(preview.addedMetadata, null, 2)}</pre><p>The profile prose above is preserved verbatim. Sparse profiles are valid.</p></div>}
         <div className="kr-toolbar"><AppButton disabled={busy} onClick={() => void submit()}>{busy ? 'Saving…' : form === 'profile' ? preview ? 'Confirm use of this profile' : 'Preview import' : 'Save'}</AppButton><AppButton static onClick={() => { setForm(null); setPreview(null); }}>Cancel</AppButton></div></section>}
-      {publication && !output && <section className="kr-panel"><div className="kr-toolbar"><h2>Voice studio</h2><AppButton static onClick={() => open('publication-update')}>Publication settings</AppButton><AppButton static onClick={() => open('preset-update')}>Format presets</AppButton><AppButton onClick={() => open('profile')}>Import voice / author</AppButton></div><p>Use your existing starter profile. Each output keeps its selected version.</p><div className="kr-grid">{state?.profiles.filter(value => value.publicationId === publication.id).map(value => <article key={`${value.id}:${value.version}`} className="kr-card"><h3>{entityName(value)} · v{String(value.version)}</h3><p>{String(value.scope)} · {String(value.status)} · {String(value.evidenceLevel)}</p><details><summary>Rules and provenance</summary><pre>{value.body}</pre><p>{String(value.provenance)}</p></details></article>)}</div></section>}
+      {publication && !output && <section className="kr-panel"><div className="kr-toolbar"><h2>Voice studio</h2><AppButton static onClick={() => open('publication-update')}>Publication settings</AppButton><AppButton static onClick={() => open('preset-update')}>Format presets</AppButton><AppButton onClick={() => open('profile')}>Import voice / author</AppButton></div><p>Use your existing starter profile. Each output keeps its selected version.</p><WritingPanel scope={String(publication.id)} scopeKind="voice" mode="guided" onCommitted={refresh} /><div className="kr-grid">{state?.profiles.filter(value => value.publicationId === publication.id).map(value => <article key={`${value.id}:${value.version}`} className="kr-card"><h3>{entityName(value)} · v{String(value.version)}</h3><p>{String(value.scope)} · {String(value.status)} · {String(value.evidenceLevel)}</p><details><summary>Rules and provenance</summary><pre>{value.body}</pre><p>{String(value.provenance)}</p></details></article>)}</div></section>}
       {piece && <section className="kr-panel"><div className="kr-toolbar"><h2>Brief & supplied sources</h2><AppButton onClick={() => open('source')}>Add notes / interview</AppButton></div><pre>{piece.body}</pre><p>{String(piece.mode)} mode · Next: {String(piece.nextAction)}</p>{materials?.sources.map(value => <details key={String(value.id)}><summary>{entityName(value)} · {String(value.attribution)}</summary><pre>{value.body}</pre></details>)}</section>}
-      {context && <><nav className="kr-tabs" aria-label="Independent outputs">{state?.outputs.filter(value => value.pieceId === context.output.pieceId).map(value => <Link aria-current={value.id === outputId ? 'page' : undefined} key={String(value.id)} href={`/kessel-run/outputs/${value.id}`}>{entityName(value)}</Link>)}</nav><section className="kr-desk"><div className="kr-paper"><div className="kr-toolbar"><h2>Markdown editor</h2><span>{dirty ? 'Unsaved changes' : 'Saved'}</span><AppButton disabled={busy || !dirty} onClick={() => void saveEditor()}>Save prose</AppButton><AppButton static onClick={() => void download()}>Export Markdown</AppButton></div><textarea aria-label="Output prose" value={editor} onChange={event => { setEditor(event.target.value); editorRef.current = event.target.value; setDirty(true); dirtyRef.current = true; }} maxLength={80000} rows={24} /><details><summary>Safe text preview</summary><pre>{editor}</pre></details>{external && <div className="kr-conflict"><h3>Another client saved a revision</h3><p>Your edits remain in the editor. Read the saved version, reconcile, then retry.</p><pre>{external.output.body}</pre><AppButton static onClick={() => { setContext(external); hashRef.current = external.output.hash; setExternal(null); }}>Use current revision as save base</AppButton></div>}</div><aside className="kr-panel"><h2>Selected voice</h2><p>{entityName(context.voice)} · v{String(context.voice.version)}</p><p>{context.author ? entityName(context.author) : 'No author overlay'}</p><details><summary>Exact rules</summary><pre>{context.voice.body}</pre><pre>{context.author?.body}</pre></details><h3>Revision history</h3>{context.revisions.map(value => <AppButton static key={String(value.id)} onClick={() => void localApi<{ prose: string }>('content', { action: 'revision', input: { outputId, revisionId: value.id } }).then(value => setRevisionText(value.prose)).catch(error => setMessage(error.message))}>{String(value.provenance)} · {String(value.created)}</AppButton>)}{revisionText !== null && <pre>{revisionText}</pre>}<h3>AI writing</h3><p>Configure an API key for in-app AI, or connect your own agent. Manual prose remains available.</p><Link href="/kessel-run/settings">API & agent settings</Link><AppButton static onClick={() => void refresh().catch(error => setMessage(error.message))}>Refresh saved activity</AppButton></aside></section></>}
+      {context && <><nav className="kr-tabs" aria-label="Independent outputs">{state?.outputs.filter(value => value.pieceId === context.output.pieceId).map(value => <Link aria-current={value.id === outputId ? 'page' : undefined} key={String(value.id)} href={`/kessel-run/outputs/${value.id}`}>{entityName(value)}</Link>)}</nav><section className="kr-desk"><div className="kr-paper"><div className="kr-toolbar"><h2>Markdown editor</h2><span>{dirty ? 'Unsaved changes' : 'Saved'}</span><AppButton disabled={busy || !dirty} onClick={() => void saveEditor()}>Save prose</AppButton><AppButton static onClick={() => void download()}>Export Markdown</AppButton></div><textarea aria-label="Output prose" value={editor} onChange={event => { setEditor(event.target.value); editorRef.current = event.target.value; setDirty(true); dirtyRef.current = true; try { sessionStorage.setItem(`kr-recovery:${state?.workspace.id}:${outputId}`, JSON.stringify({ prose: event.target.value, hash: context.output.hash, contextHash: context.contextHash })); } catch { setMessage('Recovery storage is unavailable. Keep this tab open until your prose is saved.'); } }} maxLength={80000} rows={24} /><details><summary>Markdown preview</summary><MarkdownPreview prose={editor} /></details>{external && <div className="kr-conflict"><h3>Another client saved a revision</h3><p>Your edits remain in the editor. Read the saved version, reconcile, then retry.</p><pre>{external.output.body}</pre><AppButton static onClick={() => { setContext(external); hashRef.current = external.output.hash; contextHashRef.current = external.contextHash; setExternal(null); }}>Use current revision as save base</AppButton></div>}</div><aside className="kr-panel"><h2>Selected voice</h2><p>{entityName(context.voice)} · v{String(context.voice.version)}</p><p>{context.author ? entityName(context.author) : 'No author overlay'}</p><details><summary>Exact rules</summary><pre>{context.voice.body}</pre><pre>{context.author?.body}</pre></details><h3>Revision history</h3>{context.revisions.map(value => <AppButton static key={String(value.id)} onClick={() => void localApi<{ prose: string }>('content', { action: 'revision', input: { outputId, revisionId: value.id } }).then(value => setRevisionText(value.prose)).catch(error => setMessage(error.message))}>{String(value.provenance)} · {String(value.created)}</AppButton>)}{revisionText !== null && <pre>{revisionText}</pre>}<WritingPanel scope={outputId!} scopeKind="output" mode={piece?.mode === 'fast' ? 'fast' : 'guided'} onCommitted={refresh} /><Link href="/kessel-run/settings">API & agent settings</Link><AppButton static onClick={() => void refresh().catch(error => setMessage(error.message))}>Refresh saved activity</AppButton></aside></section></>}
       {state && !output && <><div className="kr-toolbar">{!publication && <Field label="Publication"><select value={filter} onChange={event => setFilter(event.target.value)}><option value="all">All publications</option>{state.publications.map(value => <option key={String(value.id)} value={String(value.id)}>{entityName(value)}</option>)}</select></Field>}<Field label="Output status"><select value={statusFilter} onChange={event => setStatusFilter(event.target.value)}><option value="all">All statuses</option><option value="drafting">Drafting</option><option value="accepted">Accepted</option></select></Field></div>{!publication && <section><h2>Publications</h2><div className="kr-grid">{state.publications.map(value => <Link className="kr-card" key={String(value.id)} href={`/kessel-run/publications/${value.id}`}><BookOpen size={20} /><h3>{entityName(value)}</h3><p>{value.body || 'Add purpose and a voice to begin.'}</p></Link>)}</div>{!state.publications.length && <p className="kr-empty">Create your first publication, then import its voice.</p>}</section>}<section><h2>Pieces</h2><div className="kr-grid">{pieces.map(value => <Link className="kr-card" key={String(value.id)} href={`/kessel-run/pieces/${value.id}`}><FileText size={20} /><h3>{entityName(value)}</h3><p>{String(value.nextAction)}</p></Link>)}</div>{!pieces.length && <p className="kr-empty">No pieces yet. Start with a topic and supplied notes.</p>}</section><section><h2>Outputs</h2><div className="kr-grid">{outputs.map(value => <Link className="kr-card" key={String(value.id)} href={`/kessel-run/outputs/${value.id}`}><h3>{entityName(value)}</h3><p>{String(value.format)} · {String(value.status)}</p></Link>)}</div></section></>}
     </div>
   </main>;

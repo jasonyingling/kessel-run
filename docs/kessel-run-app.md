@@ -97,3 +97,14 @@ Remaining phases supply the full HTTP/MCP operation adapters, profile-version
 proposal/approval flows, preset editing UI, publication/writing desk UI,
 resumable conversations, accepted finals/lessons, and release walkthroughs.
 Browser execution and live provider/external Codex checks remain pending.
+# Writing conversations and synchronization
+
+The writing desk and publication voice studio persist separate scoped conversation runs. Each turn records its selected credential source, model, Start/Resume hash, exact starting context hash, tool results (including hashes for other workflows actually read), provider usage and terminal status. Streamed text remains provisional; generated prose is a pending saved proposal, never an editor overwrite.
+
+One in-app turn may run per scope. Identical start operation IDs recover the existing run; different arguments conflict. Stop, request disconnect, saved-key removal/replacement and a 90-second duration bound interrupt inference. Dead process owners are marked interrupted on reload. A 95-second recovery bound prevents an unacknowledged terminal-persistence failure from permanently blocking that scope. Committed content survives interruption; ambiguous generation is never automatically replayed.
+
+The app refreshes saved workspace/source activity independently of chat. Dirty prose is preserved, with a per-output session recovery buffer containing prose and revision hashes only. Reconcile external changes explicitly. Save acknowledgements identify the actual committed revision, rather than treating a later read as the acknowledgement.
+
+The server allows `gpt-5` and `gpt-5-mini`; both use the same tested fake-provider text/tool/cancellation adapter. [OpenAI documents text, streaming and function calling for GPT-5 mini](https://developers.openai.com/api/docs/models/gpt-5-mini). A catalog claim is not live compatibility evidence: real billed verification remains pending for both models. Models may change between turns; prior run metadata retains the original selection.
+
+Browser/E2E execution, visual/keyboard/mobile acceptance and the real API/Codex/editorial walkthroughs remain pending. Authored browser tests do not establish acceptance.

@@ -59,6 +59,21 @@ it('preserves both texts across stale UI/agent races and repeats identical opera
   expect(await readFile(join(privateDirectory, 'operations.json'), 'utf8')).toContain('External competing candidate');
 });
 
+it('returns an exact save acknowledgement even when another client commits before the next read', async () => {
+  const data = await fixture();
+  const initial = await service.getContext(data.outputId);
+  const first = await service.saveEditor({ operationId: operationId(), outputId: data.outputId, expectedHash: initial.output.hash, expectedContextHash: initial.contextHash, prose: 'Acknowledged human text' });
+  const acknowledged = await service.getContext(data.outputId);
+  expect(first.hash).toBe(acknowledged.output.hash);
+  expect(first.contextHash).toBe(acknowledged.contextHash);
+  const second = await new WorkspaceService(root, privateDirectory).saveEditor({ operationId: operationId(), outputId: data.outputId, expectedHash: acknowledged.output.hash, expectedContextHash: acknowledged.contextHash, prose: 'Intervening client text' });
+  const after = await service.getContext(data.outputId);
+  expect(after.output.hash).toBe(second.hash);
+  expect(after.output.hash).not.toBe(first.hash);
+  expect(first.contextHash).not.toBe(after.contextHash);
+  expect((await service.getRevision(data.outputId, String(first.revision))).prose).toBe('Acknowledged human text');
+});
+
 it('retains exact machine draft without replacing human prose and preserves interview attribution', async () => {
   const data = await fixture();
   let context = await service.getContext(data.outputId);
