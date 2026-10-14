@@ -3,7 +3,7 @@ import { readdir } from 'node:fs/promises';
 import { z } from 'zod';
 import { Journal } from './journal';
 import type { Write } from './journal';
-import { hashText, markdownPaths, noteText, parseNote, readText, safePath } from './files';
+import { hashText, markdownPaths, noteText, optionalText, parseNote, readText, safePath } from './files';
 import type { Note } from './files';
 import * as schemas from './schema';
 
@@ -17,6 +17,7 @@ const kinds: Record<string, z.ZodType> = {
   'content-output': schemas.output, source: schemas.source,
   revision: schemas.revision, proposal: schemas.proposal,
   'output-preset': schemas.preset,
+  'workflow-artifact': schemas.artifact,
 };
 function metadata(type: string, title: string, extra: Record<string, unknown> = {}) {
   return {
@@ -102,6 +103,15 @@ export class WorkspaceService {
 
   private check(note: Note, expected: string) {
     if (note.hash !== expected) throw new schemas.WorkspaceError('CONFLICT', 'Saved Markdown changed. Preserve your text and reload the current revision.');
+  }
+
+  private async navigationWrite(output: Note, line: string): Promise<Write> {
+    const path = output.path.slice(0, -'Output.md'.length) + 'Navigation.md';
+    const current = await optionalText(this.root, path);
+    if (!current) return created(path, metadata('output-navigation', 'Output navigation', { outputId: output.metadata.id }), `# Output navigation\n\n${line}\n`);
+    const note = parseNote(current, path);
+    if (note.metadata.outputId !== output.metadata.id) throw new schemas.WorkspaceError('CONFLICT', 'Navigation note belongs to another output');
+    return changed(note, {}, `${note.body}\n${line}\n`);
   }
 
   private async mutate<T extends Record<string, unknown>>(
@@ -242,13 +252,49 @@ export class WorkspaceService {
         brief_link: '[Brief](../../Brief.md)', revision_links: [],
       });
       const path = `Pieces/${parsed.pieceId}/Outputs/${output.id}/Output.md`;
-      return { writes: [created(path, output, '')], result: { id: output.id, hash: hashText(noteText(output, '')), link: `/kessel-run/outputs/${output.id}` } };
+      const navigation = `# ${parsed.title}\n\n[Publication](../../../../Publications/${publicationId}.md) · [Brief](../../Brief.md)\n\n[Voice v${parsed.voice.version}](../../../../Voice%20Profiles/${parsed.voice.profileId}/v${parsed.voice.version}.md)\n\n${parsed.author ? `[Author v${parsed.author.version}](../../../../Voice%20Profiles/${parsed.author.profileId}/v${parsed.author.version}.md)\n\n` : ''}[Preset](../../../../Output%20Presets/${preset.metadata.id}.md)\n\n## Retained versions\n`;
+      return { writes: [created(path, output, ''), created(path.replace('Output.md', 'Navigation.md'), metadata('output-navigation', parsed.title, { outputId: output.id }), navigation)], result: { id: output.id, hash: hashText(noteText(output, '')), link: `/kessel-run/outputs/${output.id}` } };
     });
   }
 
   async getContext(outputId: string, sourceOffset = 0) {
     z.number().int().nonnegative().parse(sourceOffset);
     return this.journal.readLocked(async () => this.context(await this.index(), outputId, sourceOffset));
+  }
+
+  async getPublicationContext(publicationId: string, voicePin: schemas.Pin | null, authorPin: schemas.Pin | null) {
+    return this.journal.readLocked(async () => {
+      const notes = await this.index();
+      const publication = this.find(notes, publicationId, 'publication');
+      const voice = voicePin ? this.version(notes, voicePin, publicationId) : null;
+      const author = authorPin ? this.version(notes, authorPin, publicationId) : null;
+      if (voice && voice.profile.scope !== 'publication') throw new schemas.WorkspaceError('INVALID_INPUT', 'Select a publication voice version');
+      if (author && (author.profile.scope !== 'author' || !voicePin || author.profile.parent?.profileId !== voicePin.profileId || author.profile.parent.version !== voicePin.version)) {
+        throw new schemas.WorkspaceError('MISSING_PROFILE_VERSION', 'Select the exact publication parent of the author version');
+      }
+      const proposals = notes.filter(note => note.metadata.type === 'proposal' && note.metadata.kind === 'profile' && note.metadata.targetId === publicationId).map(note => {
+        const proposal = schemas.proposal.parse(note.metadata);
+        const selected = schemas.pin.parse({ profileId: proposal.payload.profileId, version: proposal.payload.version });
+        return { proposal: summary(note), profile: summary(this.version(notes, selected, publicationId).note) };
+      });
+      const profiles = notes.filter(note => note.metadata.type === 'voice-profile' && note.metadata.publicationId === publicationId).map(note => ({ id: note.metadata.id, version: note.metadata.version, scope: note.metadata.scope, status: note.metadata.status, parent: note.metadata.parent, hash: note.hash }));
+      const contextHash = hashText(JSON.stringify({ publication: publication.hash, voice: voice?.note.hash ?? null, author: author?.note.hash ?? null, proposals: proposals.map(value => value.proposal.hash), profiles }));
+      return { publication: summary(publication), voice: voice ? summary(voice.note) : null, author: author ? summary(author.note) : null, profiles, proposals, contextHash };
+    });
+  }
+
+  async getRevision(outputId: string, revisionId: string) {
+    return this.journal.readLocked(async () => {
+      const notes = await this.index();
+      const output = this.find(notes, outputId, 'content-output');
+      const revision = this.find(notes, revisionId, 'revision');
+      const data = schemas.revision.parse(revision.metadata);
+      const folder = output.path.slice(0, -'Output.md'.length);
+      if (data.outputId !== outputId || data.prosePath !== `${folder}Revisions/${revisionId}.prose.md`) throw new schemas.WorkspaceError('NOT_FOUND', 'Revision is outside the selected output');
+      const prose = await readText(this.root, data.prosePath);
+      if (hashText(prose) !== data.proseHash) throw new schemas.WorkspaceError('CONFLICT', 'Retained revision prose changed');
+      return { ...data, prose };
+    });
   }
 
   private context(notes: Note[], outputId: string, sourceOffset = 0, fullSources = false) {
@@ -270,9 +316,20 @@ export class WorkspaceService {
     const preset = this.find(notes, data.preset, 'output-preset');
     if (preset.metadata.publicationId !== data.publicationId) throw new schemas.WorkspaceError('NOT_FOUND', 'Output preset belongs to another publication');
     const sources = notes.filter(note => note.metadata.type === 'source' && note.metadata.pieceId === data.pieceId);
-    const pending = data.proposals.map(id => this.find(notes, id, 'proposal')).filter(note => note.metadata.state === 'pending');
+    const linkedProposals = data.proposals.map(id => this.find(notes, id, 'proposal'));
+    if (linkedProposals.some(note => note.metadata.targetId !== data.id || !['draft', 'lessons'].includes(String(note.metadata.kind)))) {
+      throw new schemas.WorkspaceError('NOT_FOUND', 'Output references a proposal owned by another target');
+    }
+    const pending = linkedProposals.filter(note => note.metadata.state === 'pending');
+    const artifacts = notes.filter(note => note.metadata.type === 'workflow-artifact' && note.metadata.pieceId === data.pieceId && note.metadata.publicationId === data.publicationId);
+    const revisions = notes.filter(note => note.metadata.type === 'revision' && note.metadata.outputId === data.id);
+    const profileProposals = notes.filter(note => note.metadata.type === 'proposal' && note.metadata.kind === 'profile' && note.metadata.targetId === data.publicationId && note.metadata.state === 'pending').map(note => {
+      const proposal = schemas.proposal.parse(note.metadata);
+      const profilePin = schemas.pin.parse({ profileId: proposal.payload.profileId, version: proposal.payload.version });
+      return { proposal: summary(note), profile: summary(this.version(notes, profilePin, data.publicationId).note) };
+    });
     const sourceReferences = sources.map(note => ({ id: note.metadata.id, hash: note.hash }));
-    const contextHash = hashText(JSON.stringify({ output: output.hash, brief: piece.hash, preset: preset.hash, voice: voice.note.hash, author: author?.note.hash ?? null, sourceReferences }));
+    const contextHash = hashText(JSON.stringify({ output: output.hash, brief: piece.hash, preset: preset.hash, voice: voice.note.hash, author: author?.note.hash ?? null, sourceReferences, artifacts: artifacts.map(note => note.hash), profileProposals: profileProposals.map(value => value.proposal.hash) }));
     return {
       output: summary(output), brief: summary(piece), voice: summary(voice.note),
       author: author ? summary(author.note) : null,
@@ -281,6 +338,9 @@ export class WorkspaceService {
       sourceReferences, contextHash,
       nextSourceOffset: sourceOffset + 1 < sources.length ? sourceOffset + 1 : null,
       pending: pending.map(summary),
+      artifacts: artifacts.map(summary),
+      revisions: revisions.map(note => ({ id: note.metadata.id, parentRevision: note.metadata.parentRevision, provenance: note.metadata.provenance, declaredModel: note.metadata.declaredModel, proseHash: note.metadata.proseHash, created: note.metadata.created })),
+      profileProposals,
     };
   }
 
@@ -296,7 +356,17 @@ export class WorkspaceService {
 
   private draftWrites(notes: Note[], output: Note, prose: string, provenance: 'human' | 'model' | 'external-agent', declaredModel: string | null) {
     const data = schemas.output.parse(output.metadata);
-    const context = this.context(notes, data.id, 0, true);
+    const selected = this.context(notes, data.id, 0, true);
+    const context = {
+      snapshotVersion: 1,
+      outputSelections: { id: data.id, publicationId: data.publicationId, pieceId: data.pieceId, format: data.format, preset: data.preset, voice: data.voice, author: data.author, currentRevision: data.currentRevision, editorHash: output.hash },
+      editorProse: output.body, brief: selected.brief, voice: selected.voice,
+      author: selected.author, preset: selected.preset, sources: selected.sources,
+      sourceReferences: selected.sourceReferences, artifacts: selected.artifacts,
+      pendingDecisions: selected.pending.map(note => ({ id: note.id, state: note.state, kind: note.kind, targetHash: note.targetHash, evidence: note.evidence })),
+      pendingProfileProposals: selected.profileProposals.map(value => ({ id: value.proposal.id, hash: value.proposal.hash, evidence: value.proposal.evidence })),
+      contextHash: selected.contextHash,
+    };
     const revision = schemas.revision.parse(metadata('revision', 'Retained prose revision', {
       outputId: data.id, parentRevision: data.currentRevision, provenance, declaredModel,
       context, prosePath: '', proseHash: hashText(prose),
@@ -323,7 +393,8 @@ export class WorkspaceService {
       const data = schemas.output.parse(output.metadata);
       const draft = this.draftWrites(notes, output, parsed.prose, 'human', null);
       const write = changed(output, { currentRevision: draft.revision.id, acceptedRevision: null, status: 'drafting', revisions: [...data.revisions, draft.revision.id], revision_links: [...(Array.isArray(data.revision_links) ? data.revision_links : []), `[Revision](./Revisions/${draft.revision.id}.prose.md)`] }, parsed.prose);
-      return { writes: [...draft.writes, write], result: { id: parsed.outputId, revision: draft.revision.id, hash: hashText(write.text) } };
+      const navigation = await this.navigationWrite(output, `[Draft revision](./Revisions/${draft.revision.id}.prose.md)`);
+      return { writes: [...draft.writes, write, navigation], result: { id: parsed.outputId, revision: draft.revision.id, hash: hashText(write.text) } };
     });
   }
 
@@ -344,8 +415,9 @@ export class WorkspaceService {
       });
       const folder = output.path.slice(0, -'Output.md'.length);
       const write = changed(output, { proposals: [...data.proposals, proposal.id], candidate_links: [...(Array.isArray(data.candidate_links) ? data.candidate_links : []), `[Candidate](./Revisions/${draft.revision.id}.prose.md)`] });
+      const navigation = await this.navigationWrite(output, `[Pending candidate](./Revisions/${draft.revision.id}.prose.md)`);
       return {
-        writes: [...draft.writes, created(`${folder}Proposals/${proposal.id}.md`, proposal, ''), write],
+        writes: [...draft.writes, created(`${folder}Proposals/${proposal.id}.md`, proposal, ''), write, navigation],
         result: { id: data.id, candidateId: draft.revision.id, proposalId: proposal.id, hash: hashText(write.text), link: `/kessel-run/outputs/${data.id}` },
       };
     });
@@ -358,6 +430,82 @@ export class WorkspaceService {
       this.check(piece, parsed.expectedHash);
       const write = changed(piece, { nextAction: parsed.nextAction });
       return { writes: [write], result: { id: parsed.pieceId, hash: hashText(write.text) } };
+    });
+  }
+
+  async saveArtifact(input: { operationId: string; expectedHash: string; pieceId: string; title: string; kind: 'research' | 'anchor' | 'hook' | 'outline' | 'review'; body: string }) {
+    const parsed = baseInput.extend({ pieceId: schemas.id, title: z.string().min(1).max(160), kind: schemas.artifact.shape.kind, body: text }).strict().parse(input);
+    return this.mutate(parsed.operationId, parsed, async notes => {
+      const piece = this.find(notes, parsed.pieceId, 'content-brief');
+      this.check(piece, parsed.expectedHash);
+      const artifact = metadata('workflow-artifact', parsed.title, { publicationId: piece.metadata.publicationId, pieceId: parsed.pieceId, kind: parsed.kind });
+      return { writes: [created(`Pieces/${parsed.pieceId}/Artifacts/${artifact.id}.md`, artifact, parsed.body)], result: { id: artifact.id, kind: parsed.kind, proseChanged: false } };
+    });
+  }
+
+  async proposeProfile(input: {
+    operationId: string; expectedHash: string; publicationId: string; title: string;
+    scope: 'publication' | 'author'; parent: schemas.Pin | null; authorId: string | null;
+    prior: schemas.Pin | null; prose: string; evidence: string;
+  }) {
+    const parsed = baseInput.extend({ publicationId: schemas.id, title: z.string().min(1).max(160), scope: z.enum(['publication', 'author']), parent: schemas.pin.nullable(), authorId: schemas.id.nullable(), prior: schemas.pin.nullable(), prose: text.min(1), evidence: z.string().min(1).max(24000) }).strict().parse(input);
+    return this.mutate(parsed.operationId, parsed, async notes => {
+      const publication = this.find(notes, parsed.publicationId, 'publication');
+      this.check(publication, parsed.expectedHash);
+      const prior = parsed.prior ? this.version(notes, parsed.prior, parsed.publicationId) : null;
+      if (prior && (prior.profile.scope !== parsed.scope || prior.profile.authorId !== parsed.authorId)) throw new schemas.WorkspaceError('INVALID_INPUT', 'Profile scope/author cannot be changed by a proposal');
+      if (parsed.parent) this.version(notes, parsed.parent, parsed.publicationId);
+      const profileId = prior?.profile.id ?? randomUUID();
+      const version = 1 + Math.max(0, ...notes.filter(note => note.metadata.type === 'voice-profile' && note.metadata.id === profileId).map(note => Number(note.metadata.version)));
+      const profile = schemas.profile.parse(metadata('voice-profile', parsed.title, {
+        id: profileId, publicationId: parsed.publicationId, version, scope: parsed.scope,
+        authorId: parsed.authorId, parent: parsed.parent, previousVersion: parsed.prior,
+        status: 'draft', evidenceLevel: prior?.profile.evidenceLevel ?? 'sparse', provenance: parsed.evidence,
+      }));
+      const proposal = metadata('proposal', 'Voice profile proposal', {
+        kind: 'profile', state: 'pending', targetId: parsed.publicationId, targetHash: publication.hash,
+        evidence: parsed.evidence, payload: { profileId, version, previousVersion: parsed.prior },
+      });
+      return {
+        writes: [created(`Voice Profiles/${profileId}/v${version}.md`, profile, parsed.prose), created(`Proposals/${proposal.id}.md`, proposal, '')],
+        result: { id: profileId, version, proposalId: proposal.id, state: 'pending', link: `/kessel-run/voices/${profileId}` },
+      };
+    });
+  }
+
+  async proposeLessons(input: {
+    operationId: string; expectedHash: string; outputId: string; machineRevisionId: string;
+    finalRevisionId: string; target: 'publication' | 'author'; rules: { text: string; evidence: string }[];
+  }) {
+    const parsed = baseInput.extend({ outputId: schemas.id, machineRevisionId: schemas.id, finalRevisionId: schemas.id, target: z.enum(['publication', 'author']), rules: z.array(z.object({ text: z.string().min(1).max(4000), evidence: z.string().min(1).max(4000) }).strict()).min(1).max(20) }).strict().parse(input);
+    return this.mutate(parsed.operationId, parsed, async notes => {
+      const output = this.find(notes, parsed.outputId, 'content-output');
+      this.check(output, parsed.expectedHash);
+      const data = schemas.output.parse(output.metadata);
+      if (data.acceptedRevision !== parsed.finalRevisionId) throw new schemas.WorkspaceError('APPROVAL_REQUIRED', 'Lessons require the exact human-accepted final snapshot');
+      const machine = schemas.revision.parse(this.find(notes, parsed.machineRevisionId, 'revision').metadata);
+      const final = schemas.revision.parse(this.find(notes, parsed.finalRevisionId, 'revision').metadata);
+      if (machine.outputId !== data.id || final.outputId !== data.id || machine.provenance === 'human') throw new schemas.WorkspaceError('INVALID_INPUT', 'Choose a retained machine/final pair from this output');
+      let ancestor = final.parentRevision;
+      const visited = new Set<string>();
+      while (ancestor && ancestor !== machine.id) {
+        if (visited.has(ancestor)) throw new schemas.WorkspaceError('INVALID_INPUT', 'Revision lineage is corrupt');
+        visited.add(ancestor);
+        ancestor = schemas.revision.parse(this.find(notes, ancestor, 'revision').metadata).parentRevision;
+      }
+      if (ancestor !== machine.id) throw new schemas.WorkspaceError('INVALID_INPUT', 'Final does not descend from the selected machine draft');
+      const pin = parsed.target === 'author' ? data.author : data.voice;
+      if (!pin) throw new schemas.WorkspaceError('INVALID_INPUT', 'This output has no selected author overlay');
+      this.version(notes, pin, data.publicationId);
+      const proposal = metadata('proposal', 'Lessons from retained draft/final comparison', {
+        kind: 'lessons', state: 'pending', targetId: data.id, targetHash: output.hash,
+        evidence: 'Each rule cites the exact retained machine/final comparison pair.',
+        payload: { profile: pin, scope: parsed.target, rules: parsed.rules, machineRevisionId: machine.id, machineHash: machine.proseHash, finalRevisionId: final.id, finalHash: final.proseHash },
+      });
+      return {
+        writes: [created(`Proposals/${proposal.id}.md`, proposal, ''), changed(output, { proposals: [...data.proposals, proposal.id] })],
+        result: { proposalId: proposal.id, state: 'pending', profile: pin, humanApprovalRequired: true },
+      };
     });
   }
 }

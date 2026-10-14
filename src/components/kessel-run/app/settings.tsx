@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { AgentConnections } from './connections';
 
 type Status = { environment: boolean; saved: { reference: string; masked: string } | null; storage: string };
 const headers = { 'content-type': 'application/json', 'x-kr-csrf': 'local' };
@@ -78,5 +79,6 @@ export function AppSettings() {
       <div className="flex gap-3"><button disabled={busy || !status} onClick={test} className="rounded-md border px-4 py-2 disabled:opacity-50">Run billed connection test</button>{testing && <button onClick={() => stop.current?.abort()} className="rounded-md border px-4 py-2">Stop</button>}</div>
     </div>
     <p role="status" aria-live="polite" className="rounded-md border p-3">{message}</p>
+    <AgentConnections />
   </main>;
 }

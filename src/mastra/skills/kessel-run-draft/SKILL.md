@@ -40,3 +40,7 @@ When requested, write a complete coherent draft from adequate supplied material 
 Before editing existing material, keep its current version and capture exact machine prose separately from human edits according to the workspace contract. Never overwrite a substantial draft. Save or return the new Draft and current-version link with source references, remaining gaps, selection IDs/versions and next action. Use citations or an accompanying claim/source map appropriate to the preset so claims remain traceable without cluttering every sentence.
 
 In guided mode compile approved sections when complete; in fast mode present the full draft immediately. A later accepted Final is a separate record of the actual accepted prose. Suggest Personalize or Polish only when useful. Do not infer final acceptance from a quality score.
+
+## App runtime capabilities
+
+When working in the local app or through MCP, read [the runtime capability guide](references/app-runtime.md). Use only available capabilities; keep these editorial methods and the portable handoff unchanged.

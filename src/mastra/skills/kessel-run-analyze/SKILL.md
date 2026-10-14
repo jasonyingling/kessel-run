@@ -193,3 +193,7 @@ Present patterns as hypotheses with actual sample size and confounders, not caus
 **Be honest about uncertainty.** Low engagement doesn't always mean bad content. It might mean bad distribution, bad timing, or an algorithm having a bad day. Don't over-attribute performance to content quality when external factors might explain it.
 
 **Build the baseline over time.** Encourage the user to run Analyze regularly so the baseline becomes meaningful. The first analysis has no comparison point. The fifth analysis reveals patterns.
+
+## App runtime capabilities
+
+When working in the local app or through MCP, read [the runtime capability guide](references/app-runtime.md). Use only available capabilities; keep these editorial methods and the portable handoff unchanged.

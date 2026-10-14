@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Credentials } from '@/server/kessel-run/ai/credentials';
-import { LocalAccessError, requireLocalSession } from '@/server/kessel-run/local-session';
+import { LocalAccessError, requireLocalSession, boundedJSON } from '@/server/kessel-run/local-session';
 export const runtime = 'nodejs';
 const failure = (error: unknown) => Response.json({ error: 'Credential operation failed' }, { status: error instanceof LocalAccessError ? error.status : 400 });
 export async function GET(request: Request) {
@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   catch (error) { return failure(error); }
 }
 export async function PUT(request: Request) {
-  try { await requireLocalSession(request, true); const { key } = z.object({ key: z.string().min(20).max(512) }).strict().parse(await request.json()); return Response.json(await new Credentials().replace(key)); }
+  try { await requireLocalSession(request, true); const { key } = z.object({ key: z.string().min(20).max(512) }).strict().parse(await boundedJSON(request, 2048)); return Response.json(await new Credentials().replace(key)); }
   catch (error) { return failure(error); }
 }
 export async function DELETE(request: Request) {

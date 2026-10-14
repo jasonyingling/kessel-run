@@ -14,6 +14,7 @@ function fixture() {
   mkdirSync(join(path, "src/mastra/skill-references"), { recursive: true });
   mkdirSync(join(path, "src/mastra/skills/kessel-run-example/references"), { recursive: true });
   writeFileSync(join(path, "src/mastra/skill-references/workspace.md"), "shared contract\n");
+  writeFileSync(join(path, "src/mastra/skill-references/app-runtime.md"), "shared runtime\n");
   writeFileSync(join(path, "src/mastra/skills/kessel-run-example/SKILL.md"), "fixture skill\n");
   return path;
 }
@@ -27,6 +28,8 @@ describe("portable workspace references", () => {
     for (const dir of readdirSync(skills, { withFileTypes: true }).filter(d => d.isDirectory())) {
       expect(readFileSync(join(skills, dir.name, "references/workspace.md"), "utf8")).toBe(readFileSync(canonical, "utf8"));
       expect(readFileSync(join(skills, dir.name, "SKILL.md"), "utf8")).toMatch(/\]\(references\/workspace\.md\)/);
+      expect(readFileSync(join(skills, dir.name, "references/app-runtime.md"), "utf8")).toBe(readFileSync(join(root, "src/mastra/skill-references/app-runtime.md"), "utf8"));
+      expect(readFileSync(join(skills, dir.name, "SKILL.md"), "utf8")).toMatch(/\]\(references\/app-runtime\.md\)/);
     }
     execFileSync(process.execPath, [script, "--check"], { cwd: tmpdir() });
   });

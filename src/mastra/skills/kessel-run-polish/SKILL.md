@@ -214,3 +214,7 @@ After actual final acceptance, optionally offer **Lessons** to compare the retai
 **Don't block publishing.** The scorecard is advisory, not a gate. If the user wants to publish with a 3.5 overall, that's their decision. Your job is to make sure they know what could be stronger, not to withhold the piece until it's perfect.
 
 **Name what's next.** Offer only a useful available action by name, such as Repurpose for another output. No further stage is required.
+
+## App runtime capabilities
+
+When working in the local app or through MCP, read [the runtime capability guide](references/app-runtime.md). Use only available capabilities; keep these editorial methods and the portable handoff unchanged.

@@ -139,3 +139,7 @@ For each target format requested:
 ```
 
 If the user requested multiple formats, present them in order of typical publishing sequence (longest lead time first, quickest last).
+
+## App runtime capabilities
+
+When working in the local app or through MCP, read [the runtime capability guide](references/app-runtime.md). Use only available capabilities; keep these editorial methods and the portable handoff unchanged.

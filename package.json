@@ -31,6 +31,7 @@
     "@mastra/loggers": "^1.2.0",
     "@mastra/memory": "^1.24.0",
     "@mastra/observability": "^1.16.3",
+    "@modelcontextprotocol/server": "2.3.1",
     "@radix-ui/react-use-controllable-state": "^1.2.6",
     "@rive-app/react-webgl2": "^4.30.0",
     "@streamdown/cjk": "^1.0.3",
@@ -46,6 +47,7 @@
     "embla-carousel-react": "^8.6.0",
     "lucide-react": "^1.27.0",
     "mastra": "^1.20.3",
+    "mcp-handler": "2.3.0",
     "media-chrome": "^4.19.2",
     "motion": "^12.43.0",
     "nanoid": "^6.0.0",
@@ -66,6 +68,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "2.3.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

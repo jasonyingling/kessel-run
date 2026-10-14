@@ -180,3 +180,35 @@ it('exports actual rules, all supplied sources and pending work without private 
   expect(exported.handoff).not.toContain('synthetic-private-key-must-never-export');
   expect(safeFilename('../../unsafe/name')).not.toContain('/');
 });
+
+it('keeps retained contexts shallow over repeated saves and preserves explicit exact revision lookup', async () => {
+  const data = await fixture();
+  let maximum = 0;
+  let firstSize = 0;
+  for (let index = 0; index < 8; index++) {
+    const context = await service.getContext(data.outputId);
+    const saved = await service.saveEditor({ operationId: operationId(), expectedHash: context.output.hash, expectedContextHash: context.contextHash, outputId: data.outputId, prose: `Save ${index}` });
+    const retained = await service.getRevision(data.outputId, String(saved.revision));
+    expect(retained.prose).toBe(`Save ${index}`);
+    expect(retained.context.revisions).toBeUndefined();
+    expect(retained.context.profileProposals).toBeUndefined();
+    const size = JSON.stringify(retained.context).length;
+    if (index === 0) firstSize = size;
+    maximum = Math.max(maximum, size);
+  }
+  expect(maximum).toBeLessThan(firstSize + 200);
+  const context = await service.getContext(data.outputId);
+  expect(context.revisions.every(revision => !('context' in revision))).toBe(true);
+});
+
+it('rejects a pending proposal link owned by another output', async () => {
+  const data = await fixture();
+  const original = await service.getContext(data.outputId);
+  const proposed = await service.proposeDraft({ operationId: operationId(), expectedHash: original.output.hash, expectedContextHash: original.contextHash, outputId: data.outputId, prose: 'Owned candidate', provenance: 'external-agent', declaredModel: null });
+  const state = await service.overview();
+  const other = await service.createOutput({ operationId: operationId(), expectedHash: state.pieces[0].hash, pieceId: data.pieceId, title: 'Other output', format: 'email', preset: 'email', voice: { profileId: data.profileId, version: 1 }, author: null });
+  const path = `Pieces/${data.pieceId}/Outputs/${other.id}/Output.md`;
+  const note = parseNote(await readFile(join(root, path), 'utf8'), path);
+  await writeFile(join(root, path), noteText({ ...note.metadata, proposals: [proposed.proposalId] }, note.body));
+  await expect(service.getContext(String(other.id))).rejects.toMatchObject({ code: 'NOT_FOUND' });
+});

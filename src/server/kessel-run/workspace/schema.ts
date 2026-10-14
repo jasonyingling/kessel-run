@@ -50,6 +50,10 @@ export const proposal = common.extend({
   state: z.enum(['pending', 'accepted', 'rejected']), targetId: id, targetHash: z.string(),
   evidence: z.string().max(24000), payload: z.record(z.string(), z.unknown()),
 });
+export const artifact = common.extend({
+  type: z.literal('workflow-artifact'), publicationId: id, pieceId: id,
+  kind: z.enum(['research', 'anchor', 'hook', 'outline', 'review']),
+});
 export const entitySchemas = { workspace, publication, profile, piece, output, source, revision, proposal };
 export type Pin = z.infer<typeof pin>;
 export type Output = z.infer<typeof output>;

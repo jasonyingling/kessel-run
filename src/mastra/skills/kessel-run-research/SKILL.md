@@ -57,3 +57,7 @@ Coverage: [sources actually reviewed; full text/excerpts; retrieval limitations]
 ```
 
 For a landscape brief, Findings may group dominant narratives, minority positions, credible data anchors and audience-specific opportunities. For a single claim, a short supported finding and source list is sufficient. Suggest Anchor only when direction is undecided; otherwise feed the evidence into the current output's next action.
+
+## App runtime capabilities
+
+When working in the local app or through MCP, read [the runtime capability guide](references/app-runtime.md). Use only available capabilities; keep these editorial methods and the portable handoff unchanged.

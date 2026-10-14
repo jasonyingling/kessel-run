@@ -188,3 +188,7 @@ For a library audit, present a summary table:
 **Retiring content is okay.** Not everything needs to live forever. If a piece is outdated, irrelevant, and getting no traffic, retiring or archiving it is a legitimate choice. The user's published content is a portfolio — curation matters.
 
 **Report retrieval honestly.** Use actual available tools for current facts; without them assess supplied evidence and list freshness checks as unverified. Never simulate a search or treat remembered facts as current verification. Recommendations to update or retire are not permission to modify published content.
+
+## App runtime capabilities
+
+When working in the local app or through MCP, read [the runtime capability guide](references/app-runtime.md). Use only available capabilities; keep these editorial methods and the portable handoff unchanged.

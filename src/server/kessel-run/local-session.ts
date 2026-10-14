@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { chmodSync, lstatSync, mkdirSync, realpathSync } from 'node:fs';
 import { dirname, isAbsolute, relative, sep } from 'node:path';
+import { z } from 'zod';
 
 export const SESSION_COOKIE = 'kr-local-session';
 function contains(parent: string, child: string) {
@@ -49,8 +50,26 @@ export function privateFile(name: string, root = privateRoot()) {
   return path;
 }
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
+const sessionSchema = z.object({ tokenHash: z.string().regex(/^[a-f0-9]{64}$/), expires: z.number().finite(), workspaceId: z.string().uuid() }).strict();
 export class LocalAccessError extends Error {
   constructor(public readonly status = 403) { super('Local access denied'); }
+}
+export async function boundedJSON(request: Request, maximumBytes = 100000) {
+  const reader = request.body?.getReader();
+  if (!reader) throw new LocalAccessError(400);
+  const parts: Uint8Array[] = [];
+  let bytes = 0;
+  while (true) {
+    const chunk = await reader.read();
+    if (chunk.done) break;
+    bytes += chunk.value.byteLength;
+    if (bytes > maximumBytes) {
+      await reader.cancel();
+      throw new LocalAccessError(413);
+    }
+    parts.push(chunk.value);
+  }
+  return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(parts)));
 }
 export function requireLocalRequest(request: Request, mutation = false) {
   const configured = process.env.KESSEL_RUN_ORIGIN ?? 'http://127.0.0.1:3000';
@@ -86,7 +105,7 @@ export async function requireLocalSession(request: Request, mutation = false) {
   const cookie = request.headers.get('cookie')?.split(';').map(v => v.trim()).find(v => v.startsWith(`${SESSION_COOKIE}=`))?.slice(SESSION_COOKIE.length + 1);
   if (!cookie || !/^[a-f0-9]{64}$/.test(cookie)) throw new LocalAccessError(401);
   let session: { tokenHash: string; expires: number; workspaceId: string };
-  try { session = JSON.parse(await readFile(privateFile('session.json'), 'utf8')); }
+  try { session = sessionSchema.parse(JSON.parse(await readFile(privateFile('session.json'), 'utf8'))); }
   catch { throw new LocalAccessError(401); }
   const actual = Buffer.from(hash(cookie));
   const expected = Buffer.from(session.tokenHash);
@@ -102,7 +121,7 @@ export async function exchangePairing(request: Request, token: string) {
   try { await rename(privateFile('pairing.json', root), claimed); }
   catch { throw new LocalAccessError(401); }
   try {
-    const pairing = JSON.parse(await readFile(claimed, 'utf8')) as { tokenHash: string; expires: number; workspaceId: string };
+    const pairing = sessionSchema.parse(JSON.parse(await readFile(claimed, 'utf8')));
     const expected = Buffer.from(pairing.tokenHash);
     const actual = Buffer.from(hash(token));
     if (actual.length !== expected.length || !timingSafeEqual(actual, expected) || pairing.expires < Date.now()) throw new LocalAccessError(401);

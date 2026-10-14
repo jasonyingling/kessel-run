@@ -193,3 +193,7 @@ The "promise this hook makes" line is critical. It gets carried forward to Stage
 **Respect the publication's voice from the first word.** The hook sets the reader's expectations for the entire piece. If the hook sounds like generic LinkedIn advice but the piece is a casual builder story, there's a voice mismatch from sentence one. Match the voice from the start.
 
 **Name the next useful step.** Use Architecture if the piece needs structure; otherwise draft in the selected mode.
+
+## App runtime capabilities
+
+When working in the local app or through MCP, read [the runtime capability guide](references/app-runtime.md). Use only available capabilities; keep these editorial methods and the portable handoff unchanged.

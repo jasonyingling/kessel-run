@@ -87,11 +87,13 @@ export async function connectionTest(
             const usage = await output.totalUsage;
             record.usage = { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens };
           }
+          await cleanup();
           await store.save(record);
           if (!canceled) controller.close();
         } catch {
           record.status = abort.signal.aborted ? 'interrupted' : 'failed';
           record.candidateId = proposed;
+          await cleanup();
           await store.save(record);
           if (!canceled) {
             controller.enqueue({ type: 'error', errorText: 'Connection test failed or stopped. No credential fallback was attempted.' });

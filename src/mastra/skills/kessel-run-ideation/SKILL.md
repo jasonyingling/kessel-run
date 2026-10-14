@@ -194,3 +194,7 @@ This ideation map gets carried forward to Stage 3 (Hook) and Stage 4 (Architectu
 **Speed with substance.** Target ~5 minutes for this stage. That means efficient conversation — don't belabor points the user already has clarity on. Spend the time on the gaps: the counterarguments they haven't considered, the evidence they're missing, the stories they haven't thought to tell.
 
 **Name the next useful step.** Use Hook or Architecture where openings or structure need work; otherwise proceed to Draft with the selected voice and sources.
+
+## App runtime capabilities
+
+When working in the local app or through MCP, read [the runtime capability guide](references/app-runtime.md). Use only available capabilities; keep these editorial methods and the portable handoff unchanged.
