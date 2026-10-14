@@ -59,3 +59,51 @@ it('reloads the completed streamed candidate and provider usage', async () => {
   expect(run.response).toBe('Saved.');
   expect(run.usage).toEqual({ inputTokens: 6, outputTokens: 8 });
 });
+
+it('cancels the integrated response body, aborts inference and persists interrupted status', async () => {
+  let providerAborted = false;
+  const model = new MockLanguageModelV3({ doStream: async options => ({
+    stream: new ReadableStream({ start(controller) {
+      controller.enqueue({ type: 'text-start', id: 'text' });
+      controller.enqueue({ type: 'text-delta', id: 'text', delta: 'Provisional synthetic text' });
+      options.abortSignal?.addEventListener('abort', () => {
+        providerAborted = true;
+        controller.error(new DOMException('Stopped', 'AbortError'));
+      }, { once: true });
+    } }),
+  }) });
+  const response = await connectionTest(selection, new AbortController().signal, crypto.randomUUID(), { root, model });
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+  let provisional = '';
+  while (!provisional.includes('Provisional synthetic text')) {
+    const part = await reader.read();
+    if (part.done) throw new Error('Expected provisional streamed text');
+    provisional += decoder.decode(part.value);
+  }
+  await reader.cancel();
+  const store = new RunStore(root);
+  let run = await store.get(response.headers.get('x-kr-run-id')!);
+  const deadline = Date.now() + 2000;
+  while (run.status === 'running' && Date.now() < deadline) {
+    await new Promise(resolve => setTimeout(resolve, 10));
+    run = await store.get(run.id);
+  }
+  expect(providerAborted).toBe(true);
+  expect(run.status).toBe('interrupted');
+  expect(run.candidateId).toBeNull();
+  expect(model.doStreamCalls).toHaveLength(1);
+  expect((await readdir(root)).filter(name => name.startsWith('active-'))).toHaveLength(0);
+});
+
+it('redacts invalid-provider errors from the response and persisted run without retrying', async () => {
+  const model = new MockLanguageModelV3({ doStream: async () => {
+    throw new Error('Invalid credential synthetic-api-secret-not-for-client');
+  } });
+  const response = await connectionTest(selection, new AbortController().signal, crypto.randomUUID(), { root, model });
+  expect(await response.text()).not.toContain('synthetic-api-secret-not-for-client');
+  const run = await new RunStore(root).get(response.headers.get('x-kr-run-id')!);
+  expect(run.status).toBe('failed');
+  expect(JSON.stringify(run)).not.toContain('synthetic-api-secret-not-for-client');
+  expect(model.doStreamCalls).toHaveLength(1);
+});

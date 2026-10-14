@@ -50,3 +50,50 @@ billed smoke verification remain pending. Browser policy blocks inspection and
 browser execution; no visual, keyboard, mobile or reduced-motion acceptance is
 claimed. Source implementation and permitted unit/SDK/HTTP verification continue
 under the amended plan.
+
+## Phase 2: durable Markdown service checkpoint
+
+The shared service creates an explicitly selected empty app-managed workspace.
+It refuses existing personal notes; there is no automatic vault or legacy
+working-memory migration. Profiles are previewed and imported only through an
+explicit human confirmation operation; supplied prose remains byte-identical.
+Sparse approved profiles are supported. Publications have readable preset notes;
+initial preset labels contain no invented format instructions.
+
+Canonical content occupies `Kessel Run.md`, `Publications/`, `Voice Profiles/`,
+`Output Presets/`, and `Pieces/<id>/Brief.md`, sources and independent outputs.
+Output files retain complete profile pins and readable relative version links.
+Prose revisions have immutable raw Markdown files and separate provenance/context
+notes. Candidate proposals retain machine/external text without replacing editor
+prose. Context captures all selected source IDs, hashes and text; public source
+retrieval paginates. Source URLs are http/https references only, never retrieval
+claims. Supplied interview questions and answers remain verbatim with attribution.
+
+Private journals bind to the canonical content root and stable workspace ID.
+Reusing them for a different root fails before recovery. The existing LibSQL
+client is pinned directly for private SQLite write-transaction coordination;
+Markdown remains canonical. SQLite OS locks exclude separate Next/MCP workers
+and release on process termination. No Mastra model/observability initialization
+is needed for these operations. File and directory fsync precede journal apply
+and acknowledgment. Interrupted multi-file changes recover before reads/writes;
+intervening external edits produce conflicts rather than being overwritten.
+Identical operation IDs return their original result; changed arguments fail.
+Rejected stale prose remains in the private journal for reconciliation.
+
+The content index rebuilds from Markdown. Duplicate IDs, corruption, missing
+versions and symlink/traversal attempts report errors instead of an empty state.
+Externally modifying an immutable voice/source/revision snapshot fails until it
+is restored or explicitly imported as a new version. Draft saves check both the
+editor hash and the full selected-context hash. Restarted launchers reuse the
+configured workspace identity.
+
+Markdown export returns selected prose and a resumable handoff containing actual
+rules, sources, selections, decisions and pending work. It excludes private
+credentials, tokens, journals and runs. Filenames are sanitized. Raw supplied
+HTML remains text; browser preview sanitization/visual testing belongs to the UI
+phase and is not claimed by this backend checkpoint.
+
+Remaining phases supply the full HTTP/MCP operation adapters, profile-version
+proposal/approval flows, preset editing UI, publication/writing desk UI,
+resumable conversations, accepted finals/lessons, and release walkthroughs.
+Browser execution and live provider/external Codex checks remain pending.

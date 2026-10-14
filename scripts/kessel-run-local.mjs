@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { randomBytes, randomUUID, createHash } from 'node:crypto';
-import { mkdir, writeFile, rename, lstat, chmod, realpath } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename, lstat, chmod, realpath } from 'node:fs/promises';
 import { dirname, resolve, relative, sep } from 'node:path';
 import { homedir } from 'node:os';
 const mode = process.argv[2];
@@ -22,8 +22,21 @@ const canonical = await realpath(root);
 if (process.getuid && (await lstat(canonical)).uid !== process.getuid()) throw new Error('Private root must be owned by this user');
 await chmod(canonical, 0o700);
 const token = randomBytes(32).toString('hex');
+let workspaceId = process.env.KESSEL_RUN_WORKSPACE_ID ?? randomUUID();
+const workspaceConfigurationPath = resolve(canonical, 'workspace.json');
+const workspaceInfo = await lstat(workspaceConfigurationPath).catch(error => {
+  if (error.code !== 'ENOENT') throw error;
+  return null;
+});
+if (workspaceInfo) {
+  if (!workspaceInfo.isFile() || workspaceInfo.isSymbolicLink()) throw new Error('Workspace configuration must be a private regular file');
+  await chmod(workspaceConfigurationPath, 0o600);
+  const workspaceConfiguration = JSON.parse(await readFile(workspaceConfigurationPath, 'utf8'));
+  if (!/^[a-f0-9-]{36}$/.test(workspaceConfiguration.id)) throw new Error('Workspace identity is corrupt');
+  workspaceId = workspaceConfiguration.id;
+}
 const temporary = resolve(canonical, `.pairing-${randomUUID()}.json`);
-await writeFile(temporary, JSON.stringify({ tokenHash: createHash('sha256').update(token).digest('hex'), expires: Date.now() + 600000, workspaceId: process.env.KESSEL_RUN_WORKSPACE_ID ?? randomUUID() }), { mode: 0o600, flag: 'wx' });
+await writeFile(temporary, JSON.stringify({ tokenHash: createHash('sha256').update(token).digest('hex'), expires: Date.now() + 600000, workspaceId }), { mode: 0o600, flag: 'wx' });
 await rename(temporary, resolve(canonical, 'pairing.json'));
 const origin = `http://127.0.0.1:${port}`;
 console.log(`Pair this browser within 10 minutes: ${origin}/kessel-run/settings#pair=${token}`);

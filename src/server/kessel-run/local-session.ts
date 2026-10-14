@@ -1,5 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { readFile, writeFile, mkdir, rename, unlink } from 'node:fs/promises';
+import { readFile, open, mkdir, rename, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { chmodSync, lstatSync, mkdirSync, realpathSync } from 'node:fs';
@@ -66,8 +66,20 @@ export async function ownerWrite(name: string, value: unknown, root = privateRoo
   privateFile(name, root);
   await mkdir(root, { recursive: true, mode: 0o700 });
   const temporary = resolve(root, `.${name}.${randomBytes(16).toString('hex')}`);
-  await writeFile(temporary, JSON.stringify(value), { mode: 0o600, flag: 'wx' });
+  const handle = await open(temporary, 'wx', 0o600);
+  try {
+    await handle.writeFile(JSON.stringify(value));
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
   await rename(temporary, resolve(root, name));
+  const directory = await open(root, 'r');
+  try {
+    await directory.sync();
+  } finally {
+    await directory.close();
+  }
 }
 export async function requireLocalSession(request: Request, mutation = false) {
   requireLocalRequest(request, mutation);

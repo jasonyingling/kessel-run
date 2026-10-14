@@ -37,7 +37,7 @@ export function AppSettings() {
     try {
       const response = await fetch('/api/kessel-run/local/credentials', { method: 'PUT', headers, body: JSON.stringify({ key: submitted }) });
       if (!response.ok) throw new Error('Key was not saved. Enter it again and retry.');
-      await reload(); setMessage('Saved key. It stays in the owner-only private store outside exported content.');
+      await reload(); setMessage('Saved key. It stays in an unencrypted owner-only local file outside exported content.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Save failed'); }
     finally { setBusy(false); }
   }

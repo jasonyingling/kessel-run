@@ -67,6 +67,8 @@ export async function connectionTest(
     }).getReader();
     const record = run;
     let canceled = false;
+    let finished!: () => void;
+    const completion = new Promise<void>(resolve => { finished = resolve; });
     const stream = new ReadableStream<UIMessageChunk>({
       async start(controller) {
         try {
@@ -96,24 +98,29 @@ export async function connectionTest(
             controller.close();
           }
         } finally {
-          await cleanup();
+          try { await cleanup(); }
+          finally { finished(); }
         }
       },
-      cancel() {
+      async cancel() {
         canceled = true;
         stop();
-        return reader.cancel();
+        await reader.cancel();
+        await completion;
       },
     });
     return createUIMessageStreamResponse({
       stream, headers: { 'x-kr-run-id': record.id, 'cache-control': 'no-store' },
     });
   } catch {
-    if (run) {
-      run.status = abort.signal.aborted ? 'interrupted' : 'failed';
-      await store.save(run);
+    try {
+      if (run) {
+        run.status = abort.signal.aborted ? 'interrupted' : 'failed';
+        await store.save(run);
+      }
+    } finally {
+      await cleanup();
     }
-    await cleanup();
     throw new Error('Connection test unavailable. Check the selected credential.');
   }
 }
