@@ -177,5 +177,14 @@
 @media(max-width:420px) { .kr-main { padding:16px; } .kr-panel,.kr-paper { padding:18px; } .kr-app h1 { font-size:26px; } }
 
 .kr-paper .kr-conflict { color:#e7edff; background:#172441; }
+.kr-lesson { display:flex; gap:12px; align-items:flex-start; margin:16px 0; }
+.kr-lesson input { width:18px; height:18px; margin-top:4px; }
+.kr-chat,.kr-voice-editor { display:grid; gap:14px; margin:20px 0; }
+.kr-markdown { line-height:1.8; overflow-wrap:anywhere; }
+.kr-markdown ul,.kr-markdown ol { padding-left:24px; }
+.kr-markdown ul { list-style:disc; }
+.kr-markdown ol { list-style:decimal; }
+.kr-markdown table { display:block; overflow-x:auto; }
+.kr-markdown blockquote { border-left:3px solid #93a3c3; padding-left:16px; }
 @media(hover:hover) and (pointer:fine) { .kr-paper .kr-action:hover { color:#13233f; background:#c7d7f3; } }
 @media(max-width:768px) { .kr-app input,.kr-app textarea,.kr-app select { font-size:16px; } }

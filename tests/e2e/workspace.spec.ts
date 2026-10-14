@@ -31,16 +31,22 @@ test('no-key manual publication, import, independent outputs, save and export', 
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await page.getByRole('link', { name: 'Synthetic piece' }).click();
   for (const name of ['Article output', 'Short output']) {
-    await page.getByRole('button', { name: 'Add output' }).click();
+    await page.getByRole('button', { name: 'Add output / repurpose' }).click();
     await page.getByLabel('Title', { exact: true }).fill(name);
     await page.getByRole('button', { name: 'Save', exact: true }).click();
   }
   await page.getByRole('link', { name: 'Article output' }).click();
   await page.getByLabel('Output prose').fill('Human-supplied synthetic draft.');
   await page.getByRole('button', { name: 'Save prose' }).click();
-  await expect(page.getByRole('status')).toHaveText('Saved.');
+  await expect(page.locator('.kr-main > .kr-status')).toHaveText('Saved.');
   await page.reload();
   await expect(page.getByLabel('Output prose')).toHaveValue('Human-supplied synthetic draft.');
+  await page.getByRole('button', { name: 'Accept this exact final prose' }).click();
+  await expect(page.getByText('Current output: accepted.', { exact: false })).toBeVisible();
+  await page.getByLabel('Output prose').fill('Later manual edit invalidates acceptance.');
+  await page.getByRole('button', { name: 'Save prose' }).click();
+  await expect(page.locator('.kr-main > .kr-status')).toHaveText('Saved.');
+  await expect(page.getByText('Current output: drafting.', { exact: false })).toBeVisible();
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export Markdown' }).click();
   expect((await download).suggestedFilename()).toMatch(/\.md$/);

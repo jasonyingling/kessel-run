@@ -2,6 +2,16 @@
 
 ## Phase 1: synthetic API connection slice
 
+## Human decisions and portable restoration
+
+Use a draft candidate only after reviewing its exact retained prose. This does not accept a final. Save human edits, then accept one exact current revision; a new immutable human final snapshot retains the accepted bytes. Later prose edits clear acceptance without changing old machine/final files.
+
+Review lesson evidence against the exact retained machine/final pair. Approve/reject selected rules separately; unselected lessons remain pending. Approved rules append to a new publication or author version. Existing output pins remain unchanged. A newer approved base causes a conflict instead of replacing its rules; reject the outdated proposal or review/rebase through the voice editor. Author rules retain their exact approved publication parent.
+
+Voice edits create immutable draft versions. Human approval creates a separate approved version, preserving both the candidate and earlier approved rules. Compare the displayed previous/proposed rules before deciding. Profile approval, prose acceptance and lesson approval are separate browser capabilities; no model/MCP tool exposes them.
+
+Markdown export includes actual source/interview text, artifacts, proposed rules and lesson decisions, pending candidate prose, exact retained revisions/context, and a validated restoration block. Both readable text and restoration data come from one cross-process locked snapshot. It excludes private run records, tokens and credentials. Restoration requires an explicit preview and confirmation into a new empty app workspace; it preserves exported editorial records, identities and exact prose, and refuses existing content or unsafe/unowned paths. This is distinct from copying private state as a backup.
+
 Requires Node 20 or later. Install dependencies with `npm ci`, then launch
 `npm run app:dev`. The launcher binds to `127.0.0.1` and prints a single-use
 browser pairing link, valid for ten minutes. Pairing establishes an HttpOnly,

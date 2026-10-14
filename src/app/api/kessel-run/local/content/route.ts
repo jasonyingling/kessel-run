@@ -3,8 +3,9 @@ import { boundedJSON, LocalAccessError, requireLocalSession } from '@/server/kes
 import { configuredWorkspace } from '@/server/kessel-run/workspace/config';
 import { WorkspaceError } from '@/server/kessel-run/workspace/schema';
 import { exportOutput } from '@/server/kessel-run/workspace/import-export';
+import { parseHandoff } from '@/server/kessel-run/workspace/handoff';
 export const runtime = 'nodejs';
-const envelope = z.object({ action: z.enum(['publication', 'publication-update', 'preset-update', 'profile-preview', 'profile-import', 'piece', 'piece-context', 'output', 'source', 'editor', 'context', 'revision', 'publication-context', 'export']), input: z.unknown() }).strict();
+const envelope = z.object({ action: z.enum(['publication', 'publication-update', 'preset-update', 'profile-preview', 'profile-import', 'profile-propose', 'profile-decision', 'draft-decision', 'final-accept', 'lessons-propose', 'lessons-decision', 'piece', 'piece-context', 'output', 'source', 'editor', 'context', 'revision', 'publication-context', 'export', 'handoff-preview', 'handoff-import']), input: z.unknown() }).strict();
 type Service = Awaited<ReturnType<typeof configuredWorkspace>>['service'];
 function input<T>(value: unknown): T { return value as T; }
 export async function POST(request: Request) {
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
     const session = await requireLocalSession(request, true);
     const { service, configuration } = await configuredWorkspace();
     if (configuration.id !== session.workspaceId) throw new LocalAccessError();
-    const command = envelope.parse(await boundedJSON(request, 100000));
+    const command = envelope.parse(await boundedJSON(request, 10000000));
     let result: unknown;
     switch (command.action) {
       case 'publication': result = await service.createPublication(input<Parameters<Service['createPublication']>[0]>(command.input)); break;
@@ -20,6 +21,12 @@ export async function POST(request: Request) {
       case 'preset-update': result = await service.updatePreset(input<Parameters<Service['updatePreset']>[0]>(command.input)); break;
       case 'profile-preview': result = await service.previewProfile(input<Parameters<Service['previewProfile']>[0]>(command.input)); break;
       case 'profile-import': result = await service.confirmProfileImport(input<Parameters<Service['confirmProfileImport']>[0]>(command.input)); break;
+      case 'profile-propose': result = await service.proposeProfile(input<Parameters<Service['proposeProfile']>[0]>(command.input)); break;
+      case 'profile-decision': result = await service.decideProfile(input<Parameters<Service['decideProfile']>[0]>(command.input)); break;
+      case 'draft-decision': result = await service.decideDraft(input<Parameters<Service['decideDraft']>[0]>(command.input)); break;
+      case 'final-accept': result = await service.acceptFinal(input<Parameters<Service['acceptFinal']>[0]>(command.input)); break;
+      case 'lessons-propose': result = await service.proposeLessons(input<Parameters<Service['proposeLessons']>[0]>(command.input)); break;
+      case 'lessons-decision': result = await service.decideLessons(input<Parameters<Service['decideLessons']>[0]>(command.input)); break;
       case 'piece': result = await service.createPiece(input<Parameters<Service['createPiece']>[0]>(command.input)); break;
       case 'output': result = await service.createOutput(input<Parameters<Service['createOutput']>[0]>(command.input)); break;
       case 'source': result = await service.saveSource(input<Parameters<Service['saveSource']>[0]>(command.input)); break;
@@ -43,6 +50,15 @@ export async function POST(request: Request) {
       case 'export': {
         const value = z.object({ outputId: z.string().uuid() }).strict().parse(command.input);
         result = await exportOutput(service, value.outputId); break;
+      }
+      case 'handoff-preview': {
+        const value = z.object({ markdown: z.string().max(8000000) }).strict().parse(command.input);
+        result = await service.previewHandoff(parseHandoff(value.markdown)); break;
+      }
+      case 'handoff-import': {
+        const value = z.object({ operationId: z.string().uuid(), expectedHash: z.string().length(64), previewHash: z.string().length(64), markdown: z.string().max(8000000) }).strict().parse(command.input);
+        const { markdown, ...input } = value;
+        result = await service.importHandoff({ ...input, bundle: parseHandoff(markdown) }); break;
       }
     }
     return Response.json(result, { headers: { 'cache-control': 'no-store' } });

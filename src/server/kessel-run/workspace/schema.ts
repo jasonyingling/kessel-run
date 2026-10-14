@@ -24,6 +24,9 @@ export const profile = common.extend({
   if (value.scope === 'author' && (!value.authorId || !value.parent)) {
     context.addIssue({ code: 'custom', message: 'Author profiles require an exact parent and author ID' });
   }
+  if (value.scope === 'publication' && (value.authorId || value.parent)) {
+    context.addIssue({ code: 'custom', message: 'Publication profiles cannot have an author or parent overlay' });
+  }
 });
 export const piece = common.extend({
   type: z.literal('content-brief'), publicationId: id, mode: z.enum(['guided', 'fast']),

@@ -6,6 +6,8 @@ import type { Write } from './journal';
 import { hashText, markdownPaths, noteText, optionalText, parseNote, readText, safePath } from './files';
 import type { Note } from './files';
 import * as schemas from './schema';
+import { handoffBundle, handoffHash } from './handoff';
+import type { HandoffBundle } from './handoff';
 
 const text = z.string().max(80000);
 const expectedHash = z.string().length(64);
@@ -184,7 +186,8 @@ export class WorkspaceService {
       const publication = this.find(notes, parsed.publicationId, 'publication');
       if (parsed.scope === 'author') {
         if (!parsed.parent || !parsed.authorId) throw new schemas.WorkspaceError('INVALID_INPUT', 'Select the author and exact publication parent');
-        this.version(notes, parsed.parent, parsed.publicationId);
+        const parent = this.version(notes, parsed.parent, parsed.publicationId);
+        if (parent.profile.scope !== 'publication' || parent.profile.status !== 'approved') throw new schemas.WorkspaceError('APPROVAL_REQUIRED', 'Select an approved publication parent');
       }
       return { prose: parsed.prose, publicationHash: publication.hash, addedMetadata: { version: 1, scope: parsed.scope, parent: parsed.parent, evidenceLevel: 'sparse', status: 'approved after human confirmation' }, requiresHumanConfirmation: true };
     });
@@ -201,7 +204,10 @@ export class WorkspaceService {
     return this.mutate(parsed.operationId, parsed, async notes => {
       const publication = this.find(notes, parsed.publicationId, 'publication');
       this.check(publication, parsed.expectedHash);
-      if (parsed.parent) this.version(notes, parsed.parent, parsed.publicationId);
+      if (parsed.parent) {
+        const parent = this.version(notes, parsed.parent, parsed.publicationId);
+        if (parent.profile.scope !== 'publication' || parent.profile.status !== 'approved') throw new schemas.WorkspaceError('APPROVAL_REQUIRED', 'Select an approved publication parent');
+      }
       const profile = schemas.profile.parse(metadata('voice-profile', parsed.title, {
         publicationId: parsed.publicationId, version: 1, scope: parsed.scope,
         authorId: parsed.authorId, parent: parsed.parent, status: 'approved',
@@ -268,6 +274,120 @@ export class WorkspaceService {
       const piece = this.find(notes, pieceId, 'content-brief');
       this.find(notes, String(piece.metadata.publicationId), 'publication');
       return { piece: summary(piece), sources: notes.filter(note => note.metadata.type === 'source' && note.metadata.pieceId === pieceId).map(summary), artifacts: notes.filter(note => note.metadata.type === 'workflow-artifact' && note.metadata.pieceId === pieceId && note.metadata.publicationId === piece.metadata.publicationId).map(summary) };
+    });
+  }
+
+  private async selection(notes: Note[], outputId: string): Promise<HandoffBundle> {
+      const selected = this.context(notes, outputId, 0, true);
+      const publicationId = selected.output.publicationId;
+      const pieceId = selected.output.pieceId;
+      const included = notes.filter(note => {
+        const data = note.metadata;
+        return (data.type === 'publication' && data.id === publicationId)
+          || (['voice-profile', 'output-preset'].includes(String(data.type)) && data.publicationId === publicationId)
+          || (data.type === 'content-brief' && data.id === pieceId)
+          || (data.type === 'content-output' && data.id === outputId)
+          || (['source', 'workflow-artifact'].includes(String(data.type)) && data.pieceId === pieceId)
+          || (data.type === 'revision' && data.outputId === outputId)
+          || (data.type === 'proposal' && [publicationId, outputId].includes(data.targetId));
+      });
+      const files = included.map(note => ({ path: note.path, text: noteText(note.metadata, note.body) }));
+      for (const note of included.filter(value => value.metadata.type === 'revision')) {
+        const revision = schemas.revision.parse(note.metadata);
+        const path = `${selected.output.pieceId ? `Pieces/${selected.output.pieceId}/Outputs/${outputId}/` : ''}Revisions/${revision.id}.prose.md`;
+        if (revision.prosePath !== path) throw new schemas.WorkspaceError('INVALID_INPUT', 'Retained prose path disagrees');
+        const prose = await readText(this.root, path);
+        if (hashText(prose) !== revision.proseHash) throw new schemas.WorkspaceError('CONFLICT', 'Retained prose changed');
+        files.push({ path, text: prose });
+      }
+      return handoffBundle.parse({ format: 'kessel-run-handoff-v1', outputId, files });
+  }
+
+  async exportSelection(outputId: string) {
+    return this.journal.readLocked(async () => this.selection(await this.index(), outputId));
+  }
+
+  async exportSnapshot(outputId: string) {
+    return this.journal.readLocked(async () => {
+      const notes = await this.index();
+      const context = this.context(notes, outputId, 0, true);
+      const bundle = await this.selection(notes, outputId);
+      const revisions = notes.filter(note => note.metadata.type === 'revision' && note.metadata.outputId === outputId).map(note => {
+        const revision = schemas.revision.parse(note.metadata);
+        return { ...revision, prose: bundle.files.find(file => file.path === revision.prosePath)!.text, acceptedFinal: note.metadata.acceptedFinal === true };
+      });
+      return { context, bundle, revisions };
+    });
+  }
+
+  private validateHandoff(bundle: HandoffBundle) {
+    const value = handoffBundle.parse(bundle);
+    const paths = new Set<string>();
+    const notes: Note[] = [];
+    const identities = new Set<string>();
+    for (const file of value.files) {
+      if (paths.has(file.path)) throw new schemas.WorkspaceError('INVALID_INPUT', 'Duplicate restoration path');
+      paths.add(file.path);
+      if (file.path.endsWith('.prose.md')) continue;
+      const note = parseNote(file.text, file.path);
+      const type = String(note.metadata.type);
+      if (!kinds[type] || type === 'workspace') throw new schemas.WorkspaceError('INVALID_INPUT', 'Unsupported restoration entity');
+      kinds[type].parse(note.metadata);
+      const key = type === 'voice-profile' ? `${note.metadata.id}:v${note.metadata.version}` : String(note.metadata.id);
+      if (identities.has(key)) throw new schemas.WorkspaceError('INVALID_INPUT', 'Duplicate restoration identity');
+      identities.add(key); notes.push(note);
+    }
+    const output = this.find(notes, value.outputId, 'content-output');
+    const data = schemas.output.parse(output.metadata);
+    if (notes.filter(note => note.metadata.type === 'content-output').length !== 1 || notes.filter(note => note.metadata.type === 'publication').length !== 1 || notes.filter(note => note.metadata.type === 'content-brief').length !== 1) throw new schemas.WorkspaceError('INVALID_INPUT', 'Restore one selected output and its publication/piece');
+    this.find(notes, data.publicationId, 'publication');
+    for (const note of notes) {
+      const item = note.metadata;
+      let path: string;
+      switch (item.type) {
+        case 'publication': path = `Publications/${item.id}.md`; break;
+        case 'voice-profile': path = `Voice Profiles/${item.id}/v${item.version}.md`; this.version(notes, { profileId: String(item.id), version: Number(item.version) }, data.publicationId); break;
+        case 'output-preset': path = `Output Presets/${item.id}.md`; break;
+        case 'content-brief': path = `Pieces/${item.id}/Brief.md`; break;
+        case 'content-output': path = `Pieces/${data.pieceId}/Outputs/${item.id}/Output.md`; break;
+        case 'source': path = `Pieces/${data.pieceId}/Sources/${item.id}.md`; break;
+        case 'workflow-artifact': path = `Pieces/${data.pieceId}/Artifacts/${item.id}.md`; break;
+        case 'revision': path = `Pieces/${data.pieceId}/Outputs/${data.id}/Revisions/${item.id}.md`; break;
+        case 'proposal': path = item.kind === 'draft' ? `Pieces/${data.pieceId}/Outputs/${data.id}/Proposals/${item.id}.md` : `Proposals/${item.id}.md`; break;
+        default: throw new schemas.WorkspaceError('INVALID_INPUT', 'Unsupported restoration path');
+      }
+      if (note.path !== path || (item.publicationId && item.publicationId !== data.publicationId) || (item.pieceId && item.pieceId !== data.pieceId) || (item.outputId && item.outputId !== data.id) || (item.targetId && item.targetId !== (item.kind === 'profile' ? data.publicationId : data.id))) throw new schemas.WorkspaceError('INVALID_INPUT', 'Restoration paths or entity scopes disagree');
+    }
+    const revisions = notes.filter(note => note.metadata.type === 'revision');
+    const rawPaths = new Set<string>();
+    for (const note of revisions) {
+      const revision = schemas.revision.parse(note.metadata);
+      const path = `Pieces/${data.pieceId}/Outputs/${data.id}/Revisions/${revision.id}.prose.md`;
+      const file = value.files.find(file => file.path === path);
+      if (revision.prosePath !== path || !file || hashText(file.text) !== revision.proseHash) throw new schemas.WorkspaceError('INVALID_INPUT', 'Restoration prose hash disagrees');
+      rawPaths.add(path);
+      if (revision.parentRevision && !revisions.some(note => note.metadata.id === revision.parentRevision)) throw new schemas.WorkspaceError('INVALID_INPUT', 'Restoration parent revision is missing');
+    }
+    if (value.files.some(file => file.path.endsWith('.prose.md') && !rawPaths.has(file.path))) throw new schemas.WorkspaceError('INVALID_INPUT', 'Unowned restoration prose file');
+    for (const revisionId of [...data.revisions, data.currentRevision, data.acceptedRevision].filter(Boolean)) if (!revisions.some(note => note.metadata.id === revisionId)) throw new schemas.WorkspaceError('INVALID_INPUT', 'Referenced restoration revision is missing');
+    const context = this.context(notes, data.id, 0, true);
+    return { value, notes, context };
+  }
+
+  async previewHandoff(bundle: HandoffBundle) {
+    const validated = this.validateHandoff(bundle);
+    return { hash: handoffHash(validated.value), output: validated.context.output, profiles: validated.notes.filter(note => note.metadata.type === 'voice-profile').map(summary), fileCount: validated.value.files.length, decisions: validated.context.pending, restoresEditorialRecords: true };
+  }
+
+  async importHandoff(input: { operationId: string; expectedHash: string; previewHash: string; bundle: HandoffBundle }) {
+    const parsed = baseInput.extend({ previewHash: expectedHash, bundle: handoffBundle }).strict().parse(input);
+    const validated = this.validateHandoff(parsed.bundle);
+    if (handoffHash(validated.value) !== parsed.previewHash) throw new schemas.WorkspaceError('CONFLICT', 'Restoration preview changed');
+    return this.mutate(parsed.operationId, parsed, async notes => {
+      const home = notes.find(note => note.metadata.type === 'workspace')!;
+      this.check(home, parsed.expectedHash);
+      if (notes.some(note => note.metadata.type !== 'workspace')) throw new schemas.WorkspaceError('INVALID_INPUT', 'Restore into a new empty app-managed workspace; existing content is preserved');
+      return { writes: validated.value.files.map(file => ({ ...file, previousHash: null })), result: { outputId: validated.value.outputId, restoredFiles: validated.value.files.length } };
     });
   }
 
@@ -357,7 +477,7 @@ export class WorkspaceService {
       return { proposal: summary(note), profile: summary(this.version(notes, profilePin, data.publicationId).note) };
     });
     const sourceReferences = sources.map(note => ({ id: note.metadata.id, hash: note.hash }));
-    const contextHash = hashText(JSON.stringify({ output: output.hash, brief: piece.hash, preset: preset.hash, voice: voice.note.hash, author: author?.note.hash ?? null, sourceReferences, artifacts: artifacts.map(note => note.hash), profileProposals: profileProposals.map(value => value.proposal.hash) }));
+    const contextHash = hashText(JSON.stringify({ output: output.hash, brief: piece.hash, preset: preset.hash, voice: voice.note.hash, author: author?.note.hash ?? null, sourceReferences, artifacts: artifacts.map(note => note.hash), proposals: linkedProposals.map(note => note.hash), profileProposals: profileProposals.map(value => value.proposal.hash) }));
     return {
       output: summary(output), brief: summary(piece), voice: summary(voice.note),
       author: author ? summary(author.note) : null,
@@ -520,7 +640,9 @@ export class WorkspaceService {
       while (ancestor && ancestor !== machine.id) {
         if (visited.has(ancestor)) throw new schemas.WorkspaceError('INVALID_INPUT', 'Revision lineage is corrupt');
         visited.add(ancestor);
-        ancestor = schemas.revision.parse(this.find(notes, ancestor, 'revision').metadata).parentRevision;
+        const intermediate = schemas.revision.parse(this.find(notes, ancestor, 'revision').metadata);
+        if (intermediate.outputId !== data.id) throw new schemas.WorkspaceError('INVALID_INPUT', 'Revision lineage crosses output scope');
+        ancestor = intermediate.parentRevision;
       }
       if (ancestor !== machine.id) throw new schemas.WorkspaceError('INVALID_INPUT', 'Final does not descend from the selected machine draft');
       const pin = parsed.target === 'author' ? data.author : data.voice;
@@ -535,6 +657,142 @@ export class WorkspaceService {
         writes: [created(`Proposals/${proposal.id}.md`, proposal, ''), changed(output, { proposals: [...data.proposals, proposal.id] })],
         result: { proposalId: proposal.id, state: 'pending', profile: pin, humanApprovalRequired: true },
       };
+    });
+  }
+
+  // Human-only decisions: these methods are absent from both agent tool registries.
+  async decideDraft(input: { operationId: string; expectedHash: string; expectedContextHash: string; outputId: string; proposalId: string; accept: boolean }) {
+    const parsed = baseInput.extend({ expectedContextHash: expectedHash, outputId: schemas.id, proposalId: schemas.id, accept: z.boolean() }).strict().parse(input);
+    return this.mutate(parsed.operationId, parsed, async notes => {
+      const output = this.find(notes, parsed.outputId, 'content-output');
+      this.check(output, parsed.expectedHash);
+      if (this.context(notes, parsed.outputId).contextHash !== parsed.expectedContextHash) throw new schemas.WorkspaceError('CONFLICT', 'Review the updated context before deciding');
+      const data = schemas.output.parse(output.metadata);
+      const note = this.find(notes, parsed.proposalId, 'proposal');
+      const proposal = schemas.proposal.parse(note.metadata);
+      if (proposal.targetId !== data.id || proposal.kind !== 'draft' || !data.proposals.includes(proposal.id)) throw new schemas.WorkspaceError('NOT_FOUND', 'Draft proposal is outside this output');
+      if (proposal.state !== 'pending') throw new schemas.WorkspaceError('CONFLICT', 'This proposal already has a decision');
+      const revision = this.find(notes, schemas.id.parse(proposal.payload.revisionId), 'revision');
+      const candidate = schemas.revision.parse(revision.metadata);
+      if (candidate.outputId !== data.id) throw new schemas.WorkspaceError('NOT_FOUND', 'Candidate belongs to another output');
+      const prose = await readText(this.root, candidate.prosePath);
+      if (candidate.prosePath !== `${output.path.slice(0, -'Output.md'.length)}Revisions/${candidate.id}.prose.md`) throw new schemas.WorkspaceError('NOT_FOUND', 'Candidate prose is outside this output');
+      if (hashText(prose) !== candidate.proseHash) throw new schemas.WorkspaceError('CONFLICT', 'Candidate prose changed');
+      if (parsed.accept && candidate.parentRevision !== data.currentRevision) throw new schemas.WorkspaceError('CONFLICT', 'The editor changed after this candidate. Reconcile both texts manually before accepting.');
+      const writes = [changed(note, { state: parsed.accept ? 'accepted' : 'rejected', humanDecision: { at: now(), action: parsed.accept ? 'use-candidate' : 'reject-candidate' } })];
+      if (parsed.accept) writes.push(changed(output, { currentRevision: candidate.id, acceptedRevision: null, status: 'review', revisions: [...new Set([...data.revisions, candidate.id])] }, prose));
+      return { writes, result: { id: data.id, candidateId: candidate.id, decision: parsed.accept ? 'used' : 'rejected', finalAccepted: false } };
+    });
+  }
+
+  async acceptFinal(input: { operationId: string; expectedHash: string; expectedContextHash: string; outputId: string; revisionId: string }) {
+    const parsed = baseInput.extend({ expectedContextHash: expectedHash, outputId: schemas.id, revisionId: schemas.id }).strict().parse(input);
+    return this.mutate(parsed.operationId, parsed, async notes => {
+      const output = this.find(notes, parsed.outputId, 'content-output');
+      this.check(output, parsed.expectedHash);
+      if (this.context(notes, parsed.outputId).contextHash !== parsed.expectedContextHash) throw new schemas.WorkspaceError('CONFLICT', 'Review the exact current context before accepting');
+      const data = schemas.output.parse(output.metadata);
+      if (data.currentRevision !== parsed.revisionId) throw new schemas.WorkspaceError('CONFLICT', 'Final acceptance must target the exact current prose revision');
+      const current = schemas.revision.parse(this.find(notes, parsed.revisionId, 'revision').metadata);
+      if (current.outputId !== data.id || current.proseHash !== hashText(output.body)) throw new schemas.WorkspaceError('CONFLICT', 'Editor prose differs from its retained revision');
+      const snapshot = this.draftWrites(notes, output, output.body, 'human', null);
+      const metadataWrite = snapshot.writes.find(write => write.path.endsWith(`${snapshot.revision.id}.md`))!;
+      const snapshotNote = parseNote(metadataWrite.text, metadataWrite.path);
+      metadataWrite.text = noteText({ ...snapshotNote.metadata, acceptedFinal: true, humanDecisionAt: now() }, snapshotNote.body);
+      const write = changed(output, { acceptedRevision: snapshot.revision.id, currentRevision: snapshot.revision.id, status: 'accepted', revisions: [...data.revisions, snapshot.revision.id] });
+      const navigation = await this.navigationWrite(output, `[Accepted final](./Revisions/${snapshot.revision.id}.prose.md)`);
+      return { writes: [...snapshot.writes, write, navigation], result: { id: data.id, acceptedRevision: snapshot.revision.id, proseHash: hashText(output.body) } };
+    });
+  }
+
+  async decideProfile(input: { operationId: string; expectedHash: string; publicationId: string; proposalId: string; expectedProfileHash: string; accept: boolean }) {
+    const parsed = baseInput.extend({ publicationId: schemas.id, proposalId: schemas.id, expectedProfileHash: expectedHash, accept: z.boolean() }).strict().parse(input);
+    return this.mutate(parsed.operationId, parsed, async notes => {
+      const publication = this.find(notes, parsed.publicationId, 'publication');
+      this.check(publication, parsed.expectedHash);
+      const note = this.find(notes, parsed.proposalId, 'proposal');
+      const proposal = schemas.proposal.parse(note.metadata);
+      if (proposal.kind !== 'profile' || proposal.targetId !== parsed.publicationId) throw new schemas.WorkspaceError('NOT_FOUND', 'Profile proposal belongs to another publication');
+      if (proposal.state !== 'pending') throw new schemas.WorkspaceError('CONFLICT', 'Profile proposal already has a decision');
+      const selected = schemas.pin.parse({ profileId: proposal.payload.profileId, version: proposal.payload.version });
+      const candidate = this.version(notes, selected, parsed.publicationId);
+      this.check(candidate.note, parsed.expectedProfileHash);
+      const writes = [changed(note, { state: parsed.accept ? 'accepted' : 'rejected', humanDecision: { at: now(), accept: parsed.accept } })];
+      let approved: schemas.Pin | null = null;
+      if (parsed.accept) {
+        if (publication.hash !== proposal.targetHash) throw new schemas.WorkspaceError('CONFLICT', 'Publication changed since this profile proposal. Review current rules and submit a new proposal.');
+        const approvedVersions = notes.filter(value => value.metadata.type === 'voice-profile' && value.metadata.id === selected.profileId && value.metadata.status === 'approved');
+        const latest = approvedVersions.sort((a, b) => Number(b.metadata.version) - Number(a.metadata.version))[0];
+        const prior = candidate.note.metadata.previousVersion ? schemas.pin.parse(candidate.note.metadata.previousVersion) : null;
+        if (latest && (!prior || latest.metadata.version !== prior.version || latest.metadata.id !== prior.profileId)) throw new schemas.WorkspaceError('CONFLICT', 'A newer approved profile exists. Rebase the proposal explicitly.');
+        if (candidate.profile.parent) {
+          const parent = this.version(notes, candidate.profile.parent, parsed.publicationId);
+          if (parent.profile.scope !== 'publication' || parent.profile.status !== 'approved') throw new schemas.WorkspaceError('APPROVAL_REQUIRED', 'Author approval requires an approved publication parent');
+        }
+        const version = 1 + Math.max(...notes.filter(value => value.metadata.type === 'voice-profile' && value.metadata.id === selected.profileId).map(value => Number(value.metadata.version)));
+        const profile = { ...candidate.profile, version, status: 'approved', created: now(), updated: now(), approvedFrom: selected, humanDecisionAt: now() };
+        approved = { profileId: selected.profileId, version };
+        writes.push(created(`Voice Profiles/${selected.profileId}/v${version}.md`, profile, candidate.note.body));
+        if (candidate.profile.scope === 'publication') writes.push(changed(publication, { defaultVoice: approved, default_voice_link: `[Voice v${version}](../Voice%20Profiles/${selected.profileId}/v${version}.md)` }));
+      }
+      return { writes, result: { proposalId: proposal.id, approved, state: parsed.accept ? 'accepted' : 'rejected' } };
+    });
+  }
+
+  async decideLessons(input: { operationId: string; expectedHash: string; outputId: string; proposalId: string; expectedProposalHash: string; expectedProfileHash: string; decisions: { index: number; accept: boolean }[] }) {
+    const parsed = baseInput.extend({ outputId: schemas.id, proposalId: schemas.id, expectedProposalHash: expectedHash, expectedProfileHash: expectedHash, decisions: z.array(z.object({ index: z.number().int().nonnegative(), accept: z.boolean() }).strict()).min(1).max(20) }).strict().parse(input);
+    return this.mutate(parsed.operationId, parsed, async notes => {
+      const output = this.find(notes, parsed.outputId, 'content-output');
+      this.check(output, parsed.expectedHash);
+      const data = schemas.output.parse(output.metadata);
+      const proposalNote = this.find(notes, parsed.proposalId, 'proposal');
+      this.check(proposalNote, parsed.expectedProposalHash);
+      const proposal = schemas.proposal.parse(proposalNote.metadata);
+      if (proposal.kind !== 'lessons' || proposal.targetId !== data.id || !data.proposals.includes(proposal.id)) throw new schemas.WorkspaceError('NOT_FOUND', 'Lesson proposal belongs to another output');
+      if (proposal.state !== 'pending') throw new schemas.WorkspaceError('CONFLICT', 'Lessons already have final decisions');
+      if (data.acceptedRevision !== proposal.payload.finalRevisionId) throw new schemas.WorkspaceError('APPROVAL_REQUIRED', 'The exact comparison final must still be accepted');
+      const machine = schemas.revision.parse(this.find(notes, schemas.id.parse(proposal.payload.machineRevisionId), 'revision').metadata);
+      const final = schemas.revision.parse(this.find(notes, schemas.id.parse(proposal.payload.finalRevisionId), 'revision').metadata);
+      if (machine.outputId !== data.id || final.outputId !== data.id || machine.proseHash !== proposal.payload.machineHash || final.proseHash !== proposal.payload.finalHash) throw new schemas.WorkspaceError('CONFLICT', 'Comparison snapshots disagree');
+      const originalPin = schemas.pin.parse(proposal.payload.profile);
+      const scopedPin = proposal.payload.scope === 'author' ? data.author : data.voice;
+      if (!scopedPin || scopedPin.profileId !== originalPin.profileId || scopedPin.version !== originalPin.version) throw new schemas.WorkspaceError('CONFLICT', 'Lesson target differs from the output pin');
+      const basePin = proposalNote.metadata.approvedProfile ? schemas.pin.parse(proposalNote.metadata.approvedProfile) : originalPin;
+      const base = this.version(notes, basePin, data.publicationId);
+      if (base.profile.scope !== proposal.payload.scope || base.profile.status !== 'approved') throw new schemas.WorkspaceError('INVALID_INPUT', 'Lesson profile scope or approval disagrees');
+      this.check(base.note, parsed.expectedProfileHash);
+      const latest = notes.filter(value => value.metadata.type === 'voice-profile' && value.metadata.id === basePin.profileId && value.metadata.status === 'approved').sort((a, b) => Number(b.metadata.version) - Number(a.metadata.version))[0];
+      const approving = parsed.decisions.some(decision => decision.accept);
+      if (approving && (!latest || latest.metadata.version !== basePin.version)) throw new schemas.WorkspaceError('CONFLICT', 'A newer approved profile exists. Review and rebase lessons instead of replacing its rules.');
+      if (approving && base.profile.scope === 'publication') {
+        const publication = schemas.publication.parse(this.find(notes, data.publicationId, 'publication').metadata);
+        if (publication.defaultVoice?.profileId !== basePin.profileId || publication.defaultVoice.version !== basePin.version) throw new schemas.WorkspaceError('CONFLICT', 'Publication default changed. Review the current voice before approving these lessons.');
+      }
+      const rules = z.array(z.object({ text: z.string(), evidence: z.string() }).strict()).parse(proposal.payload.rules);
+      const priorDecisions = z.record(z.string(), z.boolean()).parse(proposalNote.metadata.ruleDecisions ?? {});
+      const seen = new Set<number>();
+      for (const decision of parsed.decisions) {
+        if (decision.index >= rules.length || seen.has(decision.index) || String(decision.index) in priorDecisions) throw new schemas.WorkspaceError('INVALID_INPUT', 'Choose each undecided lesson once');
+        seen.add(decision.index); priorDecisions[String(decision.index)] = decision.accept;
+      }
+      const accepted = parsed.decisions.filter(value => value.accept).map(value => rules[value.index]);
+      const writes: Write[] = [];
+      let approvedProfile = basePin;
+      if (accepted.length) {
+        const version = 1 + Math.max(...notes.filter(value => value.metadata.type === 'voice-profile' && value.metadata.id === basePin.profileId).map(value => Number(value.metadata.version)));
+        approvedProfile = { profileId: basePin.profileId, version };
+        const body = `${base.note.body}\n\n## Approved lessons\n\n${accepted.map(rule => `- ${rule.text}\n  Evidence: ${rule.evidence}`).join('\n')}\n`;
+        const profile = { ...base.profile, version, status: 'approved', previousVersion: basePin, created: now(), updated: now(), lessonComparison: { machineRevisionId: machine.id, finalRevisionId: final.id }, humanDecisionAt: now() };
+        writes.push(created(`Voice Profiles/${basePin.profileId}/v${version}.md`, profile, body));
+        if (base.profile.scope === 'publication') {
+          const publication = this.find(notes, data.publicationId, 'publication');
+          writes.push(changed(publication, { defaultVoice: approvedProfile, default_voice_link: `[Voice v${version}](../Voice%20Profiles/${basePin.profileId}/v${version}.md)` }));
+        }
+      }
+      const complete = Object.keys(priorDecisions).length === rules.length;
+      const state = complete ? Object.values(priorDecisions).some(Boolean) ? 'accepted' : 'rejected' : 'pending';
+      writes.push(changed(proposalNote, { state, ruleDecisions: priorDecisions, approvedProfile, humanDecisionAt: now() }));
+      return { writes, result: { proposalId: proposal.id, state, approvedProfile, decisions: priorDecisions } };
     });
   }
 }
