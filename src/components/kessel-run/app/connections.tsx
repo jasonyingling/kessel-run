@@ -24,7 +24,20 @@ export function AgentConnections() {
     setEndpoint(`${window.location.origin}/api/mcp`);
   }
   useEffect(() => {
-    void reload().then(() => setMessage('Each client has a separate revocable token.')).catch(error => setMessage(error.message));
+    const controller = new AbortController();
+    async function initialize() {
+      const response = await fetch('/api/kessel-run/local/connections', { signal: controller.signal });
+      if (!response.ok) throw new Error('Pair this browser and choose a workspace before connecting your agent.');
+      const result = await response.json();
+      if (controller.signal.aborted) return;
+      setIndex(result);
+      setEndpoint(`${window.location.origin}/api/mcp`);
+      setMessage('Each client has a separate revocable token.');
+    }
+    void initialize().catch(error => {
+      if (!controller.signal.aborted) setMessage(error.message);
+    });
+    return () => controller.abort();
   }, []);
 
   async function mutate(method: string, id?: string) {

@@ -497,8 +497,11 @@ Never invent personal experience or approval to finish a gate.
   without a preview and explicit selection.
 - A secret enters logs, model-visible content or client read responses; fix before
   continuing. Submitted key input may be transient in the credential form only.
-- Required implementation checks fail twice after targeted correction. Report the
-  failing requirement and preserve the partial work for review.
+- A required check remains unresolved after two targeted corrections and no
+  concrete in-scope correction is identified. Report the failing requirement and
+  preserve partial work. Correct ordinary compile/lint feedback during unfinished
+  implementation; never waive a check or call that phase verified. Inspect every
+  required result before committing a phase checkpoint.
 - If browser policy blocks inspection, stop that inspection path immediately; do
   not try another surface, protocol, renderer or server. Continue independent
   source implementation and permitted unit/SDK/HTTP checks. Keep browser gates
