@@ -262,6 +262,34 @@ export class WorkspaceService {
     return this.journal.readLocked(async () => this.context(await this.index(), outputId, sourceOffset));
   }
 
+  async getPieceContext(pieceId: string) {
+    return this.journal.readLocked(async () => {
+      const notes = await this.index();
+      const piece = this.find(notes, pieceId, 'content-brief');
+      this.find(notes, String(piece.metadata.publicationId), 'publication');
+      return { piece: summary(piece), sources: notes.filter(note => note.metadata.type === 'source' && note.metadata.pieceId === pieceId).map(summary), artifacts: notes.filter(note => note.metadata.type === 'workflow-artifact' && note.metadata.pieceId === pieceId && note.metadata.publicationId === piece.metadata.publicationId).map(summary) };
+    });
+  }
+
+  async updatePublication(input: { operationId: string; expectedHash: string; publicationId: string; title: string; purpose: string }) {
+    const parsed = baseInput.extend({ publicationId: schemas.id, title: z.string().min(1).max(160), purpose: text }).strict().parse(input);
+    return this.mutate(parsed.operationId, parsed, async notes => {
+      const publication = this.find(notes, parsed.publicationId, 'publication');
+      this.check(publication, parsed.expectedHash);
+      return { writes: [changed(publication, { title: parsed.title }, parsed.purpose)], result: { id: parsed.publicationId } };
+    });
+  }
+
+  async updatePreset(input: { operationId: string; expectedHash: string; presetId: string; title: string; instructions: string }) {
+    const parsed = baseInput.extend({ presetId: schemas.id, title: z.string().min(1).max(80), instructions: text }).strict().parse(input);
+    return this.mutate(parsed.operationId, parsed, async notes => {
+      const preset = this.find(notes, parsed.presetId, 'output-preset');
+      this.check(preset, parsed.expectedHash);
+      this.find(notes, String(preset.metadata.publicationId), 'publication');
+      return { writes: [changed(preset, { title: parsed.title }, parsed.instructions)], result: { id: parsed.presetId } };
+    });
+  }
+
   async getPublicationContext(publicationId: string, voicePin: schemas.Pin | null, authorPin: schemas.Pin | null) {
     return this.journal.readLocked(async () => {
       const notes = await this.index();

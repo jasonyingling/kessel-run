@@ -9,7 +9,8 @@ const headers = { 'content-type': 'application/json', 'x-kr-csrf': 'local' };
 export function AgentConnections() {
   const [index, setIndex] = useState<Index | null>(null);
   const [name, setName] = useState('');
-  const [publications, setPublications] = useState('');
+  const [publicationIds, setPublicationIds] = useState<string[] | null>(null);
+  const [publications, setPublications] = useState<{ id: string; title: string }[]>([]);
   const [drafts, setDrafts] = useState(false);
   const [sources, setSources] = useState(false);
   const [secret, setSecret] = useState<string | null>(null);
@@ -29,8 +30,12 @@ export function AgentConnections() {
       const response = await fetch('/api/kessel-run/local/connections', { signal: controller.signal });
       if (!response.ok) throw new Error('Pair this browser and choose a workspace before connecting your agent.');
       const result = await response.json();
+      const workspaceResponse = await fetch('/api/kessel-run/local/workspace', { signal: controller.signal });
+      if (!workspaceResponse.ok) throw new Error('Choose a workspace before issuing a connection.');
+      const workspace = await workspaceResponse.json();
       if (controller.signal.aborted) return;
       setIndex(result);
+      setPublications(workspace.publications.map((value: { id: string; title: string }) => ({ id: value.id, title: value.title })));
       setEndpoint(`${window.location.origin}/api/mcp`);
       setMessage('Each client has a separate revocable token.');
     }
@@ -46,7 +51,7 @@ export function AgentConnections() {
     try {
       const payload = id ? { id } : {
         clientName: name,
-        publicationIds: publications.trim() ? publications.split(',').map(value => value.trim()) : null,
+        publicationIds,
         allowDrafts: drafts,
         allowSources: sources,
       };
@@ -70,7 +75,7 @@ export function AgentConnections() {
     <p className="break-all text-sm">Streamable HTTP endpoint: <code>{endpoint}</code></p>
     <p className="text-sm">A client must reach this machine. Cloud agents need a separately authorized connection. SDK transport is tested; a real Codex connection remains unverified.</p>
     <label className="block">Client name<input value={name} onChange={event => setName(event.target.value)} maxLength={120} className="mt-2 block w-full rounded-md border bg-background p-2" /></label>
-    <label className="block">Publication IDs, separated by commas<input value={publications} onChange={event => setPublications(event.target.value)} className="mt-2 block w-full rounded-md border bg-background p-2" /><span className="text-sm">Leave empty to grant this workspace. Use IDs from publication details to narrow access.</span></label>
+    <fieldset className="space-y-2"><legend>Connection scope</legend><label className="flex gap-2"><input type="radio" name="scope" checked={publicationIds === null} onChange={() => setPublicationIds(null)} />Entire selected workspace</label><label className="flex gap-2"><input type="radio" name="scope" checked={publicationIds !== null} onChange={() => setPublicationIds([])} />Selected publications</label>{publicationIds !== null && publications.map(publication => <label className="flex gap-2" key={publication.id}><input type="checkbox" checked={publicationIds.includes(publication.id)} onChange={event => setPublicationIds(event.target.checked ? [...publicationIds, publication.id] : publicationIds.filter(id => id !== publication.id))} />{publication.title}</label>)}</fieldset>
     <label className="flex items-center gap-2"><input type="checkbox" checked={drafts} onChange={event => setDrafts(event.target.checked)} />Allow draft, artifact and profile proposals</label>
     <label className="flex items-center gap-2"><input type="checkbox" checked={sources} onChange={event => setSources(event.target.checked)} />Allow supplied source notes</label>
     <button disabled={busy || !index || !name.trim()} onClick={() => void mutate('POST')} className="rounded-md border px-4 py-2 disabled:opacity-50">Create connection</button>
@@ -78,7 +83,7 @@ export function AgentConnections() {
     <p role="status" className="rounded-md border p-3">{message}</p>
     {index?.clients.map(connection => <div key={connection.id} className="space-y-2 border-t pt-3">
       <h3 className="font-medium">{connection.clientName}</h3>
-      <p className="text-sm">{connection.revokedAt !== null ? 'Revoked' : 'Active'} · {connection.publicationIds?.join(', ') ?? 'Workspace scope'} · Drafts {connection.allowDrafts ? 'allowed' : 'disabled'} · Sources {connection.allowSources ? 'allowed' : 'disabled'}</p>
+      <p className="text-sm">{connection.revokedAt !== null ? 'Revoked' : 'Active'} · {connection.publicationIds?.map(id => publications.find(value => value.id === id)?.title ?? 'Unavailable publication').join(', ') ?? 'Workspace scope'} · Drafts {connection.allowDrafts ? 'allowed' : 'disabled'} · Sources {connection.allowSources ? 'allowed' : 'disabled'}</p>
       {connection.revokedAt === null && <div className="flex gap-3"><button disabled={busy} onClick={() => void mutate('PUT', connection.id)} className="rounded-md border px-3 py-2">Rotate token</button><button disabled={busy} onClick={() => void mutate('DELETE', connection.id)} className="rounded-md border px-3 py-2">Revoke</button></div>}
     </div>)}
     <p className="text-sm">Configure Codex manually with <code>url</code> and <code>bearer_token_env_var</code> in its MCP settings. See docs/kessel-run-mcp.md. Never place a provider key in this configuration.</p>

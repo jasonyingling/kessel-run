@@ -1,0 +1,53 @@
+import { z } from 'zod';
+import { boundedJSON, LocalAccessError, requireLocalSession } from '@/server/kessel-run/local-session';
+import { configuredWorkspace } from '@/server/kessel-run/workspace/config';
+import { WorkspaceError } from '@/server/kessel-run/workspace/schema';
+import { exportOutput } from '@/server/kessel-run/workspace/import-export';
+export const runtime = 'nodejs';
+const envelope = z.object({ action: z.enum(['publication', 'publication-update', 'preset-update', 'profile-preview', 'profile-import', 'piece', 'piece-context', 'output', 'source', 'editor', 'context', 'revision', 'publication-context', 'export']), input: z.unknown() }).strict();
+type Service = Awaited<ReturnType<typeof configuredWorkspace>>['service'];
+function input<T>(value: unknown): T { return value as T; }
+export async function POST(request: Request) {
+  try {
+    const session = await requireLocalSession(request, true);
+    const { service, configuration } = await configuredWorkspace();
+    if (configuration.id !== session.workspaceId) throw new LocalAccessError();
+    const command = envelope.parse(await boundedJSON(request, 100000));
+    let result: unknown;
+    switch (command.action) {
+      case 'publication': result = await service.createPublication(input<Parameters<Service['createPublication']>[0]>(command.input)); break;
+      case 'publication-update': result = await service.updatePublication(input<Parameters<Service['updatePublication']>[0]>(command.input)); break;
+      case 'preset-update': result = await service.updatePreset(input<Parameters<Service['updatePreset']>[0]>(command.input)); break;
+      case 'profile-preview': result = await service.previewProfile(input<Parameters<Service['previewProfile']>[0]>(command.input)); break;
+      case 'profile-import': result = await service.confirmProfileImport(input<Parameters<Service['confirmProfileImport']>[0]>(command.input)); break;
+      case 'piece': result = await service.createPiece(input<Parameters<Service['createPiece']>[0]>(command.input)); break;
+      case 'output': result = await service.createOutput(input<Parameters<Service['createOutput']>[0]>(command.input)); break;
+      case 'source': result = await service.saveSource(input<Parameters<Service['saveSource']>[0]>(command.input)); break;
+      case 'editor': result = await service.saveEditor(input<Parameters<Service['saveEditor']>[0]>(command.input)); break;
+      case 'context': {
+        const value = z.object({ outputId: z.string().uuid(), sourceOffset: z.number().int().nonnegative().default(0) }).strict().parse(command.input);
+        result = await service.getContext(value.outputId, value.sourceOffset); break;
+      }
+      case 'piece-context': {
+        const value = z.object({ pieceId: z.string().uuid() }).strict().parse(command.input);
+        result = await service.getPieceContext(value.pieceId); break;
+      }
+      case 'revision': {
+        const value = z.object({ outputId: z.string().uuid(), revisionId: z.string().uuid() }).strict().parse(command.input);
+        result = await service.getRevision(value.outputId, value.revisionId); break;
+      }
+      case 'publication-context': {
+        const value = z.object({ publicationId: z.string().uuid() }).strict().parse(command.input);
+        result = await service.getPublicationContext(value.publicationId, null, null); break;
+      }
+      case 'export': {
+        const value = z.object({ outputId: z.string().uuid() }).strict().parse(command.input);
+        result = await exportOutput(service, value.outputId); break;
+      }
+    }
+    return Response.json(result, { headers: { 'cache-control': 'no-store' } });
+  } catch (error) {
+    const code = error instanceof WorkspaceError ? error.code : 'INVALID_INPUT';
+    return Response.json({ code, error: error instanceof WorkspaceError ? error.message : error instanceof LocalAccessError ? 'Pair this browser using the launcher link.' : 'Content operation failed. Preserve your input and check the selected workspace.' }, { status: error instanceof LocalAccessError ? error.status : code === 'CONFLICT' ? 409 : 400 });
+  }
+}

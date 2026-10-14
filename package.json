@@ -17,7 +17,8 @@
     "skills:install:portable": "node scripts/install-skills.mjs",
     "app:dev": "node scripts/kessel-run-local.mjs dev",
     "app:start": "node scripts/kessel-run-local.mjs start",
-    "app:smoke:api": "node scripts/smoke-kessel-run-api.mjs"
+    "app:smoke:api": "node scripts/smoke-kessel-run-api.mjs",
+    "test:app:e2e": "playwright test"
   },
   "dependencies": {
     "@ai-sdk/provider-utils": "5.0.14",
@@ -69,6 +70,7 @@
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "2.3.1",
+    "@playwright/test": "1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
