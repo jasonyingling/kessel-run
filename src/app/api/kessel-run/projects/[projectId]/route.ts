@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server'
-import { getProject, getProjectState } from '@/mastra/projects/store'
+import { legacyDenied } from '@/server/kessel-run/legacy'
 import { getResourceId } from '@/lib/kessel-run/session'
 import type { ProjectDetail } from '@/lib/kessel-run/api-types'
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ projectId: string }> },
 ) {
+  const denied = await legacyDenied(req)
+  if (denied) return denied
+  const { getProject, getProjectState } = await import('@/mastra/projects/store')
   const { projectId } = await params
   const resourceId = await getResourceId()
 

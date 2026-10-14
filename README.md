@@ -25,13 +25,18 @@ Read the [writing guide](docs/kessel-run/README.md), [workspace structure](docs/
 
 ## Run the app locally
 
-With dependencies installed and your existing local configuration in place:
+Use Node 22.13.0 or later. Install dependencies, then use the paired loopback launcher:
 
 ```bash
-npm run dev
+npm ci
+npm run app:dev
 ```
 
-Open [localhost:3000](http://localhost:3000). The app does not yet implement the full Markdown workspace persistence or provide file/browsing tools merely because a skill asks for them.
+Open the single-use pairing link printed by the launcher. Choose a new empty workspace, create a publication and import its existing voice profile. Markdown storage supports independent outputs, supplied source/interview notes, exact retained revisions, human approvals and resumable conversations. Manual writing/export and external-agent MCP need no app model key.
+
+In-app AI uses an explicitly selected OpenAI API key; user-entered keys use an unencrypted owner-only local file outside content. Configure/remove it in settings. Connect external agents separately with scoped revocable MCP tokens; no subscription integration or automatic client configuration is included.
+
+For production, run `npm run build` then `npm run app:start`. See [local app/key/recovery instructions](docs/kessel-run-app.md) and [MCP connection instructions](docs/kessel-run-mcp.md). Browser, live API/Codex and human editorial acceptance remain pending; source/unit/HTTP checks do not establish those gates.
 
 Repository checks:
 

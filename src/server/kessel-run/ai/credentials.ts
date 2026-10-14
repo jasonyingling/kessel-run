@@ -1,4 +1,5 @@
-import { readFile, unlink } from 'node:fs/promises';
+import { readFile, unlink, open } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { ownerWrite, privateRoot, privateFile } from '../local-session';
@@ -54,9 +55,12 @@ export class Credentials {
   }
 
   async remove() {
-    await unlink(privateFile('credential.json', this.root)).catch(error => {
+    const path = privateFile('credential.json', this.root);
+    await unlink(path).catch(error => {
       if (error.code !== 'ENOENT') throw error;
     });
+    const directory = await open(dirname(path), 'r');
+    try { await directory.sync(); } finally { await directory.close(); }
   }
 
   async resolve(source: CredentialSource): Promise<string> {

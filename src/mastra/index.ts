@@ -8,12 +8,14 @@ import { Observability, MastraStorageExporter, MastraPlatformExporter, Sensitive
 import { weatherWorkflow } from './workflows/weather-workflow';
 import { weatherAgent } from './agents/weather-agent';
 import { kesselRunAgent } from './agents/kessel-run-agent';
+import { noopLogger } from '@mastra/core/logger';
 
+const legacyEnabled = process.env.KESSEL_RUN_ENABLE_LEGACY === '1';
 
 export const mastra = new Mastra({
   workflows: { weatherWorkflow },
   agents: { weatherAgent, kesselRunAgent },
-  storage: new MastraCompositeStore({
+  storage: legacyEnabled ? new MastraCompositeStore({
     id: 'composite-storage',
     default: new LibSQLStore({
       id: "mastra-storage",
@@ -25,12 +27,12 @@ export const mastra = new Mastra({
     domains: {
       observability: await new DuckDBStore().getStore('observability'),
     }
-  }),
-  logger: new PinoLogger({
+  }) : undefined,
+  logger: legacyEnabled ? new PinoLogger({
     name: 'Mastra',
     level: 'info',
-  }),
-  observability: new Observability({
+  }) : noopLogger,
+  observability: legacyEnabled ? new Observability({
     configs: {
       default: {
         serviceName: 'mastra',
@@ -43,5 +45,5 @@ export const mastra = new Mastra({
         ],
       },
     },
-  }),
+  }) : undefined,
 });

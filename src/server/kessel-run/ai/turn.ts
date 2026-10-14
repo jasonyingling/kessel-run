@@ -25,7 +25,7 @@ export async function startWritingTurn(
   const context = parsed.scopeKind === 'output' ? await service.getContext(parsed.scope) : await service.getPublicationContext(parsed.scope, null, null);
   const skill = await workflowContext('kessel-run-start');
   const initialCredential = await credentials.status();
-  const started = await conversations.start({ ...parsed, workspaceId, contextHash: context.contextHash, skillHash: skill.contentHash });
+  const started = await conversations.start({ ...parsed, workspaceId, engine: dependencies.model ? 'fake' : 'api', contextHash: context.contextHash, skillHash: skill.contentHash });
   if (started.existing) return Response.json({ existing: true, runId: started.run.id, status: started.run.status });
   const run = started.run;
   const abort = new AbortController();

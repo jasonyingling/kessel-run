@@ -9,6 +9,8 @@ export function AppSettings() {
   const [status, setStatus] = useState<Status | null>(null);
   const [key, setKey] = useState('');
   const [source, setSource] = useState('saved');
+  const [models, setModels] = useState<string[]>([]);
+  const [model, setModel] = useState('gpt-5');
   const [message, setMessage] = useState('Loading credential status…');
   const [busy, setBusy] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -28,6 +30,10 @@ export function AppSettings() {
         if (!response.ok) throw new Error('Pairing expired or was already used. Restart the local launcher for a new link.');
       }
       await reload();
+      const available = await fetch('/api/kessel-run/local/models');
+      if (!available.ok) throw new Error('Model configuration unavailable.');
+      const catalog = await available.json();
+      setModels(catalog.models.map((value: { id: string }) => value.id));
     }
     void initialize().catch(error => setMessage(error.message));
     return () => stop.current?.abort();
@@ -51,7 +57,7 @@ export function AppSettings() {
   async function test() {
     setBusy(true); setTesting(true); stop.current = new AbortController(); setMessage('Running a billed synthetic test…');
     try {
-      const response = await fetch('/api/kessel-run/local/connection-test', { method: 'POST', headers, signal: stop.current.signal, body: JSON.stringify({ source, model: 'gpt-5' }) });
+      const response = await fetch('/api/kessel-run/local/connection-test', { method: 'POST', headers, signal: stop.current.signal, body: JSON.stringify({ source, model }) });
       if (!response.ok) throw new Error('Test failed. Check the selected key. No fallback was attempted.');
       const body = await response.text();
       if (body.includes('"type":"error"')) throw new Error('Test failed or stopped. Check the selected key.');
@@ -74,7 +80,8 @@ export function AppSettings() {
       <p className="text-sm">The selected source is used explicitly. An invalid or exhausted key never triggers a fallback.</p>
       <label className="block">Replace saved key<input type="password" autoComplete="off" value={key} onChange={event => setKey(event.target.value)} className="mt-2 block w-full rounded-md border bg-background p-2" /></label>
       <div className="flex flex-wrap gap-3"><button disabled={busy || key.length < 20} onClick={save} className="rounded-md border px-4 py-2 disabled:opacity-50">Save key</button><button disabled={busy || !status?.saved} onClick={remove} className="rounded-md border px-4 py-2 disabled:opacity-50">Remove saved key</button></div>
-      <label className="block">Model<select disabled className="mt-2 block w-full rounded-md border bg-background p-2"><option>gpt-5 · text and tools</option></select></label>
+      <label className="block">Model<select disabled={busy} value={model} onChange={event => setModel(event.target.value)} className="mt-2 block w-full rounded-md border bg-background p-2">{models.map(id => <option key={id}>{id}</option>)}</select></label>
+      <p className="text-sm">Live compatibility remains unverified until a billed test completes for the selected model.</p>
       <p className="text-sm">Connection testing sends supplied synthetic notes and may incur API charges. It saves a synthetic candidate in private test records.</p>
       <div className="flex gap-3"><button disabled={busy || !status} onClick={test} className="rounded-md border px-4 py-2 disabled:opacity-50">Run billed connection test</button>{testing && <button onClick={() => stop.current?.abort()} className="rounded-md border px-4 py-2">Stop</button>}</div>
     </div>

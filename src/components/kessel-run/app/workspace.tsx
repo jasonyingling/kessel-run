@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Button as BaseButton } from '@base-ui/react/button';
 import { BookOpen, FileText, Settings, Feather } from 'lucide-react';
-import { localApi } from '@/lib/kessel-run/local-api';
+import { localApi, getWorkspaceReference, setWorkspaceReference } from '@/lib/kessel-run/local-api';
 import type { Entity, OutputContext, WorkspaceOverview } from '@/lib/kessel-run/app-contracts';
 import { acknowledgeSave } from './editor-state';
 import { WritingPanel } from './writing-panel';
@@ -52,8 +52,10 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
   const [revisionText, setRevisionText] = useState<string | null>(null);
   const workspaceReady = state !== null;
 
-  async function refresh() {
+  async function refresh(allowWorkspaceChange = false) {
     const next = await localApi<WorkspaceOverview>('workspace');
+    if (getWorkspaceReference() && getWorkspaceReference() !== next.workspace.id && !allowWorkspaceChange) throw new Error('Workspace selection changed. Your previous editor buffer remains recoverable. Reload this tab to enter the newly selected workspace.');
+    setWorkspaceReference(String(next.workspace.id));
     setState(next);
     const selectedPiece = pieceId ?? next.outputs.find(value => value.id === outputId)?.pieceId;
     if (selectedPiece) setMaterials(await localApi('content', { action: 'piece-context', input: { pieceId: selectedPiece } }));
@@ -72,6 +74,8 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
     async function initialize() {
       const next = await localApi<WorkspaceOverview>('workspace', undefined, controller.signal);
       if (!mounted) return;
+      if (getWorkspaceReference() && getWorkspaceReference() !== next.workspace.id) throw new Error('Workspace selection changed. Reload this tab before editing.');
+      setWorkspaceReference(String(next.workspace.id));
       setState(next); setMessage('Ready. Manual writing needs no API key.');
       const selectedPiece = pieceId ?? next.outputs.find(value => value.id === outputId)?.pieceId;
       if (selectedPiece) {
@@ -103,6 +107,7 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
       pending = true;
       void localApi<WorkspaceOverview>('workspace').then(async next => {
         if (!active) return;
+        if (getWorkspaceReference() !== next.workspace.id) throw new Error('Workspace selection changed. Unsaved prose remains in its previous workspace buffer; reload this tab before editing.');
         setState(next);
         const selectedPiece = pieceId ?? next.outputs.find(value => value.id === outputId)?.pieceId;
         if (selectedPiece) {
@@ -160,7 +165,7 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
       } else if (form === 'piece') await localApi('content', { action: 'piece', input: { operationId, expectedHash: publication?.hash, publicationId: publication?.id, title, brief: body, mode } });
       else if (form === 'output') await localApi('content', { action: 'output', input: { operationId, expectedHash: piece?.hash, pieceId: piece?.id, title, format: String(presets.find(value => value.id === preset)?.format ?? ''), preset, voice: pin(voiceId), author: authorPin ? pin(authorPin) : null } });
       else if (form === 'source') await localApi('content', { action: 'source', input: { operationId, expectedHash: piece?.hash, pieceId: piece?.id, title, body, attribution, sourceType, referenceUrl: null } });
-      setForm(null); await refresh(); setMessage('Saved.');
+      setForm(null); await refresh(form === 'workspace'); setMessage('Saved.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Save failed. Your input remains here.'); }
     finally { setBusy(false); }
   }

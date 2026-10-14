@@ -41,6 +41,14 @@ test('no-key manual publication, import, independent outputs, save and export', 
   await expect(page.locator('.kr-main > .kr-status')).toHaveText('Saved.');
   await page.reload();
   await expect(page.getByLabel('Output prose')).toHaveValue('Human-supplied synthetic draft.');
+  await page.getByLabel('Message', { exact: true }).fill('Use the supplied synthetic workshop notes to propose a candidate.');
+  await page.getByRole('button', { name: 'Send billed AI turn' }).click();
+  await expect(page.getByText('Synthetic fixture candidate from supplied workshop notes.', { exact: false }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Use candidate in editor' }).click();
+  await expect(page.getByLabel('Output prose')).toHaveValue('Synthetic fixture candidate from supplied workshop notes.');
+  await page.getByLabel('Output prose').fill('Human-supplied synthetic final after machine comparison.');
+  await page.getByRole('button', { name: 'Save prose' }).click();
+  await expect(page.locator('.kr-main > .kr-status')).toHaveText('Saved.');
   await page.getByRole('button', { name: 'Accept this exact final prose' }).click();
   await expect(page.getByText('Current output: accepted.', { exact: false })).toBeVisible();
   await page.getByLabel('Output prose').fill('Later manual edit invalidates acceptance.');

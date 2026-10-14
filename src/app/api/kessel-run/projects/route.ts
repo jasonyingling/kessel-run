@@ -1,16 +1,22 @@
 import { NextResponse } from 'next/server'
-import { createProject, listProjects } from '@/mastra/projects/store'
+import { legacyDenied } from '@/server/kessel-run/legacy'
 import { CONTENT_FORMATS, type ContentFormat } from '@/mastra/projects/schema'
 import { getResourceId } from '@/lib/kessel-run/session'
 import type { CreateProjectBody } from '@/lib/kessel-run/api-types'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const denied = await legacyDenied(req)
+  if (denied) return denied
+  const { listProjects } = await import('@/mastra/projects/store')
   const resourceId = await getResourceId()
   const projects = await listProjects(resourceId)
   return NextResponse.json(projects)
 }
 
 export async function POST(req: Request) {
+  const denied = await legacyDenied(req, true)
+  if (denied) return denied
+  const { createProject } = await import('@/mastra/projects/store')
   const body = (await req.json()) as Partial<CreateProjectBody>
 
   const title = typeof body.title === 'string' ? body.title.trim() : ''

@@ -3,15 +3,17 @@ import { toAISdkV5Messages } from '@mastra/ai-sdk/ui'
 import { createUIMessageStreamResponse, type UIMessageChunk } from 'ai'
 import { NextResponse } from 'next/server'
 import { RequestContext } from '@mastra/core/request-context'
-import { mastra } from '@/mastra'
+import { legacyDenied } from '@/server/kessel-run/legacy'
 import { isKesselRunSkillName } from '@/mastra/skills/catalog'
-import { getProject } from '@/mastra/projects/store'
 import { getResourceId } from '@/lib/kessel-run/session'
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ projectId: string }> },
 ) {
+  const denied = await legacyDenied(req, true)
+  if (denied) return denied
+  const [{ mastra }, { getProject }] = await Promise.all([import('@/mastra'), import('@/mastra/projects/store')])
   const { projectId } = await params
   const resourceId = await getResourceId()
 
@@ -60,9 +62,12 @@ export async function POST(
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ projectId: string }> },
 ) {
+  const denied = await legacyDenied(req)
+  if (denied) return denied
+  const [{ mastra }, { getProject }] = await Promise.all([import('@/mastra'), import('@/mastra/projects/store')])
   const { projectId } = await params
   const resourceId = await getResourceId()
 

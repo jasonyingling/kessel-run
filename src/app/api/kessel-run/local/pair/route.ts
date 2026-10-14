@@ -7,5 +7,5 @@ export async function POST(request: Request) {
     const { token } = z.object({ token: z.string().length(64) }).strict().parse(await boundedJSON(request, 1024));
     const session = await exchangePairing(request, token);
     return Response.json({ paired: true }, { headers: { 'set-cookie': `${SESSION_COOKIE}=${session}; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400`, 'cache-control': 'no-store' } });
-  } catch (error) { return Response.json({ error: 'Pairing failed' }, { status: error instanceof LocalAccessError ? error.status : 400 }); }
+  } catch (error) { return Response.json({ error: 'Pairing failed', reason: error instanceof LocalAccessError ? error.reason : 'invalid-input' }, { status: error instanceof LocalAccessError ? error.status : 400 }); }
 }

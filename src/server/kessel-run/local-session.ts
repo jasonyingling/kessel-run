@@ -52,7 +52,11 @@ export function privateFile(name: string, root = privateRoot()) {
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
 const sessionSchema = z.object({ tokenHash: z.string().regex(/^[a-f0-9]{64}$/), expires: z.number().finite(), workspaceId: z.string().uuid() }).strict();
 export class LocalAccessError extends Error {
-  constructor(public readonly status = 403) { super('Local access denied'); }
+  constructor(public readonly status = 403, public readonly reason: 'local-access' | 'configured-origin' | 'host' | 'url-origin' | 'origin' | 'cross-site' = 'local-access') { super('Local access denied'); }
+}
+export function requireWorkspaceReference(request: Request, workspaceId: string) {
+  const reference = request.headers.get('x-kr-workspace-ref');
+  if (!reference || reference !== workspaceId) throw new LocalAccessError(409);
 }
 export async function boundedJSON(request: Request, maximumBytes = 100000) {
   const reader = request.body?.getReader();
@@ -74,11 +78,19 @@ export async function boundedJSON(request: Request, maximumBytes = 100000) {
 export function requireLocalRequest(request: Request, mutation = false) {
   const configured = process.env.KESSEL_RUN_ORIGIN ?? 'http://127.0.0.1:3000';
   const url = new URL(configured);
-  if (!['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) || url.protocol !== 'http:') throw new LocalAccessError();
-  if (request.headers.get('host') !== url.host || new URL(request.url).origin !== url.origin) throw new LocalAccessError();
+  if (!['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) || url.protocol !== 'http:') throw new LocalAccessError(403, 'configured-origin');
+  if (request.headers.get('host') !== url.host) throw new LocalAccessError(403, 'host');
+  // Next 16's NextURL rewrites loopback request.url hostnames to localhost.
+  // Constructor identity can differ between bundled Next modules. Recognize
+  // only the exact normalized origin, retaining configured protocol and port.
+  // External Host and browser Origin below remain exact, with no aliasing.
+  const normalized = new URL(url.origin);
+  normalized.hostname = 'localhost';
+  const internalOrigin = new URL(request.url).origin;
+  if (internalOrigin !== url.origin && internalOrigin !== normalized.origin) throw new LocalAccessError(403, 'url-origin');
   const origin = request.headers.get('origin');
-  if ((mutation && origin !== url.origin) || (origin && origin !== url.origin)) throw new LocalAccessError();
-  if (request.headers.get('sec-fetch-site') === 'cross-site') throw new LocalAccessError();
+  if ((mutation && origin !== url.origin) || (origin && origin !== url.origin)) throw new LocalAccessError(403, 'origin');
+  if (request.headers.get('sec-fetch-site') === 'cross-site') throw new LocalAccessError(403, 'cross-site');
 }
 export async function ownerWrite(name: string, value: unknown, root = privateRoot()) {
   root = securePrivateRoot(root);

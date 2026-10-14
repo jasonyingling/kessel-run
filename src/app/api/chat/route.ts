@@ -1,13 +1,16 @@
 import { handleChatStream } from '@mastra/ai-sdk'
 import { toAISdkV5Messages } from '@mastra/ai-sdk/ui'
 import { createUIMessageStreamResponse, type UIMessageChunk } from 'ai'
-import { mastra } from '@/mastra'
+import { legacyDenied } from '@/server/kessel-run/legacy'
 import { NextResponse } from 'next/server'
 
 const THREAD_ID = 'example-user-id'
 const RESOURCE_ID = 'weather-chat'
 
 export async function POST(req: Request) {
+  const denied = await legacyDenied(req, true)
+  if (denied) return denied
+  const { mastra } = await import('@/mastra')
   const params = await req.json()
   const stream = await handleChatStream({
     mastra,
@@ -29,7 +32,10 @@ export async function POST(req: Request) {
   })
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const denied = await legacyDenied(req)
+  if (denied) return denied
+  const { mastra } = await import('@/mastra')
   const memory = await mastra.getAgentById('weather-agent').getMemory()
   let response = null
 

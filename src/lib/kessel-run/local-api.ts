@@ -1,7 +1,10 @@
+let workspaceReference: string | null = null;
+export function setWorkspaceReference(id: string) { workspaceReference = id; }
+export function getWorkspaceReference() { return workspaceReference; }
 export async function localApi<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`/api/kessel-run/local/${path}`, {
     method: body === undefined ? 'GET' : 'POST', signal,
-    headers: body === undefined ? undefined : { 'content-type': 'application/json', 'x-kr-csrf': 'local' },
+    headers: body === undefined ? undefined : { 'content-type': 'application/json', 'x-kr-csrf': 'local', ...(path === 'content' ? { 'x-kr-workspace-ref': workspaceReference ?? '' } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const result = await response.json();

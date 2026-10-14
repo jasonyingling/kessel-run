@@ -10,6 +10,7 @@ import { privateFile, securePrivateRoot } from '../local-session';
 export async function withWorkspaceLock<T>(root: string, task: () => Promise<T>, timeoutMs = 10000): Promise<T> {
   securePrivateRoot(root);
   const filename = privateFile('workspace-lock.db', root);
+  for (const suffix of ['-journal', '-wal', '-shm']) privateFile(`workspace-lock.db${suffix}`, root);
   let client = createClient({ url: pathToFileURL(filename).href, timeout: 0 });
   privateFile('workspace-lock.db', root);
   const deadline = Date.now() + timeoutMs;
@@ -29,6 +30,8 @@ export async function withWorkspaceLock<T>(root: string, task: () => Promise<T>,
         client = createClient({ url: pathToFileURL(filename).href, timeout: 0 });
       }
     }
+    privateFile('workspace-lock.db', root);
+    for (const suffix of ['-journal', '-wal', '-shm']) privateFile(`workspace-lock.db${suffix}`, root);
     const result = await task();
     await transaction.commit();
     return result;

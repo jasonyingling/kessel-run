@@ -4,6 +4,8 @@ import { mkdir, readFile, writeFile, rename, lstat, chmod, realpath } from 'node
 import { dirname, resolve, relative, sep } from 'node:path';
 import { homedir } from 'node:os';
 const mode = process.argv[2];
+const [nodeMajor, nodeMinor] = process.versions.node.split('.').map(Number);
+if (nodeMajor < 22 || (nodeMajor === 22 && nodeMinor < 13)) throw new Error('Kessel Run requires Node 22.13.0 or later');
 if (!['dev', 'start'].includes(mode)) throw new Error('Choose dev or start');
 const port = Number(process.env.PORT ?? 3000);
 if (!Number.isSafeInteger(port) || port < 1024 || port > 65535) throw new Error('PORT must be 1024–65535');

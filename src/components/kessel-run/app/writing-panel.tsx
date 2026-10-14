@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AppButton } from './workspace';
 import type { ConversationRun } from '@/server/kessel-run/ai/conversations';
 import { runEvent } from '@/server/kessel-run/ai/events';
+import { getWorkspaceReference } from '@/lib/kessel-run/local-api';
 
 export function WritingPanel({ scope, scopeKind, mode, onCommitted }: { scope: string; scopeKind: 'output' | 'voice'; mode: 'guided' | 'fast'; onCommitted: () => Promise<void> }) {
   const [runs, setRuns] = useState<ConversationRun[]>([]);
@@ -18,7 +19,7 @@ export function WritingPanel({ scope, scopeKind, mode, onCommitted }: { scope: s
   const stop = useRef<AbortController | null>(null);
   const activeId = useRef<string | null>(null);
   async function reload() {
-    const response = await fetch(`/api/kessel-run/local/writing?scope=${scope}`);
+    const response = await fetch(`/api/kessel-run/local/writing?scope=${scope}`, { headers: { 'x-kr-workspace-ref': getWorkspaceReference() ?? '' } });
     if (!response.ok) throw new Error('Conversation could not be reloaded.');
     setRuns(await response.json());
   }
@@ -26,7 +27,7 @@ export function WritingPanel({ scope, scopeKind, mode, onCommitted }: { scope: s
     scopeRef.current = scope;
     const controller = new AbortController();
     async function load() {
-      const response = await fetch(`/api/kessel-run/local/writing?scope=${scope}`, { signal: controller.signal });
+      const response = await fetch(`/api/kessel-run/local/writing?scope=${scope}`, { signal: controller.signal, headers: { 'x-kr-workspace-ref': getWorkspaceReference() ?? '' } });
       if (!response.ok) throw new Error('Pair this browser to load conversations.');
       const saved = await response.json();
       const catalog = await fetch('/api/kessel-run/local/models', { signal: controller.signal });
@@ -44,7 +45,7 @@ export function WritingPanel({ scope, scopeKind, mode, onCommitted }: { scope: s
     const submittedScope = scope;
     try {
       const response = await fetch('/api/kessel-run/local/writing', {
-        method: 'POST', headers: { 'content-type': 'application/json', 'x-kr-csrf': 'local' }, signal: controller.signal,
+        method: 'POST', headers: { 'content-type': 'application/json', 'x-kr-csrf': 'local', 'x-kr-workspace-ref': getWorkspaceReference() ?? '' }, signal: controller.signal,
         body: JSON.stringify({ scope, scopeKind, source, model, mode, message: submitted, operationId: crypto.randomUUID() }),
       });
       if (!response.ok) throw new Error((await response.json()).error);
@@ -73,8 +74,8 @@ export function WritingPanel({ scope, scopeKind, mode, onCommitted }: { scope: s
   async function cancel() {
     const id = activeId.current;
     stop.current?.abort();
-    if (id) await fetch('/api/kessel-run/local/writing', { method: 'DELETE', headers: { 'content-type': 'application/json', 'x-kr-csrf': 'local' }, body: JSON.stringify({ runId: id }) });
+    if (id) await fetch('/api/kessel-run/local/writing', { method: 'DELETE', headers: { 'content-type': 'application/json', 'x-kr-csrf': 'local', 'x-kr-workspace-ref': getWorkspaceReference() ?? '' }, body: JSON.stringify({ runId: id }) });
     await reload();
   }
-  return <section className="kr-chat"><h2>{scopeKind === 'voice' ? 'Voice setup conversation' : 'AI writing'}</h2><p>Start/Resume follows your saved rules and supplied evidence. No key is required for manual editing or MCP.</p><label className="kr-field">Credential source<select value={source} onChange={event => setSource(event.target.value)}><option value="saved">Saved local API key</option><option value="environment">Server environment key</option></select></label><label className="kr-field">Model<select value={model} onChange={event => setModel(event.target.value)}>{models.map(id => <option key={id}>{id}</option>)}</select></label><p>Live compatibility remains pending a billed connection test.</p><p>Usage is reported after a completed turn; no cost estimate is invented.</p>{runs.map(run => <details key={run.id}><summary>{new Date(run.createdAt).toLocaleString()} · {run.status} · {run.model}</summary><p>{run.message}</p><pre>{run.response}</pre>{run.usage && <p>Provider usage: {run.usage.inputTokens ?? 'unknown'} input / {run.usage.outputTokens ?? 'unknown'} output tokens</p>}</details>)}<label className="kr-field">Message<textarea value={message} maxLength={20000} onChange={event => { setMessage(event.target.value); messageRef.current = event.target.value; }} rows={5} /></label><div className="kr-toolbar"><AppButton disabled={busy || !message.trim()} onClick={() => void send()}>Send billed AI turn</AppButton>{busy && <AppButton static onClick={() => void cancel().catch(error => setStatus(error.message))}>Stop</AppButton>}<AppButton static onClick={() => void reload().catch(error => setStatus(error.message))}>Reload conversation</AppButton></div><p role="status">{status}</p>{provisional && <pre aria-label="Provisional response">{provisional}</pre>}</section>;
+  return <section className="kr-chat"><h2>{scopeKind === 'voice' ? 'Voice setup conversation' : 'AI writing'}</h2><p>Start/Resume follows your saved rules and supplied evidence. No key is required for manual editing or MCP.</p><label className="kr-field">Credential source<select value={source} onChange={event => setSource(event.target.value)}><option value="saved">Saved local API key</option><option value="environment">Server environment key</option></select></label><label className="kr-field">Model<select value={model} onChange={event => setModel(event.target.value)}>{models.map(id => <option key={id}>{id}</option>)}</select></label><p>Live compatibility remains pending a billed connection test.</p><p>Usage is reported after a completed turn; no cost estimate is invented.</p>{runs.map(run => <details key={run.id}><summary>{new Date(run.createdAt).toLocaleString()} · {run.status} · {run.model} · {run.engine === 'fake' ? 'Synthetic fixture' : 'API'}</summary><p>{run.message}</p><pre>{run.response}</pre>{run.usage && <p>{run.engine === 'fake' ? 'Synthetic fixture usage' : 'Provider usage'}: {run.usage.inputTokens ?? 'unknown'} input / {run.usage.outputTokens ?? 'unknown'} output tokens</p>}</details>)}<label className="kr-field">Message<textarea value={message} maxLength={20000} onChange={event => { setMessage(event.target.value); messageRef.current = event.target.value; }} rows={5} /></label><div className="kr-toolbar"><AppButton disabled={busy || !message.trim()} onClick={() => void send()}>Send billed AI turn</AppButton>{busy && <AppButton static onClick={() => void cancel().catch(error => setStatus(error.message))}>Stop</AppButton>}<AppButton static onClick={() => void reload().catch(error => setStatus(error.message))}>Reload conversation</AppButton></div><p role="status">{status}</p>{provisional && <pre aria-label="Provisional response">{provisional}</pre>}</section>;
 }

@@ -13,7 +13,7 @@ export default async function setup() {
   process.env.KR_E2E_SESSION = session;
   process.env.KR_E2E_ROOT = root;
   const server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--hostname', '127.0.0.1', '--port', '3197'], {
-    env: { ...process.env, OPENAI_API_KEY: '', KESSEL_RUN_PRIVATE_ROOT: privateRoot, KESSEL_RUN_ORIGIN: 'http://127.0.0.1:3197' }, stdio: 'ignore',
+    env: { ...process.env, OPENAI_API_KEY: '', KESSEL_RUN_TEST_PROVIDER: 'fake', KESSEL_RUN_TEST_ROOT: root, KESSEL_RUN_PRIVATE_ROOT: privateRoot, KESSEL_RUN_ORIGIN: 'http://127.0.0.1:3197' }, stdio: 'ignore',
   });
   try {
     let ready = false;

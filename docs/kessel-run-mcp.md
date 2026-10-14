@@ -24,6 +24,6 @@ Every mutation requires a UUID operation ID and an expected entity hash. Draft p
 
 ## Transport evidence and limits
 
-Pinned packages: `mcp-handler` 2.3.0 and matching `@modelcontextprotocol/server` / `client` 2.3.1, Node 20+, Zod 4. The handler follows [Vercel's stateless v2 guidance](https://vercel.com/changelog/latest-mcp-spec-now-supported-in-mcp-handler). No Redis or deprecated SSE adapter is used.
+Pinned packages: `mcp-handler` 2.3.0 and matching `@modelcontextprotocol/server` / `client` 2.3.1, Zod 4; the complete app requires Node 22.13.0 or later. The handler follows [Vercel's stateless v2 guidance](https://vercel.com/changelog/latest-mcp-spec-now-supported-in-mcp-handler). No Redis or deprecated SSE adapter is used.
 
 Real SDK loopback HTTP tests cover tool discovery, scoped context, supplied writing operations, missing exact versions, malformed arguments, revoked access, and request bounds with model keys unset and inference instrumented to fail. A real external Codex account walkthrough remains pending. Browser connection setup and visual/keyboard/mobile acceptance remain unverified under the current browser restriction; source implementation is not release acceptance.

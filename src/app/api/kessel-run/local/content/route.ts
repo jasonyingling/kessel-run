@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { boundedJSON, LocalAccessError, requireLocalSession } from '@/server/kessel-run/local-session';
+import { boundedJSON, LocalAccessError, requireLocalSession, requireWorkspaceReference } from '@/server/kessel-run/local-session';
 import { configuredWorkspace } from '@/server/kessel-run/workspace/config';
 import { WorkspaceError } from '@/server/kessel-run/workspace/schema';
 import { exportOutput } from '@/server/kessel-run/workspace/import-export';
@@ -13,6 +13,7 @@ export async function POST(request: Request) {
     const session = await requireLocalSession(request, true);
     const { service, configuration } = await configuredWorkspace();
     if (configuration.id !== session.workspaceId) throw new LocalAccessError();
+    requireWorkspaceReference(request, configuration.id);
     const command = envelope.parse(await boundedJSON(request, 10000000));
     let result: unknown;
     switch (command.action) {
@@ -64,6 +65,6 @@ export async function POST(request: Request) {
     return Response.json(result, { headers: { 'cache-control': 'no-store' } });
   } catch (error) {
     const code = error instanceof WorkspaceError ? error.code : 'INVALID_INPUT';
-    return Response.json({ code, error: error instanceof WorkspaceError ? error.message : error instanceof LocalAccessError ? 'Pair this browser using the launcher link.' : 'Content operation failed. Preserve your input and check the selected workspace.' }, { status: error instanceof LocalAccessError ? error.status : code === 'CONFLICT' ? 409 : 400 });
+    return Response.json({ code: error instanceof LocalAccessError && error.status === 409 ? 'CONFLICT' : code, error: error instanceof WorkspaceError ? error.message : error instanceof LocalAccessError && error.status === 409 ? 'Workspace selection changed. Preserve your editor buffer and reload this tab.' : error instanceof LocalAccessError ? 'Pair this browser using the launcher link.' : 'Content operation failed. Preserve your input and check the selected workspace.' }, { status: error instanceof LocalAccessError ? error.status : code === 'CONFLICT' ? 409 : 400 });
   }
 }

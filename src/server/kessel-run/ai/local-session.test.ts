@@ -3,6 +3,7 @@ import { mkdtemp, rm, mkdir, stat, symlink } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { NextRequest } from 'next/server';
 import { exchangePairing, ownerWrite, requireLocalSession, requireLocalRequest, securePrivateRoot, SESSION_COOKIE } from '../local-session';
 let root: string;
 beforeEach(async () => { root = await mkdtemp(join(tmpdir(), 'kr-session-')); vi.stubEnv('KESSEL_RUN_PRIVATE_ROOT', root); vi.stubEnv('KESSEL_RUN_ORIGIN', 'http://127.0.0.1:3000'); });
@@ -18,6 +19,19 @@ it('enforces exact Host/Origin and CSRF with authenticated scope', async () => {
   const headers = { cookie: `${SESSION_COOKIE}=${token}` };
   await expect(requireLocalSession(request(headers), true)).rejects.toThrow();
   expect((await requireLocalSession(request({ ...headers, 'x-kr-csrf': 'local' }), true)).workspaceId).toBeTruthy();
+});
+
+it('accepts only NextRequest loopback normalization while retaining exact wire Host/Origin and port', () => {
+  const headers = { host: '127.0.0.1:3000', origin: 'http://127.0.0.1:3000' };
+  const normalized = new NextRequest('http://127.0.0.1:3000/api/kessel-run/local/pair', { method: 'POST', headers });
+  expect(new URL(normalized.url).hostname).toBe('localhost');
+  expect(() => requireLocalRequest(normalized, true)).not.toThrow();
+  expect(() => requireLocalRequest(new NextRequest('http://127.0.0.1:3001/api/kessel-run/local/pair', { method: 'POST', headers }), true)).toThrow();
+  expect(() => requireLocalRequest(new NextRequest('https://127.0.0.1:3000/api/kessel-run/local/pair', { method: 'POST', headers }), true)).toThrow();
+  expect(() => requireLocalRequest(new NextRequest(normalized.url, { method: 'POST', headers: { ...headers, host: 'localhost:3000' } }), true)).toThrow();
+  expect(() => requireLocalRequest(new NextRequest(normalized.url, { method: 'POST', headers: { ...headers, origin: 'http://localhost:3000' } }), true)).toThrow();
+  expect(() => requireLocalRequest(new Request(normalized.url, { method: 'POST', headers }), true)).not.toThrow();
+  expect(() => requireLocalRequest(new Request('http://attacker.example:3000/api/kessel-run/local/pair', { method: 'POST', headers }), true)).toThrow();
 });
 it('pairs only once across simultaneous requests and rejects expiry', async () => {
   const token = await pairing();

@@ -11,12 +11,13 @@ export const conversationRun = z.object({
   id: z.string().uuid(), workspaceId: z.string().uuid(), scope: z.string().uuid(), scopeKind: z.enum(['output', 'voice']), operationId: z.string().uuid(), argumentsHash: z.string(),
   model: z.string(), provider: z.literal('openai'), source: z.enum(['saved', 'environment']),
   mode: z.enum(['guided', 'fast']),
+  engine: z.enum(['api', 'fake']).default('api'),
   contextHash: z.string(), skillHash: z.string(), message: z.string(), response: z.string(),
   status: z.enum(['running', 'completed', 'interrupted', 'failed']), ownerPid: z.number().int(), stopRequested: z.boolean(),
   events: z.array(runEvent), createdAt: z.number(), usage: z.object({ inputTokens: z.number().optional(), outputTokens: z.number().optional() }).nullable(),
 }).strict();
 export type ConversationRun = z.infer<typeof conversationRun>;
-type StartInput = Pick<ConversationRun, 'workspaceId' | 'scope' | 'scopeKind' | 'operationId' | 'model' | 'source' | 'mode' | 'message' | 'contextHash' | 'skillHash'>;
+type StartInput = Pick<ConversationRun, 'workspaceId' | 'scope' | 'scopeKind' | 'operationId' | 'model' | 'source' | 'mode' | 'message' | 'contextHash' | 'skillHash'> & { engine?: 'api' | 'fake' };
 type EventInput<T = z.infer<typeof runEvent>> = T extends { sequence: number } ? Omit<T, 'sequence'> : never;
 
 function alive(pid: number) {
@@ -46,7 +47,7 @@ export class Conversations {
     });
   }
   async start(input: StartInput) {
-    const argumentsHash = hashText(JSON.stringify({ workspaceId: input.workspaceId, scope: input.scope, scopeKind: input.scopeKind, operationId: input.operationId, model: input.model, source: input.source, mode: input.mode, message: input.message }));
+    const argumentsHash = hashText(JSON.stringify({ workspaceId: input.workspaceId, scope: input.scope, scopeKind: input.scopeKind, operationId: input.operationId, model: input.model, source: input.source, engine: input.engine ?? 'api', mode: input.mode, message: input.message }));
     return withWorkspaceLock(this.root, async () => {
       const runs = await this.records(); await this.recover(runs);
       const prior = runs.find(run => run.operationId === input.operationId);

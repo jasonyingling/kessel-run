@@ -11,7 +11,7 @@
 
 ## Status and decisions
 
-- **State:** Phase 1 synthetic checkpoint committed; Phase 2 durable storage checkpoint implemented. MCP adapters next. Live API and browser acceptance remain pending.
+- **State:** Implementation checkpoints complete; release acceptance remains pending browser/E2E, live API, real Codex and human editorial validation. See docs/kessel-run-app.md for technical evidence and remaining gates.
 - **Priority:** P1
 - **Effort:** L — multiple implementation and review checkpoints.
 - **Risk:** HIGH — credentials, concurrent human/agent edits, durable content,
