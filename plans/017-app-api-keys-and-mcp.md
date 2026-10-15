@@ -11,7 +11,7 @@
 
 ## Status and decisions
 
-- **State:** BLOCKED on release acceptance — GPT-6.1 Sol implementation reviewed 2026-10-14 in `/private/tmp/kessel-run-017`, branch `codex/017-app-api-keys-and-mcp`. Independent tests/build/HTTP pass; browser/live API/real Codex/editorial gates remain. See [final scoped review](2026-10-14-reconciliation.md). Unmerged.
+- **State:** MERGED — user-authorized integration into main on 2026-10-15. GPT-6.1 Sol implementation at `00a7623` independently reviewed; tests/build/HTTP pass. Browser/live API/real Codex/editorial acceptance remains pending. See [final scoped review](2026-10-14-reconciliation.md).
 - **Priority:** P1
 - **Effort:** L — multiple implementation and review checkpoints.
 - **Risk:** HIGH — credentials, concurrent human/agent edits, durable content,

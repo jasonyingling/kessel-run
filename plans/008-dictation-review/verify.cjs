@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- archived design verification script */
 // Source-level interaction checks. This is not a browser or visual inspection.
 const fs = require('node:fs')
 const vm = require('node:vm')

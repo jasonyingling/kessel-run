@@ -32,3 +32,7 @@ In guided mode present the few most consequential passages and suggested changes
 Do not attribute an unexpressed opinion to the author, invent experience or remove factual uncertainty just to sound confident. A requested editorial judgment can be proposed from evidence with its reasoning and limitations; distinguish that inference from an observed result. Do not turn notes about another author's use into the selected author's experience. If a required profile rule conflicts with an explicit current edit, surface the conflict and ask only for the consequential decision. Apply piece-specific edits locally; propose reusable profile changes separately rather than silently learning them as rules.
 
 Return clean revised prose separately from the review notes, with a link or filename for the retained previous draft and unresolved claims. Keep the original output and other profiles untouched. Name Polish as a possible next action when the draft needs final editorial review; do not mark it accepted or publish it.
+
+## App runtime capabilities
+
+When working in the local app or through MCP, read [the runtime capability guide](references/app-runtime.md). Use only available capabilities; keep these editorial methods and the portable handoff unchanged.

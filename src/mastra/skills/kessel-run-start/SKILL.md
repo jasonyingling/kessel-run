@@ -38,4 +38,8 @@ Use an available skill by name when appropriate. If a sibling skill is absent, c
 
 ## Pause and resume
 
-At a pause, record the actual current draft, completed actions, next action and open decisions alongside full output selection IDs/versions. With no files, emit the workspace handoff containing actual rules (including parent and author differences), relevant inputs/provenance and current output prose, not just inaccessible links. Name anything missing and never claim a file was saved. In the app use only existing matching working-memory fields; additional structures stay in conversation/handoff.
+At a pause, record the actual current draft, completed actions, next action and open decisions alongside full output selection IDs/versions. With no files, emit the workspace handoff containing actual rules (including parent and author differences), relevant inputs/provenance and current output prose, not just inaccessible links. Name anything missing and never claim a file was saved. In legacy demo projects, use only existing matching working-memory fields; additional structures stay in conversation/handoff. In the local writing app, use the shared content operations described in the runtime capability guide below.
+
+## App runtime capabilities
+
+When working in the local app or through MCP, read [the runtime capability guide](references/app-runtime.md). Use only available capabilities; keep these editorial methods and the portable handoff unchanged.

@@ -26,7 +26,7 @@ Never modify `Issue.md`, delete notes, or overwrite substantial content. Before 
 
 ## No filesystem or limited app tools
 
-Use available supplied documents/conversation and continue the writing task. Return a resumable Markdown handoff containing actual selected profile rules and versions (including author differences), relevant input text/provenance, decisions, open questions, progress, complete current output selections and draft, and suggested filenames. Unavailable inputs/versions are named as missing; do not claim persistence or retrieval that did not happen. Links alone are insufficient when the next session cannot access them. In the current Mastra app only update existing matching working-memory fields; keep unsupported profile/interview/output structures in conversation and the handoff. This contract adds no file or browsing tools.
+Use available supplied documents/conversation and continue the writing task. Return a resumable Markdown handoff containing actual selected profile rules and versions (including author differences), relevant input text/provenance, decisions, open questions, progress, complete current output selections and draft, and suggested filenames. Unavailable inputs/versions are named as missing; do not claim persistence or retrieval that did not happen. Links alone are insufficient when the next session cannot access them. In legacy Mastra demo projects only update existing matching working-memory fields; keep unsupported structures in conversation and the handoff. The new local app uses scoped shared content operations; read the bundled app-runtime reference and actual tool inventory for its capabilities. This contract adds no file or browsing tools.
 
 ## Starting templates
 

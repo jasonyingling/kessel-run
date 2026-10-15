@@ -143,3 +143,14 @@ implements the single composer, bounded recognition, optional cleanup with undo,
 and raw source provenance. Browser tests are authored but unexecuted; browser,
 microphone and live-provider acceptance remain pending. See the rewritten plan's
 execution review for evidence and limits. No merge or push was performed.
+
+## Integration update — 2026-10-15
+
+The user explicitly authorized bringing all reviewed work into main and pushing
+to origin. Plan 017 (`00a7623`) and plan 008 (`33facb0`) are integrated together,
+with the final review records and approved mockup preserved. Earlier statements
+that these branches were unmerged describe their October 14 review state.
+The merge changes planning records only relative to the tested implementation;
+source, tests, dependencies and configuration match `33facb0`. Remaining browser,
+microphone, live-model, real-agent and editorial acceptance gates are unchanged.
+Merge authorization does not assert those gates passed.

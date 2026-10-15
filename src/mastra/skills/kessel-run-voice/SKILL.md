@@ -38,3 +38,7 @@ Read [profile-format.md](references/profile-format.md) when emitting or revising
 Use the selected authorized destination when file access exists; otherwise return complete Markdown for the user to save. The app has no assumed retrieval or persistent-profile tools: work from supplied content and return Markdown when those capabilities are absent. Store personal profiles outside replaceable skill installation folders. Do not silently change a publication's default profile.
 
 On revision preserve approved material and confirmed lessons, show the proposed changes, and follow existing append/version conventions. Record dates, versions, reasons, and supporting answers/examples/edits. Keep the last approved version recoverable while inferred changes await approval. Never transfer lessons to another profile implicitly, reproduce long source passages in the skill, or reuse historical article facts as facts for a new piece.
+
+## App runtime capabilities
+
+When working in the local app or through MCP, read [the runtime capability guide](references/app-runtime.md). Use only available capabilities; keep these editorial methods and the portable handoff unchanged.

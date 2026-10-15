@@ -228,3 +228,7 @@ Present a proportionate outline. In guided mode confirm consequential new struct
 **Offer alternatives when there is a real choice.** Guided mode can compare structures; fast mode can choose a reasonable structure within the established brief.
 
 **Name the next useful step.** Draft follows in the selected mode: guided section collaboration or a complete fast draft. Skip further planning when the structure is already sufficient.
+
+## App runtime capabilities
+
+When working in the local app or through MCP, read [the runtime capability guide](references/app-runtime.md). Use only available capabilities; keep these editorial methods and the portable handoff unchanged.

@@ -73,3 +73,7 @@ Topic: selected topic
 ```
 
 Do not correct, reorder, paraphrase or merge answers. Keep inventory prose distinct from the verbatim transcript. With no files return the full transcript and resumable handoff without claiming persistence. Name the next useful action based on what is ready, such as Draft from these answers plus supplied research, rather than treating the transcript as the exclusive source for every future claim.
+
+## App runtime capabilities
+
+When working in the local app or through MCP, read [the runtime capability guide](references/app-runtime.md). Use only available capabilities; keep these editorial methods and the portable handoff unchanged.

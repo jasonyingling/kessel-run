@@ -1,0 +1,12 @@
+import { beforeEach, expect, it, vi } from 'vitest';
+const mocks = vi.hoisted(() => ({ session: vi.fn(), reference: vi.fn(), configured: vi.fn(), target: vi.fn(), infer: vi.fn() }));
+vi.mock('@/server/kessel-run/local-session', async importOriginal => ({ ...await importOriginal<typeof import('@/server/kessel-run/local-session')>(), requireLocalSession: mocks.session, requireWorkspaceReference: mocks.reference }));
+vi.mock('@/server/kessel-run/workspace/config', () => ({ configuredWorkspace: mocks.configured }));
+vi.mock('@/server/kessel-run/ai/cleanup', async importOriginal => ({ ...await importOriginal<typeof import('@/server/kessel-run/ai/cleanup')>(), validateCleanupTarget: mocks.target, cleanupText: mocks.infer }));
+import { POST } from './route';
+import { LocalAccessError } from '@/server/kessel-run/local-session';
+const input = { requestId: crypto.randomUUID(), scope: crypto.randomUUID(), scopeKind: 'source', text: 'Synthetic supplied notes', source: 'saved', model: 'gpt-5-mini' };
+const request = (body: unknown = input) => new Request('http://127.0.0.1:3198/api/kessel-run/local/cleanup', { method: 'POST', body: JSON.stringify(body) });
+beforeEach(() => { vi.clearAllMocks(); mocks.session.mockResolvedValue({ workspaceId: 'workspace' }); mocks.reference.mockImplementation(() => undefined); mocks.configured.mockResolvedValue({ configuration: { id: 'workspace' }, service: {} }); mocks.target.mockResolvedValue(undefined); mocks.infer.mockResolvedValue({ suggestion: 'Synthetic notes', requestId: input.requestId }); });
+it.each(['session', 'reference', 'target'] as const)('denies %s before inference', async boundary => { mocks[boundary].mockImplementation(() => { throw new LocalAccessError(); }); expect((await POST(request())).ok).toBe(false); expect(mocks.infer).not.toHaveBeenCalled(); });
+it('validates bounded strict text before inference and passes cancellation signal', async () => { expect((await POST(request({ ...input, text: 'x'.repeat(20001) }))).status).toBe(400); expect(mocks.infer).not.toHaveBeenCalled(); const req = request(); const result = await POST(req); expect(result.ok).toBe(true); expect(mocks.session).toHaveBeenCalledWith(req, true); expect(mocks.infer).toHaveBeenCalledWith(input, req.signal, { model: undefined }); expect(result.headers.get('cache-control')).toBe('no-store'); });

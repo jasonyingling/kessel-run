@@ -138,3 +138,7 @@ This anchor document gets carried forward to Stage 2 (Ideation) as the foundatio
 **Stay with the requested action.** Anchor develops direction. When the user explicitly requests drafting and the brief is sufficient, move to Draft or continue that action if no sibling skill is available; do not force another anchor pass.
 
 **Name the next useful step.** Use Ideation if the argument needs development, Interview if substantive material is missing, or Draft when the brief and sources are ready.
+
+## App runtime capabilities
+
+When working in the local app or through MCP, read [the runtime capability guide](references/app-runtime.md). Use only available capabilities; keep these editorial methods and the portable handoff unchanged.

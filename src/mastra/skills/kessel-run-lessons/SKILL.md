@@ -42,3 +42,7 @@ Apply only what was approved. A profile can remain approved when its existing ap
 ## Handoff
 
 Report applied profile ID and old/new versions, confirmed rules, pending/rejected/local observations, preserved predecessor location and remaining decisions. With no filesystem, return a clearly labeled unsaved Markdown patch/addition and review record, including actual relevant prior rules, exact comparison text/provenance and proposed version metadata. Distinguish a confirmed decision from a persisted file change; never claim the model was trained, a profile installed, or a file saved without those actions.
+
+## App runtime capabilities
+
+When working in the local app or through MCP, read [the runtime capability guide](references/app-runtime.md). Use only available capabilities; keep these editorial methods and the portable handoff unchanged.

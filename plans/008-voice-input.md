@@ -2,8 +2,8 @@
 
 ## Status and authorization
 
-- **State:** BLOCKED on release acceptance — GPT-6.1 Sol implementation and independent technical review complete on 2026-10-14; browser, microphone and live cleanup gates pending.
-- **Reviewed commit:** `33facb09c743eaa7fc255e133dec756a241e0d2a`; clean isolated worktree, unmerged and unpushed.
+- **State:** MERGED — user-authorized integration into main on 2026-10-15; GPT-6.1 Sol implementation and independent technical review complete. Browser, microphone and live cleanup acceptance remain pending.
+- **Reviewed commit:** `33facb09c743eaa7fc255e133dec756a241e0d2a`; reviewed in a clean isolated worktree and integrated into main on 2026-10-15.
 - **Priority / effort / risk:** P2 / M / MED.
 - **Planned at:** `00a7623e4a10695f0bfca2086d8bb2821f53690f`, 2026-10-14.
 - **Depends on:** plan 017's reviewed implementation at that commit. Its browser,
@@ -281,3 +281,16 @@ authorized live billed cleanup. Browser tests are authored but unexecuted.
 Plan 017's pending release gates remain pending. The existing automatic approval
 review restriction prevented browser inspection; no alternate renderer was used.
 No merge or push was performed. Main planning records remain local changes.
+
+## Execution evidence (2026-10-14)
+
+- Implemented app-owned finalized-speech controller/adapter, one editable writing/source composer, optional bounded cleanup and edit-safe undo. Source metadata retains raw finalized speech separately from submitted body through export/restoration; absent metadata remains valid.
+- Fixed HTTP200 failed/interrupted/no-terminal send retention while preserving the newer-typing guard. New draft capture history resets only after an unchanged successful turn.
+- No dependency, vendored-component, stage-method, provider-migration, main-branch, merge or push changes.
+- Read installed Next route/client guides and applied emil-design-eng and better-ui. Code-only UI checks cover static listening status, wrapping actions, 16px inputs, existing surfaces, focus behavior, pointer-only .96 press and reduced-motion rules. Browser appearance and interaction are not verified.
+- Offline install missed the cache; permitted locked npm ci succeeded. Sandbox baseline tests had 113 passes and three loopback EPERM failures; permitted final loopback run passed 151 tests in 35 files (116 baseline plus 35 new).
+- Final npm run typecheck -- --incremental false passed. npm run lint: zero errors, nine existing warnings. npm run skills:check: 15 workspace + 15 runtime references. Production build passed with the one baseline NFT tracing warning, after permitting the project's existing Google Fonts fetches.
+- HTTP-only production no-key and guarded synthetic development fixture modes passed authentication, Origin/CSRF/workspace/target/length checks, cleanup/no-content-mutation, restart and owned-server/temporary-root cleanup. Production fake-provider refusal is verified separately before final handoff. No browser or live model request was made.
+- Added authored browser scenarios for fake speech, selection preservation/typing, Stop/Send late-event freezing, cleanup/undo, failed terminal retention, source save/failure retention and raw provenance. Existing projects cover 390/768/1440 widths and reduced motion. These scenarios were not executed under the inspection restriction.
+- Full release still requires permitted browser/keyboard/mobile/reduced-motion inspection, actual microphone/speech testing and an explicitly authorized live billed cleanup. Plan 017's pending browser/live API/real Codex/editorial gates remain pending. Design approval does not satisfy these gates.
+- The copied historical design verifier has a require-import lint annotation only; it was not executed. Reviewer owns plans/README.md.

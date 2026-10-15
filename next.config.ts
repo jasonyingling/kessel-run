@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/**": ["./src/mastra/skills/**/*.md"],
   },
+  // Runtime credentials/legacy databases belong to the local server, never a
+  // distributable build trace. The selected workspace and private root are
+  // separately chosen outside this repository at runtime.
+  outputFileTracingExcludes: {
+    "/**": ["./.env*", "./mastra.db*", "./mastra.duckdb*", "./.git/**"],
+  },
 };
 
 export default nextConfig;
