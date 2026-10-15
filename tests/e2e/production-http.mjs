@@ -99,6 +99,19 @@ try {
   check(!result.isError, 'external candidate committed with no app key');
   const after = await request('content', session.headers, { action: 'context', input: { outputId: output.id } });
   check(after.output.body === 'Exact synthetic human prose.\n' && after.pending.length === 1, 'shared revisions preserve editor and candidate');
+  const cleanupInput = { requestId: operationId(), scope: output.id, scopeKind: 'output', text: 'Synthetic um supplied notes.', source: 'saved', model: 'gpt-5-mini' };
+  const cleanupRequest = (headers, input = cleanupInput) => fetch(origin + '/api/kessel-run/local/cleanup', { method: 'POST', headers, body: JSON.stringify(input) });
+  check((await cleanupRequest({ origin, 'content-type': 'application/json' })).status === 401, 'cleanup unpaired rejected');
+  check((await cleanupRequest({ ...session.headers, 'x-kr-csrf': '' })).status === 403, 'cleanup CSRF rejected');
+  check((await cleanupRequest({ ...session.headers, origin: 'https://invalid.example' })).status === 403, 'cleanup foreign origin rejected');
+  check((await cleanupRequest({ ...session.headers, 'x-kr-workspace-ref': operationId() })).status === 409, 'cleanup stale workspace rejected');
+  check((await cleanupRequest(session.headers, { ...cleanupInput, scope: operationId() })).status === 400, 'cleanup nonexistent target rejected');
+  check((await cleanupRequest(session.headers, { ...cleanupInput, text: 'x'.repeat(20001) })).status === 400, 'cleanup oversized text rejected');
+  const cleaned = await cleanupRequest(session.headers);
+  if (fake && launchMode === 'dev') check(cleaned.ok && (await cleaned.json()).suggestion === 'Synthetic cleaned fixture text.', 'guarded synthetic cleanup round-trip');
+  else check(cleaned.status === 400, fake ? 'production cleanup fake refusal' : 'cleanup no-key safe failure');
+  const afterCleanup = await request('content', session.headers, { action: 'context', input: { outputId: output.id } });
+  check(JSON.stringify(afterCleanup) === JSON.stringify(after), 'cleanup does not mutate content or proposals');
   let expectedPending = 1;
   if (fake) {
     const response = await fetch(`${origin}/api/kessel-run/local/writing`, { method: 'POST', headers: session.headers, body: JSON.stringify({ operationId: operationId(), scope: output.id, scopeKind: 'output', message: 'Supplied synthetic fixture notes.', mode: 'fast', source: 'saved', model: 'gpt-5-mini' }) });
@@ -126,7 +139,7 @@ try {
   check(next.id !== workspace.id, 'explicit new workspace identity');
   const stale = await fetch(`${origin}/api/kessel-run/local/content`, { method: 'POST', headers: restarted.headers, body: JSON.stringify({ action: 'context', input: { outputId: output.id } }) });
   check(stale.status === 409, 'stale tab workspace scope denied');
-  console.log(JSON.stringify({ launch: launchMode, launchResult: 'passed', fakeGuard: fake ? launchMode === 'dev' ? 'fixture round-trip passed' : 'production refusal passed' : 'not enabled', restart: 'passed', manualWithoutKey: 'passed', sdkMcpWithoutKey: 'passed', export: 'passed', browserInspection: 'not attempted', liveInference: 'not attempted', codexInstalled: 'not required' }));
+  console.log(JSON.stringify({ launch: launchMode, launchResult: 'passed', fakeGuard: fake ? launchMode === 'dev' ? 'fixture round-trip passed' : 'production refusal passed' : 'not enabled', restart: 'passed', manualWithoutKey: 'passed', sdkMcpWithoutKey: 'passed', export: 'passed', cleanup: 'auth/CSRF/origin/scope/limits/no-mutation passed', browserInspection: 'not attempted', liveInference: 'not attempted', codexInstalled: 'not required' }));
 } finally {
   await Promise.all(clients.map(client => client.close().catch(() => undefined)));
   await shutdown(); await rm(root, { recursive: true, force: true });

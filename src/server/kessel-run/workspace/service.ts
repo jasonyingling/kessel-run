@@ -492,12 +492,12 @@ export class WorkspaceService {
     };
   }
 
-  async saveSource(input: { operationId: string; expectedHash: string; pieceId: string; title: string; body: string; attribution: string; sourceType: 'notes' | 'interview' | 'supplied-text'; referenceUrl: string | null }) {
-    const parsed = baseInput.extend({ pieceId: schemas.id, title: z.string().min(1).max(160), body: text.min(1), attribution: z.string().min(1).max(2000), sourceType: schemas.source.shape.sourceType, referenceUrl: schemas.source.shape.referenceUrl }).strict().parse(input);
+  async saveSource(input: { operationId: string; expectedHash: string; pieceId: string; title: string; body: string; attribution: string; sourceType: 'notes' | 'interview' | 'supplied-text'; referenceUrl: string | null; dictation?: { recognizedText: string; cleanupApplied: boolean } }) {
+    const parsed = baseInput.extend({ pieceId: schemas.id, title: z.string().min(1).max(160), body: text.min(1), attribution: z.string().min(1).max(2000), sourceType: schemas.source.shape.sourceType, referenceUrl: schemas.source.shape.referenceUrl, dictation: schemas.source.shape.dictation }).strict().parse(input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const piece = this.find(notes, parsed.pieceId, 'content-brief');
       this.check(piece, parsed.expectedHash);
-      const source = metadata('source', parsed.title, { pieceId: parsed.pieceId, attribution: parsed.attribution, sourceType: parsed.sourceType, referenceUrl: parsed.referenceUrl });
+      const source = metadata('source', parsed.title, { pieceId: parsed.pieceId, attribution: parsed.attribution, sourceType: parsed.sourceType, referenceUrl: parsed.referenceUrl, ...(parsed.dictation ? { dictation: parsed.dictation } : {}) });
       return { writes: [created(`Pieces/${parsed.pieceId}/Sources/${source.id}.md`, source, parsed.body)], result: { id: source.id, hash: hashText(parsed.body), retrievedUrl: false } };
     });
   }

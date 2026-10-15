@@ -18,7 +18,7 @@ export async function exportOutput(service: WorkspaceService, outputId: string) 
     '## Brief\n', first.brief.body,
     '## Decisions and next action\n', `${JSON.stringify(first.brief.decisions)}\n${first.brief.nextAction}\n`,
     '## Supplied source material\n',
-    ...sources.map(source => `### ${source.title}\nAttribution: ${source.attribution}\nType: ${source.sourceType}\nReference URL: ${source.referenceUrl ?? 'none'} (reference only; no retrieval claimed)\nSource hash: ${source.hash}\n\n${source.body}\n`),
+    ...sources.map(source => `### ${source.title}\nAttribution: ${source.attribution}\nType: ${source.sourceType}\nReference URL: ${source.referenceUrl ?? 'none'} (reference only; no retrieval claimed)\nSource hash: ${source.hash}\n\n${source.body}\n${source.dictation ? `\nRaw recognition (fallible; separate from submitted body):\n${(source.dictation as { recognizedText: string }).recognizedText}\nCleanup applied: ${String((source.dictation as { cleanupApplied: boolean }).cleanupApplied)}\n` : ''}`),
     '## Saved workflow artifacts\n',
     ...first.artifacts.map(artifact => `### ${artifact.title}\nKind: ${artifact.kind}\nArtifact hash: ${artifact.hash}\n\n${artifact.body}\n`),
     '## Current prose\n', first.output.body,

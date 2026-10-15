@@ -188,3 +188,15 @@
 .kr-markdown blockquote { border-left:3px solid #93a3c3; padding-left:16px; }
 @media(hover:hover) and (pointer:fine) { .kr-paper .kr-action:hover { color:#13233f; background:#c7d7f3; } }
 @media(max-width:768px) { .kr-app input,.kr-app textarea,.kr-app select { font-size:16px; } }
+
+/* Inline speech/cleanup controls retain the app's existing surfaces. */
+.kr-composer textarea { font-size: 16px; }
+.kr-composer-actions { flex-wrap: wrap; align-items: center; }
+.kr-composer-note { font-size: .85rem; color: var(--muted-foreground); }
+.kr-composer-actions button { min-height: 44px; }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .kr-composer-actions button:active:not(:disabled):not(:focus-visible) { transform: scale(.96); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kr-composer-actions button { transform: none; transition: none; }
+}

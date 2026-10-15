@@ -227,3 +227,25 @@ it('rejects a pending proposal link owned by another output', async () => {
   await writeFile(join(root, path), noteText({ ...note.metadata, proposals: [proposed.proposalId] }, note.body));
   await expect(service.getContext(String(other.id))).rejects.toMatchObject({ code: 'NOT_FOUND' });
 });
+
+it('retains raw dictation bytes separately from edited body through export and restoration; old sources stay valid', async () => {
+  const data = await fixture();
+  const dictation = { recognizedText: 'um  12 maybe not\nExact raw bytes.\n', cleanupApplied: true };
+  let state = await service.overview();
+  await service.saveSource({ operationId: operationId(), expectedHash: String(state.pieces[0].hash), pieceId: data.pieceId, title: 'Dictated supplied notes', body: 'Edited mixed text.', attribution: 'Supplied synthetic writer', sourceType: 'notes', referenceUrl: null, dictation });
+  state = await service.overview();
+  await service.saveSource({ operationId: operationId(), expectedHash: String(state.pieces[0].hash), pieceId: data.pieceId, title: 'Old caller source', body: 'Supplied typed text.', attribution: 'Synthetic legacy caller', sourceType: 'notes', referenceUrl: null });
+  const context = (await service.exportSnapshot(data.outputId)).context;
+  expect(context.sources.find(value => value.title === 'Dictated supplied notes')).toMatchObject({ body: 'Edited mixed text.', attribution: 'Supplied synthetic writer', dictation });
+  expect(context.sources.find(value => value.title === 'Old caller source')?.dictation).toBeUndefined();
+  const { exportOutput } = await import('./import-export');
+  const exported = await exportOutput(service, data.outputId);
+  expect(exported.handoff).toContain(dictation.recognizedText);
+  expect(exported.handoff).toContain('Raw recognition (fallible');
+  const snapshot = await service.exportSnapshot(data.outputId);
+  const destination = new WorkspaceService(join(folder, 'restored'), join(folder, 'restored-private'));
+  await destination.initialize({ operationId: operationId(), title: 'Synthetic restored workspace' });
+  const restored = await destination.overview();
+  await destination.importHandoff({ operationId: operationId(), expectedHash: String(restored.workspace.hash), previewHash: (await destination.previewHandoff(snapshot.bundle)).hash, bundle: snapshot.bundle });
+  expect((await destination.exportSnapshot(data.outputId)).context.sources.find(value => value.title === 'Dictated supplied notes')?.dictation).toEqual(dictation);
+});

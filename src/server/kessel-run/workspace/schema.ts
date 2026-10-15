@@ -38,7 +38,9 @@ export const output = common.extend({
   status: z.enum(['drafting', 'review', 'accepted']), currentRevision: id.nullable(),
   acceptedRevision: id.nullable(), revisions: z.array(id), proposals: z.array(id),
 });
+export const dictation = z.object({ recognizedText: z.string().min(1).max(80000), cleanupApplied: z.boolean() }).strict();
 export const source = common.extend({
+  dictation: dictation.optional(),
   type: z.literal('source'), pieceId: id, attribution: z.string().min(1).max(2000),
   sourceType: z.enum(['notes', 'interview', 'supplied-text']),
   referenceUrl: z.string().url().refine(value => ['http:', 'https:'].includes(new URL(value).protocol), 'References must use http or https').nullable(),

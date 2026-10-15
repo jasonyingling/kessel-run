@@ -38,3 +38,11 @@ export async function fixtureModel(service: WorkspaceService, scope: string, kin
     { stream: simulateReadableStream({ chunks: [{ type: 'text-start', id: 'fixture-text' }, { type: 'text-delta', id: 'fixture-text', delta: 'Synthetic candidate saved for human review.' }, { type: 'text-end', id: 'fixture-text' }, { type: 'finish', finishReason: { unified: 'stop', raw: 'stop' }, usage }] }) },
   ] });
 }
+
+export async function cleanupFixtureModel(service: WorkspaceService) {
+  await requireFixtureServer(service);
+  const state = await service.overview();
+  if (!String(state.workspace.title).startsWith('Synthetic')) throw new WorkspaceError('CAPABILITY_UNAVAILABLE', 'Fake provider requires a synthetic fixture workspace');
+  const { MockLanguageModelV3 } = await import('ai/test');
+  return new MockLanguageModelV3({ doGenerate: { content: [{ type: 'text', text: 'Synthetic cleaned fixture text.' }], finishReason: { unified: 'stop', raw: 'stop' }, usage: { inputTokens: { total: 2, noCache: 2, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 2, text: 2, reasoning: 0 } }, warnings: [] } });
+}
