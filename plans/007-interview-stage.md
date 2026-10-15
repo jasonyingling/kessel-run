@@ -1,5 +1,17 @@
 # Plan 007: Add an Interview stage that captures the author's own words, and constrain Draft to them
 
+> **Reconciled 2026-10-14: SUPERSEDED — retire this historical implementation plan.**
+> Plan 015 (merged as `4882762`) delivered optional Interview/Start methods,
+> unchanged stages 0–7, and flexible sourcing. Plan 017's reviewed, unmerged
+> implementation supplies attributed interview/source persistence through the
+> shared app/MCP service. Its browser, live-provider, real-client and editorial
+> acceptance remain pending; this retirement does not claim those gates passed.
+> Do not add a mandatory numbered Interview stage, renumber the pipeline, require
+> speech, or revive the legacy working-memory transcript field. Typed answers,
+> notes, testing records and attributed research remain valid sources.
+> See the [scoped reconciliation](2026-10-14-reconciliation.md). The earlier
+> deferral and original steps below are retained as history, not instructions.
+
 > **Reconciled 2026-09-19 at `63177e4`: DEFERRED — app work follows real content validation.**
 > Plan 015 already delivered the skill method changes. Its eight numbered stages
 > (0–7), standalone Interview/Start skills, and flexible sourcing supersede this

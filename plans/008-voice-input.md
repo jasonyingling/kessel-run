@@ -1,475 +1,283 @@
-# Plan 008: Add push-to-talk dictation to the project chat input
+# Plan 008: Inline dictation and optional cleanup in the writing composer
 
-> **Reconciled 2026-09-19 at `63177e4`: DEFERRED — app work follows real content validation.**
-> Dictation remains unimplemented: the chat has no `SpeechInput` and
-> `src/lib/kessel-run/dictation.ts` does not exist. Before dispatch, rewrite the
-> disabled-state design: the vendored speech component spreads `...props` after
-> `disabled={isDisabled}`, so a caller can override its internal readiness guard.
-> Define app-owned capability handling without editing the vendored component;
-> use detected capabilities rather than browser-brand assumptions. The two
-> component files are unchanged from the historical baseline, but this design
-> gap remains. Do not execute the historical steps below. The old Planned-at
-> stamp is retained; see [current reconciliation](2026-09-19-reconciliation.md).
+## Status and authorization
 
-> **Executor instructions**: Follow this plan step by step. Run every
-> verification command and confirm the expected result before moving to the
-> next step. If anything in the "STOP conditions" section occurs, stop and
-> report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md` — unless a reviewer dispatched you and told you they
-> maintain the index.
->
-> **Drift check (run first)**:
-> ```
-> git diff --stat 490545a..HEAD -- src/components/kessel-run/project-chat.tsx src/components/ai-elements/speech-input.tsx src/lib/kessel-run
-> ```
-> If any in-scope file changed since this plan was written, compare the
-> "Current state" excerpts against the live code before proceeding; on a
-> mismatch, treat it as a STOP condition.
-
-## Status
-
-- **Priority**: P1
-- **Effort**: S
-- **Risk**: LOW
-- **Depends on**: none — this is independent of plan 007 and the two can land in
-  either order. It is numbered second because the Interview stage is what makes
-  dictation worth having.
-- **Category**: dx
-- **Planned at**: commit `490545a`, 2026-08-21
+- **State:** BLOCKED on release acceptance — GPT-6.1 Sol implementation and independent technical review complete on 2026-10-14; browser, microphone and live cleanup gates pending.
+- **Reviewed commit:** `33facb09c743eaa7fc255e133dec756a241e0d2a`; clean isolated worktree, unmerged and unpushed.
+- **Priority / effort / risk:** P2 / M / MED.
+- **Planned at:** `00a7623e4a10695f0bfca2086d8bb2821f53690f`, 2026-10-14.
+- **Depends on:** plan 017's reviewed implementation at that commit. Its browser,
+  live API, real Codex and editorial release gates remain pending. The user's
+  explicit request authorizes stacking 008 on that candidate without waiting for
+  merge or pretending 017 is DONE; this overrides the skill's DONE dependency rule.
+- **Worktree:** `/private/tmp/kessel-run-008`; branch `codex/008-inline-dictation`.
+- **Approved design:** one editable message, Dictate toggles to Stop dictation,
+  speech enters that field, optional Clean up with undo, Send when ready.
+- **References:** `plans/008-dictation-review/mockup.html` and its README. The old
+  plan is archived at `plans/008-dictation-review/historical-plan.md`; do not execute it.
 
 ## Why this matters
 
-The Interview stage (plan 007) only pays off if the answers are spoken. Typed
-answers to good interview questions come out short, tidy, and pre-edited — which
-is the same thing as pre-generified. Spoken answers are longer, messier, and full
-of the specific asides and half-formed opinions that make writing sound like a
-person. The transcript is the source of record for the whole piece, so the
-quality of that raw material sets the ceiling on everything downstream.
+The writer should be able to speak and type in the same field without a separate
+capture/insertion step. Optional light cleanup removes fillers and proofreads
+without silently changing source material. Recording, cleanup and sending must
+preserve edits and stay bound to the original workspace/output/destination.
 
-Right now the only way into the chat is a textarea. This plan adds a microphone
-button that dictates into it: press, talk, watch the words land, edit if you
-want, send. The heavy lifting is already vendored — `speech-input.tsx` is a
-complete, unused Web Speech API component sitting in `src/components/ai-elements/`.
-This plan wires it up, extracts the one piece of real logic into a testable
-module, and handles the browsers where it does not work.
+## Current state and conventions
 
-## Current state
+Next 16.2.12, React 19, TypeScript, Mastra and AI SDK are installed. Node >=22.13
+is required. Read relevant installed `node_modules/next/dist/docs/` guides before
+writing Next code. Apply `/Users/miniying/.agents/skills/emil-design-eng/SKILL.md`
+and `/Users/miniying/.agents/skills/better-ui/SKILL.md` for UI details.
 
-### `src/components/ai-elements/speech-input.tsx` — already present, currently unused
+`src/components/kessel-run/app/writing-panel.tsx` owns `message`, `messageRef`,
+credential/model selection and streamed send. It snapshots `messageRef.current`
+before POST and only clears if current scope/text still equal that snapshot.
+Its textarea currently has `maxLength={20000}` and toolbar says `Send billed AI
+turn`. Preserve the newer-typing guard and explicit billing notice. Integrate
+Dictate / Clean up / Send using existing AppButton and the approved compact row.
 
-A vendored ai-elements component. It is a `<Button>` with pulse rings that
-toggles listening. Relevant contract:
+`workspace.tsx` owns the source form's `body`, `sourceType`, `attribution` and
+piece identity. Its source submit currently calls:
 
-```tsx
-export type SpeechInputProps = ComponentProps<typeof Button> & {
-  onTranscriptionChange?: (text: string) => void;
-  onAudioRecorded?: (audioBlob: Blob) => Promise<string>;
-  lang?: string;
-};
+```ts
+await localApi('content', { action: 'source', input: {
+  operationId, expectedHash: piece?.hash, pieceId: piece?.id,
+  title, body, attribution, sourceType, referenceUrl: null
+} });
 ```
 
-- It detects one of three modes at mount: `"speech-recognition"` (Web Speech API
-  present — Chrome, Edge), `"media-recorder"` (no Web Speech API but
-  `MediaRecorder` exists — Firefox, Safari), or `"none"`.
-- In `speech-recognition` mode it runs `continuous = true`,
-  `interimResults = true`, and calls `onTranscriptionChange` with **final**
-  transcript fragments only, one fragment per pause. Fragments arrive with no
-  leading space and no trailing punctuation.
-- In `media-recorder` mode the button is **disabled** unless `onAudioRecorded`
-  is supplied. This plan does not supply one, so on Firefox and Safari the mic
-  renders disabled. That is the intended outcome for now — see "Maintenance
-  notes".
-- Its `disabled` calculation is:
-  ```tsx
-  const isDisabled =
-    mode === "none" ||
-    (mode === "speech-recognition" && !isRecognitionReady) ||
-    (mode === "media-recorder" && !onAudioRecorded) ||
-    isProcessing;
-  ```
+Only replace/enhance that form's body field, not every shared body field or the
+main prose editor. Reuse source saving and failure retention. `service.ts`
+`saveSource` and `mcp/tools.ts`'s `kr_save_source` schema own persistence/validation.
+Source schema is in `workspace/schema.ts`; export/restoration use shared entities.
 
-Nothing in the repo imports it. `grep -rn "speech-input" src/` returns only the
-file itself.
+Use app-owned components/controllers. Vendored `ai-elements/speech-input.tsx`
+has no adequate controlled stop/error/cancellation API and must stay unchanged.
+Use capability detection for SpeechRecognition/webkitSpeechRecognition, never a
+browser-brand allowlist. No MediaRecorder or new dependency is needed.
 
-### `src/components/kessel-run/project-chat.tsx:83-89` — the input state
-
-```tsx
-  const handleSubmit = async () => {
-    if (!input.trim()) return
-
-    sendMessage({ text: input })
-    setInput("")
-  }
-```
-
-### `src/components/kessel-run/project-chat.tsx:139-150` — the input, as it renders today
-
-```tsx
-      <PromptInput onSubmit={handleSubmit} className="mt-4">
-        <PromptInputBody>
-          <PromptInputTextarea
-            onChange={(e) => setInput(e.target.value)}
-            className="md:leading-10"
-            value={input}
-            placeholder="Type your message..."
-            disabled={status !== "ready"}
-          />
-        </PromptInputBody>
-      </PromptInput>
-```
-
-There is no footer and no visible submit button. Enter submits, via
-`PromptInputTextarea`'s internal `form?.requestSubmit()`.
-
-### The hazard that will bite you if you skip it
-
-`src/components/ui/button.tsx` does **not** set a default `type`. An HTML
-`<button>` inside a `<form>` defaults to `type="submit"`. `SpeechInput` renders
-a `<Button>` and spreads its props onto it, so unless you pass `type="button"`
-explicitly:
-
-1. Clicking the mic submits the chat form instead of starting dictation.
-2. `PromptInputTextarea`'s Enter handler looks up `form?.querySelector('button[type="submit"]')`
-   and would find the mic button, so Enter would read the mic's disabled state
-   instead of the real submit button's.
-
-Pass `type="button"` on the `SpeechInput`. This is the single most likely way
-for this plan to ship broken.
-
-### Repo conventions to match
-
-- `src/components/` and `src/lib/` use **double quotes and no semicolons**.
-  `src/mastra/` uses single quotes with semicolons. Match the file you are in.
-- App UI lives in `src/components/kessel-run/`. `src/components/ai-elements/`
-  and `src/components/ui/` are vendored and must not be edited — pass
-  `className` instead, the way `project-chat.tsx` already does for
-  `ToolInput`/`ToolOutput`.
-- Tests are Vitest, colocated, `*.test.ts` only. `vitest.config.ts` sets
-  `environment: "node"` and its comment says component tests would need jsdom
-  and are deliberately not configured. So: no component test. Testable logic
-  gets extracted into a plain `.ts` module in `src/lib/kessel-run/`.
-- Every flex container in this workspace carries `min-w-0` — see the comment
-  block in `project-workspace.tsx`. Do not introduce a flex child without it.
-
-## Commands you will need
-
-| Purpose | Command | Expected on success |
-|---|---|---|
-| Install | `npm install` | exit 0 |
-| Tests | `npm test` | exit 0, all pass |
-| Typecheck | `npm run typecheck` | exit 0, no output |
-| Lint | `npm run lint` | exit 0, `9 problems (0 errors, 9 warnings)` |
-| Build | `npm run build` | exit 0 |
-| Dev server | `npm run dev` | listening on `http://localhost:3000` |
-
-**Run `npm install` first.** A `node_modules` predating commit `87fa9fd` has no
-`vitest`, and both `npm test` and `npm run typecheck` fail with
-`Cannot find module 'vitest'` until you install.
-
-`npm run build` logs `IO Error: Could not set lock on file .../mastra.duckdb`.
-Known, pre-existing, non-fatal. Ignore it.
+Server patterns: `local-session.ts` checks exact Host/Origin, session/CSRF and
+`x-kr-workspace-ref`. `ai/provider.ts` exports providerSelection; Credentials
+resolves the explicitly selected source without fallback. Mastra Agent supports
+injected fake models, abortSignal, maxRetries:0 and noopLogger (see ai/turn.ts).
+`ai/fake-provider.ts` requires development plus an owned synthetic fixture root;
+production rejects it. Reuse that boundary for HTTP fixture tests.
 
 ## Scope
 
-**In scope** (the only files you may modify or create):
+Only change these paths, plus the approved plan/design files copied by reviewer:
 
-- `src/lib/kessel-run/dictation.ts` (create)
-- `src/lib/kessel-run/dictation.test.ts` (create)
-- `src/components/kessel-run/project-chat.tsx`
-- `plans/README.md` (status row only)
+- `src/components/kessel-run/app/writing-panel.tsx`, `workspace.tsx`.
+- New app-owned `src/components/kessel-run/app/dictation*` and `cleanup*` files
+  (components, hooks, controller/adapter and meaningful tests).
+- `src/app/globals.css` for scoped dictation/composer styles only.
+- New `src/server/kessel-run/ai/cleanup.ts` and `cleanup.test.ts`.
+- New `src/app/api/kessel-run/local/cleanup/route.ts` and its tests.
+- `src/lib/kessel-run/local-api.ts` if needed for cleanup workspace headers.
+- `src/server/kessel-run/workspace/{schema,service,import-export}.ts`, service and
+  approval tests, and `src/server/kessel-run/mcp/tools.ts` only for optional
+  dictation provenance; no new MCP generation capability.
+- `src/server/kessel-run/ai/fake-provider.ts` only to expose a guarded cleanup
+  fixture; existing fixture validation must remain unchanged or stricter.
+- `tests/e2e/` for authored browser tests and HTTP-only cleanup verification.
+- `docs/kessel-run-app.md`, `plans/008-voice-input.md` for implementation notes.
 
-**Out of scope** (do NOT touch):
+Out of scope: vendored components, stage numbering/skill method changes, provider
+migration, paid transcription/audio persistence, general redesign, dependencies,
+OAuth, hosted access, real personal data, other plans' acceptance, merge/push.
+Reviewer maintains `plans/README.md`.
 
-- `src/components/ai-elements/speech-input.tsx` and every other file under
-  `src/components/ai-elements/` or `src/components/ui/` — vendored library code
-  carrying hand-applied compatibility fixes. Re-running the ai-elements CLI
-  would overwrite any edit you make here. If the component needs different
-  behavior, pass props; if props cannot express it, STOP and report.
-- `vitest.config.ts` — do not add jsdom. Component testing is a deliberate
-  non-goal; the browser walkthrough in step 5 covers what a jsdom test would.
-- Any server route, the Mastra agent, or the skills. Dictation is entirely
-  client-side.
-- A server-side transcription endpoint. Explicitly deferred; see "Maintenance
-  notes".
+## Commands and baseline
 
-## Git workflow
+Use bundled Git if system Git hits the Xcode license; never accept the license:
+`/Users/miniying/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback/git`.
+Drift check: `git diff --stat 00a7623..HEAD -- src tests docs package.json package-lock.json`.
+Base worktree must be clean and HEAD equal the planned commit before edits.
+Install with `npm ci --offline` using cache if possible; if cache is incomplete,
+request the permitted dependency-install path. Do not read or copy secret files.
 
-- Branch: `advisor/008-voice-input`
-- Commit per step or per logical unit. Message style from `git log`: short
-  imperative sentence, no prefix, e.g. `Add project workspace route, loading, and not-found pages`.
-- Do NOT push or open a PR unless the operator instructed it.
+| Check | Command | Expected |
+| --- | --- | --- |
+| Unit/SDK | `npm test` | Baseline 116 tests + meaningful new tests pass |
+| Types | `npm run typecheck -- --incremental false` | Exit 0 |
+| Lint | `npm run lint` | 0 errors; no new warnings (9 baseline) |
+| Skills | `npm run skills:check` | 15 workspace + 15 runtime references |
+| Build | `npm run build` | Exit 0; baseline has one NFT tracing warning |
+| Whitespace | `git diff --check` | Exit 0 |
+| HTTP regression | `node tests/e2e/production-http.mjs /opt/homebrew/bin/npm` | Pass; owned server stops/cleans up |
 
-## Steps
+Loopback tests may need tool escalation; they use synthetic data, no browser or
+paid model. Do not run browser/Playwright, alternate renderers or visual servers
+under the existing inspection restriction. Continue independent work; report
+browser/live microphone/live model gates pending. User approval of the design
+is not evidence those implementation checks ran.
 
-### Step 1: Extract the transcript-append rule into a testable module
+## Step 1 — Recognition controller and browser adapter
 
-`SpeechInput` delivers final transcript fragments one at a time, with no leading
-space and no trailing punctuation. Naively concatenating them produces
-`we tried thatit broke`. Joining them unconditionally with a space produces a
-leading space on an empty input and a double space after a user-typed trailing
-space.
+Create an injectable recognition adapter and testable controller. Keep lifecycle
+and result logic separate from React. No microphone starts on mount, page load or
+capability probing. Start only after Dictate. Use explicit ready/requesting/
+listening/finishing/error/unavailable states, static status and user cancellation.
 
-Create `src/lib/kessel-run/dictation.ts`:
+Append only finalized recognition segments to the latest editable value, one per
+session/result index. Interim recognition can be a small status hint outside the
+editable value, never a second capture form. Do not replay the full transcript.
+Preserve typing, selection/caret and focus. Enforce the destination's length limit
+without silently dropping text: stop/report overflow and retain the unsaved
+fragment for explicit recovery. Bound cumulative recognized text too.
 
-```ts
-/**
- * Fold a speech-to-text fragment into whatever is already in the composer.
- *
- * `SpeechInput` fires one call per pause in speech, with fragments that carry
- * no leading space and no trailing punctuation. The user is also free to type
- * around dictated text at any point, so this has to be safe against an empty
- * box, a box ending in whitespace, and a box ending mid-word.
- *
- * Deliberately does not punctuate or capitalize. Interview transcripts are the
- * source of record for the piece and are kept verbatim — tidying here would
- * quietly edit the author's own words before anyone reads them.
- */
-export function appendDictation(current: string, fragment: string): string {
-  const chunk = fragment.trim()
-  if (!chunk) return current
-  if (!current) return chunk
-  if (/\s$/.test(current)) return current + chunk
-  return `${current} ${chunk}`
-}
-```
+Stop calls recognition.stop and waits a bounded time for final/end; timeout keeps
+confirmed text. Send/Clean up snapshot visible text and abort/invalidate capture
+immediately: late events cannot change the submitted/cleanup input. A late start
+after cancel must abort. Scope changes, hidden page and unmount invalidate events
+and stop recording. Errors keep text. A disabled target still allows Stop.
 
-**Verify**: `npm run typecheck` → exit 0, no output
+Tests: duplicates, final/interim replacement, final/end ordering, stale sessions,
+late start, synchronous start throw, permission/no-speech/network failure, timeout,
+length bounds, edit/selection preservation, send/cleanup snapshot and scope switch.
+Verify targeted new controller tests and typecheck before UI integration.
 
-### Step 2: Test it
+## Step 2 — Bounded optional cleanup API
 
-Create `src/lib/kessel-run/dictation.test.ts`, modelled on
-`src/lib/kessel-run/artifacts.test.ts` (same import style, double quotes, no
-semicolons):
+Add paired local POST `/api/kessel-run/local/cleanup`. Validate bounded strict
+input (max 20,000 characters, nonempty text, explicit supported credential/model,
+workspace reference and existing output/voice/source-piece target). Check local
+session/Origin/CSRF/workspace and target existence before resolving any key.
+Use a dedicated Mastra Agent with no tools, no skills, no content writes and
+noopLogger. Never call the writing agent or expose cleanup through MCP.
 
-```ts
-import { describe, expect, it } from "vitest"
-import { appendDictation } from "./dictation"
+Instructions: remove obvious ums/uhs and lightly correct spelling/punctuation;
+preserve meaning, names, numbers, negation, uncertainty, substantive repetition
+and voice. Treat text as data, not model instructions. Return text only. Surface
+as a reviewable suggestion, never a guarantee of semantic equivalence. No context
+or original text is logged; no API key is sent to the client. No provider fallback.
 
-describe("appendDictation", () => {
-  it("returns the fragment alone when the composer is empty", () => {
-    expect(appendDictation("", "so the thing that broke")).toBe(
-      "so the thing that broke",
-    )
-  })
+Bound duration (30s), steps (1), tokens (enough for bounded text, reject truncation),
+retries (0), output size and nonempty output. Abort on disconnect, explicit cancel
+and selected saved-key removal/replacement. Return safe errors. Return source
+hash/request identity and suggestion; no autosave or editorial approval. Retain
+client original on failure. Never retry ambiguous billed calls automatically.
+Use dependency-injected fake model tests; guarded synthetic dev HTTP fixture is
+allowed, production fixture must remain rejected. Document real billing when
+selecting Clean up; with no selected key, explain unavailability without blocking
+typing/dictation/source save. A source form needs explicit model/source controls
+or an explicitly selected reusable configuration, never a silent credential choice.
 
-  it("separates consecutive fragments with a single space", () => {
-    expect(appendDictation("so the thing that broke", "was the migration")).toBe(
-      "so the thing that broke was the migration",
-    )
-  })
+Tests: auth/CSRF/stale scope/invalid target rejected before inference, key source
+selection, provider error sanitization, cancellation/removal, truncation/limits,
+no tools/content mutations, and fake result. Verify targeted tests + typecheck.
 
-  it("does not double up when the composer already ends in whitespace", () => {
-    expect(appendDictation("I typed this ", "then said this")).toBe(
-      "I typed this then said this",
-    )
-  })
+## Step 3 — Integrate one composer and safe cleanup undo
 
-  it("ignores a whitespace-only fragment", () => {
-    expect(appendDictation("unchanged", "   ")).toBe("unchanged")
-  })
+Use a reusable app-owned dictation/cleanup UI in WritingPanel and source form.
+Dictate toggles to Stop dictation in the same action position. Keep Send available
+while listening if it otherwise can submit. Editing remains available. Preserve
+017's snapshot/newer-typing/send-failure behavior. Source Save captures visible
+text with the same stop/invalidate rule. Closing/reopening a source form creates
+a new session identity; callbacks from the old form cannot affect the new one.
 
-  it("preserves the fragment verbatim, including filler and false starts", () => {
-    const messy = "I mean, the — the thing is, we, uh, we never measured it"
-    expect(appendDictation("", messy)).toBe(messy)
-  })
-})
-```
+Clean up stops capture, snapshots target/text/revision and starts one request;
+provide cancellation. Never apply a stale response after typing/navigation or
+another cleanup. Keep stale suggestions separately reviewable at their original
+target or discard with a clear notice, preserving the original text. Apply only
+when the exact input is still current. Undo restores the pre-cleanup text only
+when no intervening edit occurred; otherwise offer comparison/copy without
+clobbering newer edits. No automatic cleanup or automatic sending.
 
-**Verify**: `npm test` → exit 0, all pass, including 5 new tests in
-`dictation.test.ts`
+Use existing navy surfaces/AppButton tokens, quiet static listening indicator,
+visible labels/focus, wrapping action row, 16px mobile input text, reduced-motion
+and keyboard stationary presses, pointer-only 0.96 press and hover capability
+queries. Explain browser speech may process remotely; no audio is stored.
 
-### Step 3: Wire the microphone into the chat input
+Retain source provenance through an optional bounded `dictation` object on saved
+source metadata: recognizedText (exact finalized recognition before user cleanup)
+and cleanupApplied (boolean). Body remains the writer's submitted mixed typed/
+dictated/edited text, labelled author-reviewed rather than verbatim recognition.
+Keep old source callers/backups valid; optional field absent means no capture.
+Carry metadata through export/restoration. Raw recognition is fallible text, not
+an audio transcript guarantee. Cleanup prompt/output never replaces this raw field.
+No new source store. Test raw bytes/attribution/export/restore and absent metadata.
+Verify meaningful controller/integration tests, full tests/types/lint/skills.
 
-In `src/components/kessel-run/project-chat.tsx`:
+## Step 4 — Verification, documentation and delivery
 
-**a.** Add imports. Extend the existing `prompt-input` import to include
-`PromptInputFooter`, `PromptInputTools`, and `PromptInputSubmit`, and add two
-new import lines:
+Author browser tests with an injected fake recognition API covering start/stop,
+editing while listening, send freezes current text, cleanup/undo, late results,
+source save and errors at 390/768/1440 widths and reduced motion. Do not execute
+them while inspection remains restricted. Use unit/service tests to exercise
+actual controller and integrations; do not rely solely on tests of mock code.
 
-```tsx
-import { SpeechInput } from "@/components/ai-elements/speech-input"
-import { appendDictation } from "@/lib/kessel-run/dictation"
-```
+Run all permitted commands in the table. Extend/add an HTTP-only synthetic check
+for cleanup route authentication, no-key failure, guarded fake suggestion, no
+content mutation and production fake refusal. Stop owned processes, verify port
+closure, clean temporary roots. No live provider call. Document speech support,
+remote-service caveat, cleanup billing/limits/undo/provenance and pending checks.
+Inspect every result before committing. Reviewer independently reruns checks.
 
-**b.** Add a dictation handler next to `handleSubmit`:
+## Done criteria and STOP conditions
 
-```tsx
-  const handleDictation = useCallback((fragment: string) => {
-    setInput((current) => appendDictation(current, fragment))
-  }, [])
-```
+All source scope, regression and meaningful new unit/HTTP checks must pass; no
+new lint warnings, secrets, personal data or dependency changes. Clean committed
+worktree with complete evidence and unexecuted checks stated. Full release
+acceptance additionally requires browser/keyboard/mobile/reduced-motion, actual
+microphone and explicitly authorized live cleanup checks; keep these pending.
 
-Import `useCallback` from `react` alongside the existing hooks. The functional
-`setInput` form matters: `SpeechInput` holds `onTranscriptionChange` in a ref
-and fires it from an async recognition callback, so reading `input` directly
-would capture a stale value between fragments.
+Stop and report for unrelated source drift, out-of-scope architectural changes,
+credential leakage, loss of original/newer text, or unresolved failing checks
+without a concrete in-scope correction after two targeted attempts. Correct
+ordinary compile/lint implementation errors; do not waive gates. Browser denial
+stops only that path, not source/unit/HTTP work; never try an alternate renderer.
 
-**c.** Replace the `PromptInput` block with:
+## Git workflow and maintenance
 
-```tsx
-      <PromptInput onSubmit={handleSubmit} className="mt-4">
-        <PromptInputBody>
-          <PromptInputTextarea
-            onChange={(e) => setInput(e.target.value)}
-            className="md:leading-10"
-            value={input}
-            placeholder="Type, or press the mic and talk..."
-            disabled={status !== "ready"}
-          />
-        </PromptInputBody>
-        <PromptInputFooter>
-          <PromptInputTools className="min-w-0">
-            {/*
-              `type="button"` is load-bearing. ui/button sets no default type,
-              so a <button> inside this <form> would be type="submit": clicking
-              the mic would send the message, and PromptInputTextarea's Enter
-              handler — which finds the submit control with
-              querySelector('button[type="submit"]') — would read the mic's
-              disabled state instead of the real one.
-            */}
-            <SpeechInput
-              type="button"
-              size="icon-sm"
-              aria-label="Dictate your answer"
-              title="Dictate (Chrome and Edge)"
-              onTranscriptionChange={handleDictation}
-              disabled={status !== "ready"}
-            />
-            <span className="truncate text-xs text-muted-foreground">
-              Talk it out — rambling makes better material than typing.
-            </span>
-          </PromptInputTools>
-          <PromptInputSubmit status={status} disabled={!input.trim()} />
-        </PromptInputFooter>
-      </PromptInput>
-```
+Commit logical units on `codex/008-inline-dictation` only; no merge, push, PR or
+main edits. Copy this approved plan/design into the worktree for review. Report
+exact commit, commands/results, changed files and pending gates. Reviewer owns
+index/status and final verdict. Future recognition/provider upgrades must rerun
+late-event, selection, cancellation and cleanup race tests. Speech never changes
+source eligibility or the eight-stage writing method.
 
-Note on `disabled`: `SpeechInput` computes its own disabled state internally and
-ORs it with nothing — the prop you pass is spread onto the `<Button>` **after**
-its internal `disabled={isDisabled}`, so your value wins. Passing
-`status !== "ready"` is correct: the mic should be off while a response streams.
-It also means the button will be enabled on Firefox/Safari where the internal
-logic wanted it disabled. Accept that for now — clicking it there is a no-op,
-because `toggleListening` takes neither branch without an `onAudioRecorded`
-handler. Note it in your report.
+## Execution review — 2026-10-14
 
-**Verify**: `npm run typecheck` → exit 0, no output
-**Verify**: `npm run lint` → exit 0, `9 problems (0 errors, 9 warnings)`
-**Verify**: `grep -c 'type="button"' src/components/kessel-run/project-chat.tsx` → `1`
+GPT-6.1 Sol implemented the approved single composer in the writing assistant
+and source form: finalized speech appends to the editable field, Dictate toggles
+to Stop dictation, and Clean up offers guarded undo. Source export/restoration
+retains raw recognition separately from submitted text. Cleanup uses the
+explicitly selected API credential/model and has no content-writing tools.
 
-### Step 4: Full static verification
+The advisor read the implementation diff and new tests, confirmed the 29-file
+change stays within scope, and independently verified the committed candidate:
 
-**Verify**: `npm test` → exit 0, all pass
-**Verify**: `npm run typecheck` → exit 0, no output
-**Verify**: `npm run lint` → exit 0, `9 problems (0 errors, 9 warnings)`
-**Verify**: `npm run build` → exit 0
-**Verify**: `git status --porcelain` → only the three in-scope source files
-**Verify**: `git diff --name-only | grep -c "ai-elements\|components/ui"` → `0`
+| Check | Result |
+| --- | --- |
+| `npm test` | 35 files / 151 tests passed |
+| Nonincremental typecheck | Passed |
+| Lint | 0 errors / 9 baseline warnings |
+| Skill references | 15 workspace + 15 runtime passed |
+| Production build | Passed; one baseline NFT tracing warning |
+| HTTP production without key | Passed |
+| HTTP production with test provider configured | Production refusal passed |
+| HTTP development synthetic provider | Fixture round-trip passed |
+| Diff whitespace / clean committed worktree | Passed |
+| Mockup source-level verifier in main | Passed; no browser rendering |
 
-### Step 5: Browser walkthrough — reviewer only
+HTTP checks cover cleanup authentication, CSRF, Origin, workspace/target scope,
+length limits and no content mutation, plus existing manual/MCP/export/restart
+regressions. Each harness confirmed its owned server stopped and cleaned its
+temporary fixture root. No live model call, browser or microphone was used.
 
-**If you are an executor without a browser, SKIP this step and say so in your
-report. Do not fabricate any part of it.**
+Review corrections include retaining text after failed/interrupted HTTP200
+streams, recovering all finalized fragments in an overflowing result batch,
+preserving unavailable capability through cancellation, and keeping cleanup
+feedback visible separately from dictation status. Original and newer text are
+protected by request/session and edit-generation checks. No unresolved source
+finding remains from this scoped review.
 
-With `npm run dev` running and a project open at
-`/kessel-run/projects/<id>`, in Chrome:
-
-1. The mic button renders in the input footer, left of the caption, with a
-   submit button on the right. No layout shift, no horizontal page scroll —
-   confirm `document.documentElement.scrollWidth === clientWidth`.
-2. Click the mic. The browser prompts for microphone permission; grant it. The
-   button turns destructive-colored, shows a square stop icon, and the pulse
-   rings animate.
-3. Speak two sentences with a clear pause between them. Both land in the
-   textarea, separated by exactly one space, with no leading space and no
-   duplicated fragments.
-4. Type a word at the end, then speak again. The spoken fragment appends after
-   the typed word with one space.
-5. Click stop. Rings stop, icon returns to the microphone, text stays in the
-   box.
-6. Press Enter. The message sends — confirming the mic button did not steal
-   `type="submit"`.
-7. Send a message and click the mic while the response is streaming. The mic is
-   disabled.
-
-**Verify**: all seven observed. Record any that were not.
-
-## Test plan
-
-- New file `src/lib/kessel-run/dictation.test.ts` with the five cases in step 2:
-  empty composer, consecutive fragments, composer already ending in whitespace,
-  whitespace-only fragment, and verbatim preservation of messy speech.
-- Model after `src/lib/kessel-run/artifacts.test.ts` — same import style, same
-  `describe`/`it` shape.
-- No component test. `vitest.config.ts` is `environment: "node"` with
-  `include: ["src/**/*.test.ts"]`, and its own comment records that component
-  tests are deliberately not configured. The browser walkthrough in step 5 is
-  what covers the wiring.
-- Verification: `npm test` → all pass, including 5 new tests.
-
-## Done criteria
-
-Machine-checkable. ALL must hold:
-
-- [ ] `npm test` exits 0; `src/lib/kessel-run/dictation.test.ts` exists and its
-      5 tests pass
-- [ ] `npm run typecheck` exits 0 with no output
-- [ ] `npm run lint` exits 0 with `9 problems (0 errors, 9 warnings)`
-- [ ] `npm run build` exits 0
-- [ ] `grep -c 'type="button"' src/components/kessel-run/project-chat.tsx` → `1`
-- [ ] `grep -rn "SpeechInput" src/components/kessel-run/project-chat.tsx` → 2 matches
-      (the import and the element)
-- [ ] `git diff --name-only` lists no file under `src/components/ai-elements/`
-      or `src/components/ui/`
-- [ ] No files outside the in-scope list are modified (`git status --porcelain`)
-- [ ] `plans/README.md` status row for 008 updated
-- [ ] Step 5 either performed and reported item by item, or explicitly reported
-      as skipped for lack of a browser
-
-## STOP conditions
-
-Stop and report back (do not improvise) if:
-
-- The drift check shows `project-chat.tsx` or `speech-input.tsx` changed since
-  `490545a` and no longer matches the excerpts above.
-- `SpeechInput`'s props do not match the `SpeechInputProps` type in "Current
-  state" — the vendored component has been updated and the wiring may differ.
-- You need to edit anything under `src/components/ai-elements/` or
-  `src/components/ui/` to make this work. Passing props should be sufficient;
-  if it is not, that is a finding, not something to work around.
-- `npm run lint` reports anything other than exactly 9 warnings and 0 errors.
-  The 9 pre-existing warnings are all in vendored `ai-elements` files; a tenth
-  is yours.
-- A step's verification fails twice after a reasonable fix attempt.
-
-## Maintenance notes
-
-For whoever owns this next:
-
-- **Firefox and Safari get no dictation.** They have no Web Speech API, so
-  `SpeechInput` falls into `media-recorder` mode, which needs an
-  `onAudioRecorded` callback that this plan does not supply. The upgrade is a
-  small one and the component is already built for it: add a POST
-  `/api/kessel-run/transcribe` route that takes the audio blob and returns text,
-  and pass `onAudioRecorded={...}` returning that text. That needs a
-  transcription model — note that `@ai-sdk/openai` is **not** currently a
-  dependency (the agent uses the gateway model string `openai/gpt-5`), so it
-  would add one, plus per-minute API cost. The `ai` package already exports
-  `transcribe`.
-- **Where the audio goes.** Chrome's Web Speech API sends audio to Google's
-  speech service for recognition. That is worth knowing before dictating
-  anything client-confidential into an interview. A server-side transcription
-  route would move that to whichever provider is chosen instead — it does not
-  make the concern disappear.
-- **Do not add punctuation or capitalization to `appendDictation`.** The
-  Interview stage's transcript is the source of record for the finished piece
-  and its verbatim rule is deliberate. Cleaning up here would edit the author's
-  words before anyone reads them, which is the exact failure the transcript rule
-  exists to prevent.
-- **A reviewer should scrutinize**: `type="button"` on the `SpeechInput`, the
-  functional `setInput` update in `handleDictation` (a direct read of `input`
-  would drop fragments), and that no vendored file was edited.
-- **Deferred out of this plan**: a live interim-transcript preview (the
-  component requests `interimResults` but only forwards finals), microphone
-  device selection via the vendored `mic-selector.tsx`, and any keyboard
-  shortcut for push-to-talk.
+**Verdict:** implementation and permitted technical checks complete; full plan
+acceptance remains BLOCKED on browser/keyboard/mobile/reduced-motion and
+assistive-technology inspection, actual microphone behavior, and explicitly
+authorized live billed cleanup. Browser tests are authored but unexecuted.
+Plan 017's pending release gates remain pending. The existing automatic approval
+review restriction prevented browser inspection; no alternate renderer was used.
+No merge or push was performed. Main planning records remain local changes.

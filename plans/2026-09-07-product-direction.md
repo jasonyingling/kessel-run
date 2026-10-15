@@ -1,5 +1,14 @@
 # Agreed direction: validate the skills, then build the publication workspace
 
+> **Sequence updated 2026-10-13:** The user now wants to validate writing inside
+> the app. Their latest decision uses an API key for in-app AI and MCP for users
+> working through their own agents; Sign in with ChatGPT is deferred.
+> [Plan 017](017-app-api-keys-and-mcp.md) supersedes this document's blanket
+> deferral of app implementation. The publication/voice/output model and editorial
+> quality requirements below still apply. A successful starter voice profile is
+> confirmed by the user; full drafting/lessons/resume validation is still pending.
+> Hosted SaaS and publishing remain later work.
+
 Recorded 2026-09-07 from the user's clarification. This supersedes the September 6 recommendation to prioritize ChatGPT packaging and develop SaaS foundations alongside skill work. It records product direction; it is not an executor-ready implementation plan.
 
 ## Decisions
