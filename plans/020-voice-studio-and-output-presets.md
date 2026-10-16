@@ -4,11 +4,15 @@
 
 ## Status / drift
 
-- TODO · P1 · M–L · MED risk · direction/correctness.
+- IN PROGRESS · P1 · M–L · MED risk · direction/correctness.
 - Depends on 018 (stable operations, publication entry), 019 (studio destination/shared controls).
 - Planned 2026-10-16 at `939adc5c2dbb36034fd2def4f4a395ba708d7be0` plus intentional uncommitted Luna/Sol fixes. Run `git diff --stat 939adc5..HEAD -- src/components/kessel-run/app src/server/kessel-run/workspace src/app/api/kessel-run/local src/app/kessel-run tests docs` and `node plans/2026-10-16-ui-review/check-baseline.mjs`. Reconcile expected 018/019 extractions; unexpected contract drift or missing model changes means STOP.
 
 ## Why / current state
+
+### Reconciled predecessor contracts
+
+018 and reviewed019 candidate `dde48c6` supply the current implementation baseline. The original line references below describe the audited behavior; the same studio and preset logic now lives behind `/kessel-run/voices?publication=<id>`, with `AppButton` and `Field` extracted into leaf modules and a shared `AppShell`. Preserve URL selection, unavailable-ID handling, the publication return link, pending-command recovery and same-document pairing. Only explicit `LocalApiError.outcome === 'rejected'` permits abandoning a command; uncertain outcomes retain their exact identity and body. Existing format/pin validation must continue to accept historical outputs after preset edits: enforce new format agreement only in `createOutput`, not in context reads, schema migration or restoration. Preset hashes already participate in output context fingerprints. Profile exports are standalone exact-text metadata envelopes, distinct from whole-workspace handoff restoration. Expected predecessor drift has been inspected; no model/provider changes are needed. Existing dictation tests also navigate through the studio; narrow navigation/label updates to that suite are in scope while preserving every capture/cleanup/provenance assertion.
 
 A new publication can be created without AI, but its voice path emphasizes an assistant or “Import.” The existing manual voice editor only starts from an approved version. Output creation offers an empty required voice selector. Users should be able to write a few preferences, confirm them, and start writing. Presets also need real format semantics: renaming Article to Newsletter currently retains `format: Article`.
 

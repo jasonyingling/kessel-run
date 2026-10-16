@@ -4,7 +4,7 @@
 
 ## Status and drift
 
-- IN PROGRESS · P1 · effort L · risk MED · direction/architecture/UI.
+- DONE · P1 · effort L · risk MED · direction/architecture/UI.
 - Depends on 018's typed entry states and stable create operations. No requirement to configure AI.
 - Planned 2026-10-16 at `939adc5c2dbb36034fd2def4f4a395ba708d7be0` plus uncommitted Luna/Sol changes. Run `git diff --stat 939adc5..HEAD -- src/app src/components/kessel-run src/lib/kessel-run tests/e2e docs` and `node plans/2026-10-16-ui-review/check-baseline.mjs`. Reconcile intentional 018 changes against the contracts below; stop for unrelated behavioral drift or missing model changes.
 
@@ -99,3 +99,5 @@ Implemented on `codex/019-editorial-shell`, stacked on reviewed `e55df6e` (018 p
 - Screenshots retained under ignored `test-results/navigation-editorial-navig-3ccdc-ecovery-across-destinations-<project>/`: loading, overview empty/populated, content, publication, studio and settings for all three projects. Root and executor inspected representative desktop/tablet/mobile screenshots. Test-owned servers completed teardown.
 
 Not verified here: slow-motion Animations-panel replay (new navigation is instant; loading is static), live paid inference, real external-agent integration and the browser-policy-blocked prototype file rendering. Prototype comparison used its source. Existing AgentConnections border/control polish, fully settled connection-state screenshots and singular publication-card count wording remain for final 022 polish; no HIGH interaction finding remains from this scoped review. Full product acceptance still depends on 020/021/022.
+
+Primary review approved candidate `dde48c6` after one correction round and a second independent source review. Primary reran all final gates on the frozen source:206 tests/48 files, nonincremental typecheck, lint0errors/9baselinewarnings, skills15+15, production build and18/18 Chromium cases passed. Representative desktop/tablet/mobile screenshots were inspected. Source was merged into main under the user's authorization; final product acceptance remains scoped as above.

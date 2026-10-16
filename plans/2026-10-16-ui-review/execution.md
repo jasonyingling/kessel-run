@@ -11,8 +11,8 @@ Commit `95bf0c6` preserves the existing Luna/Sol fixes and the approved plans. B
 | Plan | Branch / worktree | State |
 |---|---|---|
 | 018 | `codex/018-publication-first` · `/Users/miniying/.codex/worktrees/018-publication-first/kessel-run` | APPROVED `0f155f0`; combined candidate `b5124cc`, merged `a8d5bb8` |
-| 019 | `codex/019-editorial-shell` · isolated prepared worktree | Implementing from reviewed018 |
-| 020 | Read-only preflight complete | Waiting for 019 |
+| 019 | `codex/019-editorial-shell` · isolated worktree | APPROVED `dde48c6`, merged after independent verification |
+| 020 | `codex/020-voice-studio` · isolated prepared worktree | Implementing from reviewed019 |
 | 021 | Read-only preflight complete | Waiting for 020 |
 | 022 early unit | `codex/022-ui-foundations` · `/Users/miniying/.codex/worktrees/022-ui-foundations/kessel-run` | APPROVED at `77cda84`; handoff-selection safety and reusable mark assets only |
 | 022 completion | Same executor after stacking onto 021 | Waiting for final surfaces |
@@ -40,3 +40,7 @@ Review identified unsafe client abandonment based on generic `INVALID_INPUT`/`CO
 ## 018 final independent verification
 
 Combined candidate `b5124cc` (includes reviewed022 early unit) passed200 tests/47 files, typecheck, lint0errors/9baselinewarnings, skills15+15 and production build. Normal, fake-production and fake-dev HTTP checks passed. Combined Chromium run passed15/15 across1440/768/390 with reduced motion on mobile. Primary inspected entry, loading, location error, retry, successful publication and corruption screenshots; no horizontal overflow. Expected preexisting font/mobile-header/status chrome issues move to019/022. Merged into main `a8d5bb8`; no paid inference, real credentials or user-content testing.
+
+## 019 review and integration
+
+One revision round fixed repeated New publication after Cancel, duplicate AI headings and empty status chrome. Independent follow-up review found no remaining blocker. Primary read all26changed files, inspected screenshots and independently reran206tests/48files, typecheck, lint0errors/9baselinewarnings, skills15+15, production build and18/18 browser cases. Candidate `dde48c6` was approved and merged. The final022 plan explicitly includes AgentConnections presentation, settled-state screenshots and count grammar; behavior stays unchanged.020 drift is reconciled to the reviewed shell/018operation contracts, with narrow dictation navigation test integration allowed.

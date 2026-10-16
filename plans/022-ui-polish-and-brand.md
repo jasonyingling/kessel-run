@@ -26,6 +26,10 @@ Polish needs to survive every surface and state. The current dark shell uses pal
 
 Out of scope: schema/provider changes, key handling, editorial workflow redesign, new theme toggle, new animation dependency, blanket restyling of legacy pages, prototype changes and user content. SVG concept assets under `plans/2026-10-16-ui-review/` are design inputs, not deployed assets.
 
+### Reviewed integration details
+
+019 already fixes the Geist binding and uses bounded, static application loading skeletons; preserve those instead of duplicating the work. Include `connections.tsx` only for shared leaf controls, panel styling and settled-state browser evidence; its connection grants, authorization and token behavior must remain unchanged. Include publication-card count wording in `workspace.tsx` for correct singular/plural labels. Existing AgentConnections native borders and disabled controls need the same visual checks as Settings. The current favicon has 16/32/48/256px entries; deliberately replace it with the planned coherent 16/32/48 set. Installed Next16 file-based icon metadata supports the favicon and icon.svg without adding redundant layout metadata. Use existing local image tooling rather than introducing a generation dependency.
+
 ## Design specification
 
 - Shared shell stays deep navy; writing paper remains light. Fix links with a paper-scoped readable color plus persistent underline. Use app-muted token on dark composer notes. Assert ≥4.5:1 for ordinary text and ≥3:1 for essential control boundaries/focus against adjacent surfaces. Check computed runtime colors, including hover/focus/disabled; disabled contrast is not a blanket reason to hide state labels.
