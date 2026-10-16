@@ -164,11 +164,11 @@ Added 2026-08-21, chosen by the repo owner while planning 007 and 008:
 | 015  | Start/resume and profile-aware writing flow | P1 | M | 010, 011 | DONE — reviewed and merged 4882762; 14 skills |
 | 016  | [Polish standalone HTML mockup](016-polish-html-mockup.md) | P1 | M | — | MERGED — user-authorized fast-forward to `eca1ba9` on September 19; browser acceptance remains unverified |
 | 017  | [Finish the app with API-key AI and external-agent MCP](017-app-api-keys-and-mcp.md) | P1 | L | 009–012, 015, 016 (merged) | MERGED — user-authorized integration of `00a7623` on October 15; tests/build/HTTP pass; browser/live API/real Codex/editorial gates pending |
-| 018 | [Publication-first entry and recoverable workspace creation](018-publication-first-entry.md) | P1 | L | 017/008 merged; preserve model-fix baseline | TODO |
+| 018 | [Publication-first entry and recoverable workspace creation](018-publication-first-entry.md) | P1 | L | 017/008 merged; model-fix baseline preserved at `95bf0c6` | IN PROGRESS — isolated executor; review before merge |
 | 019 | [Shared editorial shell and navigation](019-editorial-shell-and-navigation.md) | P1 | L | 018 | TODO |
 | 020 | [Keyless voice studio and real output presets](020-voice-studio-and-output-presets.md) | P1 | M–L | 018, 019 | TODO |
 | 021 | [Connected creation and writing desk](021-connected-writing-desk.md) | P1 | L | 018–020 | TODO |
-| 022 | [UI state polish and SVG brand integration](022-ui-polish-and-brand.md) | P2 | M | 019–021 | TODO |
+| 022 | [UI state polish and SVG brand integration](022-ui-polish-and-brand.md) | P2 | M | 019–021 | IN PROGRESS — early handoff-selection/mark unit reviewed at `77cda84`; final integration follows 021 |
 
 ### UI review: considered and rejected
 
