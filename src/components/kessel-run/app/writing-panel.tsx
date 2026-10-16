@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useModelCatalog } from './use-model-catalog';
 import { completedUnchangedSubmission } from './dictation-submission';
 import { DictationComposer, type ComposerHandle } from './dictation-composer';
-import { AppButton } from './workspace';
+import { AppButton } from './app-button';
 import type { ConversationRun } from '@/server/kessel-run/ai/conversations';
 import { runEvent } from '@/server/kessel-run/ai/events';
 import { getWorkspaceReference } from '@/lib/kessel-run/local-api';

@@ -2,11 +2,15 @@
 import { useModelCatalog } from './use-model-catalog';
 import { DictationComposer, type ComposerHandle } from './dictation-composer';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button as BaseButton } from '@base-ui/react/button';
-import { BookOpen, FileText, Settings, Feather } from 'lucide-react';
+import { AppButton } from './app-button';
+import { Field } from './field';
+import { useWorkspaceNavigation } from './app-shell';
+import { ProgressBoard } from './progress-board';
+import { routeUnavailable, selectProgress } from '@/lib/kessel-run/progress';
+import { BookOpen } from 'lucide-react';
 import { localApi, LocalApiError, getWorkspaceReference, setWorkspaceReference } from '@/lib/kessel-run/local-api';
 import type { Entity, OutputContext, WorkspaceOverview, WorkspaceAvailability } from '@/lib/kessel-run/app-contracts';
 import { pairFromLauncher } from './pairing';
@@ -19,16 +23,11 @@ import { ReviewDecisions } from './review-decisions';
 import { VoiceStudio } from './voice-studio';
 import { HandoffImport } from './handoff-import';
 
-export function AppButton({ static: stationary = false, ...props }: React.ComponentProps<typeof BaseButton> & { static?: boolean }) {
-  return <BaseButton {...props} className={`kr-action ${props.className ?? ''}`} data-static={stationary || undefined} />;
-}
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="kr-field"><span>{label}</span>{children}</label>;
-}
 function entityName(entity?: Entity) { return String(entity?.title ?? ''); }
 
-export function WritingWorkspace({ publicationId, pieceId, outputId }: { publicationId?: string; pieceId?: string; outputId?: string }) {
+export function WritingWorkspace({ publicationId, pieceId, outputId, view = 'overview', publicationFilter = 'all', statusFilter = 'all', createPublication = false }: { publicationId?: string; pieceId?: string; outputId?: string; view?: 'overview' | 'content' | 'voices'; publicationFilter?: string; statusFilter?: string; createPublication?: boolean }) {
   const router = useRouter();
+  const [filterPending, startFilterTransition] = useTransition();
   const [availability, setAvailability] = useState<WorkspaceAvailability | null>(null);
   const [pairRequired, setPairRequired] = useState(false);
   const operations = useRef<ReturnType<typeof operationState> | null>(null);
@@ -39,7 +38,7 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
   const [materials, setMaterials] = useState<{ sources: Entity[]; artifacts: Entity[] } | null>(null);
   const [message, setMessage] = useState('Loading your workspace…');
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState<'workspace' | 'publication' | 'publication-update' | 'preset-update' | 'profile' | 'piece' | 'output' | 'source' | null>(null);
+  const [form, setForm] = useState<'workspace' | 'publication' | 'publication-update' | 'preset-update' | 'profile' | 'piece' | 'output' | 'source' | null>(createPublication ? 'publication' : null);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const sourceComposer = useRef<ComposerHandle>(null);
@@ -64,10 +63,9 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
   const dirtyRef = useRef(false);
   const hashRef = useRef<string | null>(null);
   const contextHashRef = useRef<string | null>(null);
-  const [filter, setFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [revisionText, setRevisionText] = useState<string | null>(null);
   const workspaceReady = state !== null;
+  useWorkspaceNavigation(state);
 
   async function refresh(allowWorkspaceChange = false) {
     const available = await localApi<WorkspaceAvailability>('bootstrap');
@@ -77,6 +75,7 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
     if (getWorkspaceReference() && getWorkspaceReference() !== next.workspace.id && !allowWorkspaceChange) throw new Error('Workspace selection changed. Your previous editor buffer remains recoverable. Reload this tab to enter the newly selected workspace.');
     setWorkspaceReference(String(next.workspace.id));
     setState(next);
+    if (routeUnavailable(next, { publicationId, pieceId, outputId })) return;
     const selectedPiece = pieceId ?? next.outputs.find(value => value.id === outputId)?.pieceId;
     if (selectedPiece) setMaterials(await localApi('content', { action: 'piece-context', input: { pieceId: selectedPiece } }));
     if (outputId) {
@@ -103,7 +102,8 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
       if (!mounted) return;
       if (getWorkspaceReference() && getWorkspaceReference() !== next.workspace.id) throw new Error('Workspace selection changed. Reload this tab before editing.');
       setWorkspaceReference(String(next.workspace.id));
-      setState(next); setMessage('Ready. Manual writing needs no API key.');
+      setState(next); setMessage('');
+      if (routeUnavailable(next, { publicationId, pieceId, outputId })) return;
       const selectedPiece = pieceId ?? next.outputs.find(value => value.id === outputId)?.pieceId;
       if (selectedPiece) {
         const material = await localApi<{ sources: Entity[]; artifacts: Entity[] }>('content', { action: 'piece-context', input: { pieceId: selectedPiece } }, controller.signal);
@@ -124,7 +124,7 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
     }
     void initialize().catch(error => { if (mounted) { setMessage(error.message); setPairRequired(error instanceof LocalApiError && error.status === 401); } });
     return () => { mounted = false; controller.abort(); };
-  }, [outputId, pieceId]);
+  }, [outputId, pieceId, publicationId]);
 
   useEffect(() => {
     if (!workspaceReady) return;
@@ -136,6 +136,7 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
         if (!active) return;
         if (getWorkspaceReference() !== next.workspace.id) throw new Error('Workspace selection changed. Unsaved prose remains in its previous workspace buffer; reload this tab before editing.');
         setState(next);
+        if (routeUnavailable(next, { publicationId, pieceId, outputId })) return;
         const selectedPiece = pieceId ?? next.outputs.find(value => value.id === outputId)?.pieceId;
         if (selectedPiece) {
           const material = await localApi<{ sources: Entity[]; artifacts: Entity[] }>('content', { action: 'piece-context', input: { pieceId: selectedPiece } });
@@ -153,7 +154,7 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
       }).catch(error => { if (active) setMessage(error.message); }).finally(() => { pending = false; });
     }, 1500);
     return () => { active = false; clearInterval(poll); };
-  }, [workspaceReady, outputId, pieceId]);
+  }, [workspaceReady, outputId, pieceId, publicationId]);
 
   const output = state?.outputs.find(value => value.id === outputId);
   const piece = state?.pieces.find(value => value.id === (pieceId ?? output?.pieceId));
@@ -161,8 +162,17 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
   const voices = state?.profiles.filter(value => value.publicationId === publication?.id && value.scope === 'publication' && value.status === 'approved') ?? [];
   const authors = state?.profiles.filter(value => value.publicationId === publication?.id && value.scope === 'author' && value.status === 'approved') ?? [];
   const presets = state?.presets.filter(value => value.publicationId === publication?.id) ?? [];
-  const pieces = state?.pieces.filter(value => publication ? value.publicationId === publication.id : filter === 'all' || value.publicationId === filter) ?? [];
-  const outputs = state?.outputs.filter(value => (piece ? value.pieceId === piece.id : publication ? value.publicationId === publication.id : filter === 'all' || value.publicationId === filter) && (statusFilter === 'all' || value.status === statusFilter)) ?? [];
+  const missing = state && routeUnavailable(state, { publicationId, pieceId, outputId });
+  const defaultPin = publication?.defaultVoice as { profileId: string; version: number } | null;
+  const defaultVoice = voices.find(value => value.id === defaultPin?.profileId && value.version === defaultPin?.version);
+  const progress = state ? selectProgress(state, publication ? String(publication.id) : publicationFilter, statusFilter).filter(value => !piece || value.piece.id === piece.id) : [];
+  function changeFilter(key: string, value: string) {
+    const query = new URLSearchParams();
+    if (publicationFilter !== 'all') query.set('publication', publicationFilter);
+    if (statusFilter !== 'all') query.set('status', statusFilter);
+    if (value === 'all') query.delete(key); else query.set(key, value);
+    startFilterTransition(() => router.push(`/kessel-run/content${query.size ? `?${query}` : ''}`));
+  }
 
   function open(next: NonNullable<typeof form>) {
     if (busy) { setMessage('Finish the current save before starting another.'); return; }
@@ -242,15 +252,16 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Export failed.'); }
   }
 
-  return <main className="kr-app">
-    <aside className="kr-sidebar"><Link href="/kessel-run" className="kr-brand"><Feather size={23} />Kessel Run</Link><p>Your editorial workspace</p><nav aria-label="Workspace"><Link href="/kessel-run"><BookOpen size={18} />Overview</Link><Link href="/kessel-run/settings"><Settings size={18} />API & agent settings</Link></nav><div className="kr-sidebar-bottom">Local first<br />Your words, your workspace</div></aside>
-    <div className="kr-main"><header className="kr-heading"><div><p className="kr-eyebrow">{output ? 'Writing desk' : publication ? 'Publication' : 'Workspace'}</p><h1>{entityName(output ?? piece ?? publication) || 'Your writing, in one place'}</h1><p>{publication ? publication.body : 'Publications, voices and independent outputs.'}</p></div><div className="kr-toolbar">{state && !publication && <AppButton disabled={busy || Boolean(pendingOperation)} onClick={() => open('publication')}>New publication</AppButton>}{publication && <AppButton disabled={busy || Boolean(pendingOperation)} onClick={() => open('piece')}>New piece</AppButton>}{piece && <AppButton disabled={busy || Boolean(pendingOperation)} onClick={() => open('output')}>Add output / repurpose</AppButton>}</div></header>
-      <p className="kr-status" role="status" aria-live="polite">{message}</p>
+  if (missing) return <><header className="kr-heading"><div><p className="kr-eyebrow">Unavailable item</p><h1>This {outputId ? 'output' : pieceId ? 'piece' : 'publication'} is unavailable</h1><p>It may have moved or belong to another workspace.</p></div></header><Link href="/kessel-run">Return to overview</Link></>;
+  return <>
+    <header className="kr-heading"><div><p className="kr-eyebrow">{output ? 'Writing desk' : view === 'voices' ? 'Voice studio' : publication ? 'Publication' : 'Workspace'}</p><h1>{view === 'voices' ? 'Voice studio' : view === 'content' ? 'All content' : entityName(output ?? piece ?? publication) || 'Your writing, in one place'}</h1><p>{publication ? publication.body : view === 'voices' ? 'Choose a publication to work on its voice.' : 'Publications, voices and independent outputs.'}</p></div><div className="kr-toolbar">{state && !publication && <AppButton disabled={busy || Boolean(pendingOperation)} onClick={() => open('publication')}>New publication</AppButton>}{publication && view !== 'voices' && <AppButton disabled={busy || Boolean(pendingOperation)} onClick={() => open('piece')}>New piece</AppButton>}{piece && <AppButton disabled={busy || Boolean(pendingOperation)} onClick={() => open('output')}>Add output / repurpose</AppButton>}</div></header>
+    {publication && <nav aria-label="Breadcrumb" className="kr-breadcrumbs"><Link href={`/kessel-run/publications/${publication.id}`} aria-current={!piece && view !== 'voices' ? 'page' : undefined}>{entityName(publication)}</Link>{piece && <><span aria-hidden="true">/</span><Link href={`/kessel-run/pieces/${piece.id}`} aria-current={!output ? 'page' : undefined}>{entityName(piece)}</Link></>}{output && <><span aria-hidden="true">/</span><span aria-current="page">{entityName(output)}</span></>}{view === 'voices' && <><span aria-hidden="true">/</span><span aria-current="page">Voice studio</span></>}</nav>}
+    <p className={message ? 'kr-status' : 'kr-announcement'} role="status" aria-live="polite">{message}</p>
       {!state && !availability && !pairRequired && <section className="kr-panel" aria-busy="true"><h2>Opening your writing workspace…</h2></section>}
       {pairRequired && <section className="kr-panel"><h2>Open your local browser link</h2><p>Restart the local launcher and open the link it prints to connect this browser. You do not need an API key.</p></section>}
       {availability && availability.status !== 'ready' && <PublicationEntry key={availability.scope} availability={availability} onReady={() => refresh(true)} />}
       {pendingOperation && <section className="kr-panel"><h2>Resolve your pending save</h2><p>Your exact submission is retained. Retry to recover its result before editing or starting another save.</p><AppButton disabled={busy} onClick={() => void submit()}>Retry saved submission</AppButton>{pendingOperation.failed && <AppButton static onClick={() => { operations.current?.abandon(); setPendingOperation(null); }}>Edit failed submission</AppButton>}</section>}
-      {form && <fieldset disabled={busy || Boolean(pendingOperation)} className="kr-panel kr-form" aria-label={`New ${form}`}><h2>{form === 'profile' ? 'Import a voice' : `New ${form}`}</h2><Field label="Title"><input value={title} onChange={event => setTitle(event.target.value)} maxLength={160} disabled={Boolean(preview)} /></Field>
+      {state && form && <fieldset disabled={busy || Boolean(pendingOperation)} className="kr-panel kr-form" aria-label={`New ${form}`}><h2>{form === 'profile' ? 'Import a voice' : `New ${form}`}</h2><Field label="Title"><input value={title} onChange={event => setTitle(event.target.value)} maxLength={160} disabled={Boolean(preview)} /></Field>
         {form === 'workspace' && <Field label="Empty folder path"><input value={root} onChange={event => setRoot(event.target.value)} /></Field>}
         {['publication', 'publication-update', 'preset-update', 'profile', 'piece'].includes(form) && <Field label={form === 'profile' ? 'Exact profile prose (Markdown)' : form === 'source' ? 'Supplied notes, including questions and answers' : 'Purpose or brief'}><textarea value={body} onChange={event => { setBody(event.target.value); setPreview(null); }} rows={9} maxLength={80000} /></Field>}
         {form === 'piece' && <Field label="Writing mode"><select value={mode} onChange={event => setMode(event.target.value)}><option value="guided">Guided · collaborate section by section</option><option value="fast">Fast · complete draft with gaps marked</option></select></Field>}
@@ -261,11 +272,18 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
         {form === 'preset-update' && <Field label="Preset"><select value={preset} onChange={event => { setPreset(event.target.value); const selected = presets.find(value => value.id === event.target.value); setTitle(entityName(selected)); setBody(selected?.body ?? ''); }}>{presets.map(value => <option key={String(value.id)} value={String(value.id)}>{entityName(value)}</option>)}</select></Field>}{form === 'source' && <Field label="Source type"><select value={sourceType} onChange={event => setSourceType(event.target.value)}><option value="notes">Notes</option><option value="interview">Interview</option><option value="supplied-text">Supplied text</option></select></Field>}
         {(form === 'profile' || form === 'source') && <Field label="Attribution / provenance"><input value={attribution} onChange={event => setAttribution(event.target.value)} /></Field>}
         {preview && <div><h3>Added metadata preview</h3><pre>{JSON.stringify(preview.addedMetadata, null, 2)}</pre><p>The profile prose above is preserved verbatim. Sparse profiles are valid.</p></div>}
-        <div className="kr-toolbar">{form !== 'source' && <AppButton disabled={busy} onClick={() => void submit()}>{busy ? 'Saving…' : form === 'profile' ? preview ? 'Confirm use of this profile' : 'Preview import' : 'Save'}</AppButton>}<AppButton static onClick={() => { setForm(null); setPreview(null); }}>Cancel</AppButton></div></fieldset>}
-      {publication && !output && <section className="kr-panel"><div className="kr-toolbar"><h2>Voice studio</h2><AppButton static onClick={() => open('publication-update')}>Publication settings</AppButton><AppButton static onClick={() => open('preset-update')}>Format presets</AppButton><AppButton onClick={() => open('profile')}>Import voice / author</AppButton></div><p>Use your existing starter profile. Each output keeps its selected version.</p><WritingPanel key={String(publication.id)} scope={String(publication.id)} scopeKind="voice" mode="guided" onCommitted={refresh} /><VoiceStudio publication={publication} profiles={state?.profiles.filter(value => value.publicationId === publication.id) ?? []} version={Number(state?.workspace.version ?? 0)} onChanged={refresh} /><div className="kr-grid">{state?.profiles.filter(value => value.publicationId === publication.id).map(value => <article key={`${value.id}:${value.version}`} className="kr-card"><h3>{entityName(value)} · v{String(value.version)}</h3><p>{String(value.scope)} · {String(value.status)} · {String(value.evidenceLevel)}</p><details><summary>Rules and provenance</summary><pre>{value.body}</pre><p>{String(value.provenance)}</p></details></article>)}</div></section>}
+        <div className="kr-toolbar">{form !== 'source' && <AppButton disabled={busy} onClick={() => void submit()}>{busy ? 'Saving…' : form === 'profile' ? preview ? 'Confirm use of this profile' : 'Preview import' : 'Save'}</AppButton>}<AppButton static onClick={() => { setForm(null); setPreview(null); if (createPublication) router.replace('/kessel-run'); }}>Cancel</AppButton></div></fieldset>}
+      {state && view === 'voices' && <section className="kr-panel"><Field label="Publication voice"><select value={publicationId ?? ''} onChange={event => router.push(event.target.value ? `/kessel-run/voices?publication=${event.target.value}` : '/kessel-run/voices')}><option value="">Choose a publication</option>{state.publications.map(value => <option key={String(value.id)} value={String(value.id)}>{entityName(value)}</option>)}</select></Field>{!state.publications.length && <p>Create a publication first. You can add its voice when you are ready.</p>}{publication && <Link href={`/kessel-run/publications/${publication.id}`}>Back to publication</Link>}</section>}
+      {publication && view === 'voices' && <section className="kr-panel"><div className="kr-toolbar"><h2>Voice studio</h2><AppButton static onClick={() => open('publication-update')}>Publication settings</AppButton><AppButton static onClick={() => open('preset-update')}>Format presets</AppButton><AppButton onClick={() => open('profile')}>Import voice / author</AppButton></div><p>Use your existing starter profile. Each output keeps its selected version.</p><WritingPanel key={String(publication.id)} scope={String(publication.id)} scopeKind="voice" mode="guided" onCommitted={refresh} /><VoiceStudio publication={publication} profiles={state?.profiles.filter(value => value.publicationId === publication.id) ?? []} version={Number(state?.workspace.version ?? 0)} onChanged={refresh} /><div className="kr-grid">{state?.profiles.filter(value => value.publicationId === publication.id).map(value => <article key={`${value.id}:${value.version}`} className="kr-card"><h3>{entityName(value)} · v{String(value.version)}</h3><p>{String(value.scope)} · {String(value.status)} · {String(value.evidenceLevel)}</p><details><summary>Rules and provenance</summary><pre>{value.body}</pre><p>{String(value.provenance)}</p></details></article>)}</div></section>}
       {piece && <section className="kr-panel"><div className="kr-toolbar"><h2>Brief & supplied sources</h2><AppButton onClick={() => open('source')}>Add notes / interview</AppButton></div><pre>{piece.body}</pre><p>{String(piece.mode)} mode · Next: {String(piece.nextAction)}</p>{materials?.sources.map(value => <details key={String(value.id)}><summary>{entityName(value)} · {String(value.attribution)}</summary><p>Submitted source text</p><pre>{value.body}</pre>{!!value.dictation && <details><summary>Raw recognition (may contain errors)</summary><pre>{String((value.dictation as { recognizedText: string }).recognizedText)}</pre><p>Cleanup applied: {String((value.dictation as { cleanupApplied: boolean }).cleanupApplied)}</p></details>}</details>)}</section>}
       {context && state && <><ReviewDecisions context={context} state={state} dirty={dirty} onChanged={refresh} /><nav className="kr-tabs" aria-label="Independent outputs">{state?.outputs.filter(value => value.pieceId === context.output.pieceId).map(value => <Link aria-current={value.id === outputId ? 'page' : undefined} key={String(value.id)} href={`/kessel-run/outputs/${value.id}`}>{entityName(value)}</Link>)}</nav><section className="kr-desk"><div className="kr-paper"><div className="kr-toolbar"><h2>Markdown editor</h2><span>{dirty ? 'Unsaved changes' : 'Saved'}</span><AppButton disabled={busy || !dirty} onClick={() => void saveEditor()}>Save prose</AppButton><AppButton static onClick={() => void download()}>Export Markdown</AppButton></div><textarea aria-label="Output prose" value={editor} onChange={event => { setEditor(event.target.value); editorRef.current = event.target.value; setDirty(true); dirtyRef.current = true; try { sessionStorage.setItem(`kr-recovery:${state?.workspace.id}:${outputId}`, JSON.stringify({ prose: event.target.value, hash: context.output.hash, contextHash: context.contextHash })); } catch { setMessage('Recovery storage is unavailable. Keep this tab open until your prose is saved.'); } }} maxLength={80000} rows={24} /><details><summary>Markdown preview</summary><MarkdownPreview prose={editor} /></details>{external && <div className="kr-conflict"><h3>Another client saved a revision</h3><p>Your edits remain in the editor. Read the saved version, reconcile, then retry.</p><pre>{external.output.body}</pre><AppButton static onClick={() => { setContext(external); hashRef.current = external.output.hash; contextHashRef.current = external.contextHash; setExternal(null); }}>Use current revision as save base</AppButton></div>}</div><aside className="kr-panel"><h2>Selected voice</h2><p>{entityName(context.voice)} · v{String(context.voice.version)}</p><p>{context.author ? entityName(context.author) : 'No author overlay'}</p><details><summary>Exact rules</summary><pre>{context.voice.body}</pre><pre>{context.author?.body}</pre></details><h3>Revision history</h3>{context.revisions.map(value => <AppButton static key={String(value.id)} onClick={() => void localApi<{ prose: string }>('content', { action: 'revision', input: { outputId, revisionId: value.id } }).then(value => setRevisionText(value.prose)).catch(error => setMessage(error.message))}>{String(value.provenance)} · {String(value.created)}</AppButton>)}{revisionText !== null && <pre>{revisionText}</pre>}<WritingPanel key={outputId} scope={outputId!} scopeKind="output" mode={piece?.mode === 'fast' ? 'fast' : 'guided'} onCommitted={refresh} /><Link href="/kessel-run/settings">API & agent settings</Link><AppButton static onClick={() => void refresh().catch(error => setMessage(error.message))}>Refresh saved activity</AppButton></aside></section></>}
-      {state && !output && <><HandoffImport workspaceHash={state.workspace.hash} empty={state.publications.length === 0} onChanged={refresh} /><div className="kr-toolbar">{!publication && <Field label="Publication"><select value={filter} onChange={event => setFilter(event.target.value)}><option value="all">All publications</option>{state.publications.map(value => <option key={String(value.id)} value={String(value.id)}>{entityName(value)}</option>)}</select></Field>}<Field label="Output status"><select value={statusFilter} onChange={event => setStatusFilter(event.target.value)}><option value="all">All statuses</option><option value="drafting">Drafting</option><option value="review">Review</option><option value="accepted">Accepted</option></select></Field></div>{!publication && <section><h2>Publications</h2><div className="kr-grid">{state.publications.map(value => <Link className="kr-card" key={String(value.id)} href={`/kessel-run/publications/${value.id}`}><BookOpen size={20} /><h3>{entityName(value)}</h3><p>{value.body || 'Add purpose and a voice to begin.'}</p></Link>)}</div>{!state.publications.length && <p className="kr-empty">Create your first publication, then import its voice.</p>}</section>}<section><h2>Pieces</h2><div className="kr-grid">{pieces.map(value => <Link className="kr-card" key={String(value.id)} href={`/kessel-run/pieces/${value.id}`}><FileText size={20} /><h3>{entityName(value)}</h3><p>{String(value.nextAction)}</p></Link>)}</div>{!pieces.length && <p className="kr-empty">No pieces yet. Start with a topic and supplied notes.</p>}</section><section><h2>Outputs</h2><div className="kr-grid">{outputs.map(value => <Link className="kr-card" key={String(value.id)} href={`/kessel-run/outputs/${value.id}`}><h3>{entityName(value)}</h3><p>{String(value.format)} · {String(value.status)}</p></Link>)}</div></section></>}
-    </div>
-  </main>;
+
+      {publication && !piece && view !== 'voices' && <section className="kr-panel kr-voice-summary"><div><h2>Publication voice</h2><p>{defaultVoice ? `${entityName(defaultVoice)} · v${String(defaultVoice.version)}` : 'No approved default voice yet.'}</p><p>Each output keeps its selected voice version.</p></div><div className="kr-toolbar"><Link href={`/kessel-run/voices?publication=${publication.id}`}>Manage voice</Link><AppButton static disabled={busy || Boolean(pendingOperation)} onClick={() => open('publication-update')}>Publication settings</AppButton><AppButton static disabled={busy || Boolean(pendingOperation)} onClick={() => open('preset-update')}>Format presets</AppButton></div></section>}
+      {state && !output && view !== 'voices' && <>
+        {!publication && view === 'overview' && <section><h2>Publications</h2><div className="kr-grid">{state.publications.map(value => <Link className="kr-card" key={String(value.id)} href={`/kessel-run/publications/${value.id}`}><BookOpen size={20} aria-hidden="true" /><h3>{entityName(value)}</h3><p>{value.body || 'A home for your writing.'}</p><p>{state.pieces.filter(item => item.publicationId === value.id).length} pieces · {state.outputs.filter(item => item.publicationId === value.id).length} outputs</p></Link>)}</div>{!state.publications.length && <p className="kr-empty">Create your first publication to give your writing a home.</p>}</section>}
+        {view === 'content' && <section className="kr-toolbar" aria-label="Content filters"><Field label="Publication"><select disabled={filterPending} value={publicationFilter} onChange={event => changeFilter('publication', event.target.value)}><option value="all">All publications</option>{!state.publications.some(value => value.id === publicationFilter) && publicationFilter !== 'all' && <option value={publicationFilter}>Unavailable publication</option>}{state.publications.map(value => <option key={String(value.id)} value={String(value.id)}>{entityName(value)}</option>)}</select></Field><Field label="Output status"><select disabled={filterPending} value={statusFilter} onChange={event => changeFilter('status', event.target.value)}><option value="all">All statuses</option><option value="ideas">Ideas · no outputs</option><option value="drafting">Drafting</option><option value="review">Review</option><option value="accepted">Ready · approved for export</option>{!['all', 'ideas', 'drafting', 'review', 'accepted'].includes(statusFilter) && <option value={statusFilter}>Unavailable status</option>}</select></Field>{(publicationFilter !== 'all' || statusFilter !== 'all') && <Link href="/kessel-run/content">Reset filters</Link>}</section>}
+        <ProgressBoard items={progress} filtered={publicationFilter !== 'all' || statusFilter !== 'all'} />
+        {!piece && view === 'overview' && <HandoffImport workspaceHash={state.workspace.hash} empty={state.publications.length === 0} onChanged={refresh} />}
+      </>}
+  </>;
 }

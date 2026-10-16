@@ -110,3 +110,12 @@ Clean up is optional, billed inference using the explicitly selected credential 
 A source body contains the submitted mixed typed/dictated/edited text. When capture occurred, optional `dictation` metadata separately retains the exact finalized recognition text and whether cleanup remains applied. That fallible raw text is readable in sources, exports and restored handoffs. Older sources and callers without metadata remain valid. Cleanup never overwrites raw recognition or changes evidence eligibility or the eight-stage method.
 
 Verification uses synthetic unit/service/HTTP fixtures only. Browser scenarios are authored for 390/768/1440 widths and reduced motion but were not executed under the existing inspection restriction. Keyboard, actual microphone/browser speech, visual/mobile interaction and an explicitly authorized live billed cleanup remain release gates. Plan 017's pending browser/live API/real Codex/editorial gates remain pending as well.
+
+
+## Editorial navigation
+
+The local app shares one shell across overview, All content, Voice studio and Settings. On small screens, Open menu expands navigation; Escape closes it and returns focus to the toggle. Publication, piece and output routes retain durable IDs and show their parent breadcrumbs. An unavailable ID shows a recovery link rather than unrelated content.
+
+The overview leads with real publication cards and current work. Publication pages lead with content and a compact approved-default voice summary. Manage voice opens `/kessel-run/voices?publication=<id>` for existing import, proposal and approval actions. Voice selection and All content's publication/status filters are URL-backed, so back/forward preserves the destination. Settings groups workspace storage, optional AI connection and agent connections without changing credential or model selection behavior.
+
+Content progress counts pieces with no outputs as Ideas. Drafting, Review and Ready count individual outputs using their persisted states. Ready means that exact output is approved for export; it does not approve its siblings or publish anything. The board becomes a stacked list on narrow screens. Navigation retains output-scoped unsaved recovery buffers; explicit save/reconcile navigation remains plan 021 work.

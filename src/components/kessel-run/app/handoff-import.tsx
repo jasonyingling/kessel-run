@@ -2,7 +2,7 @@
 import { useRef, useState, useSyncExternalStore } from 'react';
 import type { WorkspaceService } from '@/server/kessel-run/workspace/service';
 import { localApi } from '@/lib/kessel-run/local-api';
-import { AppButton } from './workspace';
+import { AppButton } from './app-button';
 import { MarkdownPreview } from './markdown-preview';
 import { HandoffSelection } from './handoff-selection';
 type Preview = Awaited<ReturnType<WorkspaceService['previewHandoff']>>;

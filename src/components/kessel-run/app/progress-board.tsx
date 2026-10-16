@@ -1,0 +1,9 @@
+import Link from 'next/link';
+import { progressStages, type WorkItem } from '@/lib/kessel-run/progress';
+const labels = { ideas: 'Ideas', drafting: 'Drafting', review: 'Review', accepted: 'Ready' };
+const empty = { ideas: 'New pieces without an output appear here.', drafting: 'Drafts in progress appear here.', review: 'Outputs awaiting review appear here.', accepted: 'Outputs approved for export appear here.' };
+export function ProgressBoard({ items, filtered = false, resetHref = '/kessel-run/content' }: { items: WorkItem[]; filtered?: boolean; resetHref?: string }) {
+  if (!items.length && filtered) return <section className="kr-panel"><h2>No matching content</h2><p>Try another publication or status.</p><Link href={resetHref}>Reset filters</Link></section>;
+  const ideas = items.filter(item => item.kind === 'idea').length;
+  return <section aria-label="Content progress"><div className="kr-toolbar"><h2>Content progress</h2><p>{ideas} {ideas === 1 ? 'idea' : 'ideas'} · {items.length - ideas} {items.length - ideas === 1 ? 'output' : 'outputs'}</p></div><p className="kr-muted">Ready means this output is approved for export. Other formats keep their own status.</p><div className="kr-progress-board">{progressStages.map(stage => <section className="kr-progress-column" key={stage} aria-label={labels[stage]}><h3>{labels[stage]} <span className="kr-count">{items.filter(item => item.stage === stage).length}</span></h3>{items.filter(item => item.stage === stage).map(item => <Link className="kr-card kr-work-item" key={item.id} href={item.href}><p className="kr-eyebrow">{String(item.publication.title)}</p><h4>{String(item.piece.title)}</h4>{item.output && <p>{item.title} · {String(item.output.format)}</p>}<span className="kr-work-status">{item.kind === 'idea' ? 'Idea · no outputs yet' : labels[item.stage]}</span></Link>)}{!items.some(item => item.stage === stage) && <p className="kr-column-empty">{empty[stage]}</p>}</section>)}</div></section>;
+}

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useLayoutEffect, useImperativeHandle, useRef, useState } from 'react';
-import { AppButton } from './workspace';
+import { AppButton } from './app-button';
 import { DictationController, browserRecognition, browserSpeechAvailable } from './dictation-controller';
 import { CleanupRevision } from './cleanup-controller';
 import { getWorkspaceReference, localApi } from '@/lib/kessel-run/local-api';
