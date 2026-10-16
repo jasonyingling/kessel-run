@@ -10,6 +10,12 @@
 
 ## Why / current state
 
+### Reconciled predecessor contracts
+
+Reviewed 018–020 supply publication-first entry, shared `AppShell`/`AppButton`/`Field`, exact operation outcomes, and keyless VoiceStudio/PresetSettings. The 020 candidate is `4d14201`; implementation starts only after its independent gates and merge. Preserve separate workspace/publication-scoped studio command and draft slots, strict recovered-draft parsing, lifetime/command identity checks, selected-profile JSON export and exact voice/author pins. Profile approval retains draft v2 and creates approved v3. Preset format agreement applies only to new outputs; historical output format remains authoritative, including export fallback copy. Only an explicit `outcome: rejected` permits command abandonment; unknown outcomes retain the exact operation. Source paths and line references below describe the audit baseline and must be mapped onto these reviewed extractions. No model/provider changes are needed.
+
+Existing onboarding/navigation/voice-studio browser journeys also use New piece and Add output. Narrow their route/label navigation updates as needed for the new flow, preserving every existing recovery, no-inference, pin, export and provenance assertion. This is authorized test-integration scope, alongside the listed workspace/dictation suites. The current save owner also needs lifetime/output identity protection when a save completes after navigation; a response for output A must never acknowledge output B's buffer.
+
 Current create forms save a piece, then require the user to find it, add an output, find that output and open it. The desk stacks review ahead of writing; a saved brief cannot be edited. Export can silently download older text than the dirty editor. Restore the prototype's focused flow while retaining production revision safety.
 
 - `workspace.tsx:172–175`: createPiece/createOutput results are ignored before refresh. Services already return `{ id, link }` at `service.ts:231,264`.
