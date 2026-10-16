@@ -35,7 +35,7 @@ export async function cleanupText(input: z.infer<typeof cleanupInput>, signal: A
     }, dependencies.pollMs ?? 250);
     const agent = new Agent({ id: 'kessel-run-cleanup', name: 'Light cleanup', model, instructions: cleanupInstructions });
     agent.__setLogger(noopLogger);
-    const generating = agent.generate([{ role: 'user', content: JSON.stringify({ suppliedText: parsed.text }) }], { abortSignal: abort.signal, maxSteps: 1, modelSettings: { maxRetries: 0, maxOutputTokens: 24000 } });
+    const generating = agent.generate([{ role: 'user', content: JSON.stringify({ suppliedText: parsed.text }) }], { providerOptions: { openai: { forceReasoning: true, reasoningEffort: 'low' } }, abortSignal: abort.signal, maxSteps: 1, modelSettings: { maxRetries: 0, maxOutputTokens: 24000 } });
     const result = await new Promise<Awaited<typeof generating>>((resolve, reject) => {
       const canceled = () => reject(new Error('Cleanup canceled'));
       abort.signal.addEventListener('abort', canceled, { once: true });

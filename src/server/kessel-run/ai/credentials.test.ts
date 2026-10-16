@@ -54,13 +54,13 @@ describe('server-only credentials', () => {
   });
 
   it('allows only validated model and turn fields', () => {
-    expect(modelSelection.safeParse('gpt-5').success).toBe(true);
+    expect(modelSelection.safeParse('gpt-6.1-sol').success).toBe(true);
     expect(modelSelection.safeParse('unknown').success).toBe(false);
     const request = {
       message: 'hello',
       scope: crypto.randomUUID(),
       operationId: crypto.randomUUID(),
-      model: 'gpt-5',
+      model: 'gpt-6.1-sol',
       mode: 'guided',
       apiKey: 'forged',
     };

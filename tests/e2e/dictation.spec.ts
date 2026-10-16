@@ -7,6 +7,7 @@ test('inline dictation, typing, freeze, cleanup undo and source failures (author
   await rm(join(process.env.KR_E2E_ROOT!, 'private', 'workspace.json'), { force: true });
   page.on('pageerror', error => errors.push(error.message));
   await context.addCookies([{ name: 'kr-local-session', value: process.env.KR_E2E_SESSION!, url: 'http://127.0.0.1:3197', httpOnly: true, sameSite: 'Strict' }]);
+  await page.route('**/api/kessel-run/local/models?source=*', route => route.fulfill({ json: { checked: true, message: 'Synthetic model access', models: [{ id: 'gpt-6.1-sol', label: 'GPT-6.1 Sol', available: true }, { id: 'gpt-6-luna', label: 'GPT-6 Luna', available: true }] } }));
   await page.addInitScript(() => {
     class FakeRecognition {
       continuous = false; interimResults = false; lang = '';

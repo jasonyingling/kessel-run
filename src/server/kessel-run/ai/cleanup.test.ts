@@ -3,7 +3,7 @@ import { MockLanguageModelV3 } from 'ai/test';
 import { cleanupInput, cleanupInstructions, cleanupText, validateCleanupTarget } from './cleanup';
 import { Credentials } from './credentials';
 import type { WorkspaceService } from '../workspace/service';
-const input = { requestId: crypto.randomUUID(), scope: crypto.randomUUID(), scopeKind: 'output' as const, text: 'um supplied 12 notes, maybe not.', source: 'saved' as const, model: 'gpt-5-mini' as const };
+const input = { requestId: crypto.randomUUID(), scope: crypto.randomUUID(), scopeKind: 'output' as const, text: 'um supplied 12 notes, maybe not.', source: 'saved' as const, model: 'gpt-6-luna' as const };
 function fake(text = 'Supplied 12 notes, maybe not.', finish: 'stop' | 'length' = 'stop') {
   return new MockLanguageModelV3({ doGenerate: { content: [{ type: 'text', text }], finishReason: { unified: finish, raw: finish }, usage: { inputTokens: { total: 2, noCache: 2, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 2, text: 2, reasoning: 0 } }, warnings: [] } });
 }

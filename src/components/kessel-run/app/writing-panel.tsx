@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { useModelCatalog } from './use-model-catalog';
 import { completedUnchangedSubmission } from './dictation-submission';
 import { DictationComposer, type ComposerHandle } from './dictation-composer';
 import { AppButton } from './workspace';
@@ -14,9 +15,9 @@ export function WritingPanel({ scope, scopeKind, mode, onCommitted }: { scope: s
   const messageRef = useRef('');
   const composer = useRef<ComposerHandle>(null);
   const scopeRef = useRef(scope);
-  const [models, setModels] = useState<string[]>([]);
-  const [model, setModel] = useState('gpt-5');
-  const [source, setSource] = useState('saved');
+  const [source, setSource] = useState('environment');
+  const catalog = useModelCatalog(source);
+  const { model, setModel } = catalog;
   const [status, setStatus] = useState('Loading saved conversation…');
   const [busy, setBusy] = useState(false);
   const [provisional, setProvisional] = useState('');
@@ -34,10 +35,7 @@ export function WritingPanel({ scope, scopeKind, mode, onCommitted }: { scope: s
       const response = await fetch(`/api/kessel-run/local/writing?scope=${scope}`, { signal: controller.signal, headers: { 'x-kr-workspace-ref': getWorkspaceReference() ?? '' } });
       if (!response.ok) throw new Error('Pair this browser to load conversations.');
       const saved = await response.json();
-      const catalog = await fetch('/api/kessel-run/local/models', { signal: controller.signal });
-      if (!catalog.ok) throw new Error('Model configuration unavailable.');
-      const available = await catalog.json();
-      if (!controller.signal.aborted) { setModels(available.models.map((value: { id: string }) => value.id)); setRuns(saved); setStatus('Ready. Each AI turn may incur API charges.'); }
+      if (!controller.signal.aborted) { setRuns(saved); setStatus('Ready. Each AI turn may incur API charges.'); }
     }
     void load().catch(error => { if (!controller.signal.aborted) setStatus(error.message); });
     return () => { controller.abort(); stop.current?.abort(); };
@@ -82,5 +80,5 @@ export function WritingPanel({ scope, scopeKind, mode, onCommitted }: { scope: s
     if (id) await fetch('/api/kessel-run/local/writing', { method: 'DELETE', headers: { 'content-type': 'application/json', 'x-kr-csrf': 'local', 'x-kr-workspace-ref': getWorkspaceReference() ?? '' }, body: JSON.stringify({ runId: id }) });
     await reload();
   }
-  return <section className="kr-chat"><h2>{scopeKind === 'voice' ? 'Voice setup conversation' : 'AI writing'}</h2><p>Start/Resume follows your saved rules and supplied evidence. No key is required for manual editing or MCP.</p><label className="kr-field">Credential source<select value={source} onChange={event => setSource(event.target.value)}><option value="saved">Saved local API key</option><option value="environment">Server environment key</option></select></label><label className="kr-field">Model<select value={model} onChange={event => setModel(event.target.value)}>{models.map(id => <option key={id}>{id}</option>)}</select></label><p>Live compatibility remains pending a billed connection test.</p><p>Usage is reported after a completed turn; no cost estimate is invented.</p>{runs.map(run => <details key={run.id}><summary>{new Date(run.createdAt).toLocaleString()} · {run.status} · {run.model} · {run.engine === 'fake' ? 'Synthetic fixture' : 'API'}</summary><p>{run.message}</p><pre>{run.response}</pre>{run.usage && <p>{run.engine === 'fake' ? 'Synthetic fixture usage' : 'Provider usage'}: {run.usage.inputTokens ?? 'unknown'} input / {run.usage.outputTokens ?? 'unknown'} output tokens</p>}</details>)}<DictationComposer key={(getWorkspaceReference() ?? '') + scopeKind + scope + draftIdentity} value={message} onChange={text => { setMessage(text); messageRef.current = text; }} scope={scope} scopeKind={scopeKind} source={source} model={model} disabled={busy} handle={composer} action={<AppButton disabled={busy || !message.trim()} onClick={() => void send()}>Send billed AI turn</AppButton>} /><div className="kr-toolbar">{busy && <AppButton static onClick={() => void cancel().catch(error => setStatus(error.message))}>Stop</AppButton>}<AppButton static onClick={() => void reload().catch(error => setStatus(error.message))}>Reload conversation</AppButton></div><p role="status">{status}</p>{provisional && <pre aria-label="Provisional response">{provisional}</pre>}</section>;
+  return <section className="kr-chat"><h2>{scopeKind === 'voice' ? 'Voice setup conversation' : 'AI writing'}</h2><p>Start/Resume follows your saved rules and supplied evidence. No key is required for manual editing or MCP.</p><label className="kr-field">Credential source<select value={source} onChange={event => setSource(event.target.value)}><option value="saved">Saved local API key</option><option value="environment">Server environment key</option></select></label><label className="kr-field">Model<select value={model} onChange={event => setModel(event.target.value)}>{catalog.models.map(item => <option key={item.id} value={item.id} disabled={item.available === false}>{item.label}{item.available === false ? " · unavailable" : ""}</option>)}</select></label><p role="status">{catalog.message}</p><AppButton static onClick={catalog.refresh}>Refresh models</AppButton><p>Usage is reported after a completed turn; no cost estimate is invented.</p>{runs.map(run => <details key={run.id}><summary>{new Date(run.createdAt).toLocaleString()} · {run.status} · {run.model} · {run.engine === 'fake' ? 'Synthetic fixture' : 'API'}</summary><p>{run.message}</p><pre>{run.response}</pre>{run.usage && <p>{run.engine === 'fake' ? 'Synthetic fixture usage' : 'Provider usage'}: {run.usage.inputTokens ?? 'unknown'} input / {run.usage.outputTokens ?? 'unknown'} output tokens</p>}</details>)}<DictationComposer key={(getWorkspaceReference() ?? '') + scopeKind + scope + draftIdentity} value={message} onChange={text => { setMessage(text); messageRef.current = text; }} scope={scope} scopeKind={scopeKind} source={source} model={model} disabled={busy} cleanupDisabled={!catalog.available} handle={composer} action={<AppButton disabled={busy || !message.trim() || !catalog.available} onClick={() => void send()}>Send billed AI turn</AppButton>} /><div className="kr-toolbar">{busy && <AppButton static onClick={() => void cancel().catch(error => setStatus(error.message))}>Stop</AppButton>}<AppButton static onClick={() => void reload().catch(error => setStatus(error.message))}>Reload conversation</AppButton></div><p role="status">{status}</p>{provisional && <pre aria-label="Provisional response">{provisional}</pre>}</section>;
 }

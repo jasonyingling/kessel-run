@@ -10,7 +10,7 @@ import { RunStore } from './run-store';
 let root: string;
 beforeEach(async () => { root = await mkdtemp(join(tmpdir(), 'kr-probe-')); });
 afterEach(async () => { await rm(root, { recursive: true, force: true }); });
-const selection = { source: 'saved' as const, model: 'gpt-5' as const };
+const selection = { source: 'saved' as const, model: 'gpt-6.1-sol' as const };
 
 it('cleans up setup failures, retains a safe failed record and never falls back', async () => {
   const credentials = new Credentials(root, () => 'synthetic-environment-key');
@@ -106,4 +106,18 @@ it('redacts invalid-provider errors from the response and persisted run without 
   expect(run.status).toBe('failed');
   expect(JSON.stringify(run)).not.toContain('synthetic-api-secret-not-for-client');
   expect(model.doStreamCalls).toHaveLength(1);
+});
+
+it.each(['stop', 'length'] as const)('explains a %s finish without a candidate and uses a focused reasoning-compatible probe', async finishReason => {
+  const model = new MockLanguageModelV3({ doStream: { stream: simulateReadableStream({ chunks: [
+    { type: 'finish', finishReason: { unified: finishReason, raw: finishReason }, usage: { inputTokens: { total: 5, noCache: 5, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 4000, text: 0, reasoning: 4000 } } },
+  ] }) } });
+  const response = await connectionTest(selection, new AbortController().signal, crypto.randomUUID(), { root, model });
+  await response.text();
+  const run = await new RunStore(root).get(response.headers.get('x-kr-run-id')!);
+  expect(run.status).toBe('failed'); expect(run.failure).toBe(finishReason === 'length' ? 'output-limit' : 'no-candidate');
+  const call = model.doStreamCalls[0];
+  expect(call.maxOutputTokens).toBe(4000);
+  expect(call.providerOptions?.openai).toMatchObject({ forceReasoning: true, reasoningEffort: 'low' });
+  expect(call.tools?.map(tool => tool.name).sort()).toEqual(['kr_get_context', 'kr_propose_draft']);
 });

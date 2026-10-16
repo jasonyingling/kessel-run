@@ -27,15 +27,17 @@ User-entered keys stay on the local server in an **unencrypted owner-only file**
 
 The default private root is `~/.local/share/kessel-run`; set `KESSEL_RUN_PRIVATE_ROOT` to an owned directory outside the checkout/content before launching. Existing linked or incorrectly owned private files are refused. Do not move private state into exported content. Environment configuration uses server-side `OPENAI_API_KEY`; never use a `NEXT_PUBLIC_*` variable. See [OpenAI authentication guidance](https://developers.openai.com/api/reference/overview).
 
-The server allows `gpt-5` and `gpt-5-mini`. Their text/tool/stream adapter is tested with fake providers; [OpenAI documents streaming/function calling for GPT-5 mini](https://developers.openai.com/api/docs/models/gpt-5-mini). Catalog capability is not proof of live compatibility. Both models still need a real billed verification in the user's environment.
+The app offers **GPT-6.1 Sol** (`gpt-6.1-sol`) for writing and **GPT-6 Luna** (`gpt-6-luna`) as the lighter option and default for cleanup. Settings, writing and cleanup query the [OpenAI models endpoint](https://developers.openai.com/api/reference/resources/models/methods/list) on the server using the explicitly selected credential source, then intersect that account catalog with these two choices. Unavailable models are disabled; no silent model or key fallback occurs. Refresh models after changing access. Manual editing and dictation remain available without a key. This API catalog is separate from a ChatGPT subscription.
 
-**Run billed connection test** sends a bounded synthetic request and verifies streaming plus a saved tool candidate. Status/model-list checks do not generate. A CLI equivalent requires a fresh pairing token:
+Both models use Mastra's Responses adapter; its installed SDK needs the explicit `forceReasoning` option for these newer IDs. Sol requires Responses for tools ([Sol documentation](https://developers.openai.com/api/docs/models/gpt-6.1-sol)); Luna also supports reasoning with tools through Responses ([Luna documentation](https://developers.openai.com/api/docs/models/gpt-6-luna)). Account discovery confirms model visibility, not a completed generation/tool run.
+
+**Check AI connection** sends a bounded synthetic request and verifies streaming plus a saved tool candidate. Status/model-list checks do not generate. A CLI equivalent requires a fresh pairing token:
 
 ```bash
-npm run app:smoke:api -- PAIRING_TOKEN saved gpt-5
+npm run app:smoke:api -- PAIRING_TOKEN saved gpt-6.1-sol
 ```
 
-The token is a pairing credential, never an API key. Choose `environment` and/or `gpt-5-mini` explicitly if desired. The smoke test prints safe run IDs, selected provider/model and provider-reported usage. It does not estimate costs. No real key or live test was supplied during implementation.
+The token is a pairing credential, never an API key. Choose `environment` and/or `gpt-6-luna` explicitly if desired. The smoke test prints safe run IDs, selected provider/model and provider-reported usage. It does not estimate costs. The connection probe uses only synthetic context and save tools, without loading editorial skills. It allows 4,000 output tokens per step, low reasoning, four steps and 60 seconds, with no automatic retry. Failure messages distinguish interruption, output limits and missing saves from credential errors. On October 16, a read-only catalog query confirmed both requested models for the configured environment key; no new billed generation was run for this change.
 
 ## Writing and voice setup
 

@@ -24,7 +24,7 @@ beforeEach(async () => {
   publicationId = String((await service.createPublication({ operationId: crypto.randomUUID(), expectedHash: state.workspace.hash, title: 'Voice setup fixture', purpose: 'Supplied purpose', presets: ['article'] })).id);
 });
 afterEach(async () => { await rm(root, { recursive: true, force: true }); });
-function input(model: 'gpt-5' | 'gpt-5-mini' = 'gpt-5') {
+function input(model: 'gpt-6.1-sol' | 'gpt-6-luna' = 'gpt-6.1-sol') {
   return { source: 'saved' as const, model, operationId: crypto.randomUUID(), scope: publicationId, scopeKind: 'voice' as const, mode: 'guided' as const, message: 'Use supplied synthetic notes for voice setup.' };
 }
 const usage = { inputTokens: { total: 3, noCache: 3, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 2, text: 2, reasoning: 0 } };
@@ -42,10 +42,10 @@ it('reloads completed scoped conversations, deduplicates starts and records mode
   const duplicate = await startWritingTurn(args, workspaceId, service, new AbortController().signal, { conversations, credentials, model });
   expect((await duplicate.json()).existing).toBe(true);
   expect(model.doStreamCalls).toHaveLength(1);
-  const next = await startWritingTurn(input('gpt-5-mini'), workspaceId, service, new AbortController().signal, { conversations, credentials, model: answer('Second model answer') });
+  const next = await startWritingTurn(input('gpt-6-luna'), workspaceId, service, new AbortController().signal, { conversations, credentials, model: answer('Second model answer') });
   await next.text();
   const runs = await new Conversations(join(root, 'runs')).list(workspaceId, publicationId);
-  expect(runs.map(run => run.model)).toEqual(['gpt-5', 'gpt-5-mini']);
+  expect(runs.map(run => run.model)).toEqual(['gpt-6.1-sol', 'gpt-6-luna']);
   expect(runs[0].response).toBe('Synthetic answer');
   expect(runs[0].contextHash).toHaveLength(64);
   expect(runs[0].skillHash).toHaveLength(64);

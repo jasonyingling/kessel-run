@@ -15,7 +15,7 @@ it('runs real Mastra fixture and saving tools through its v5 stream into the ins
     { stream: simulateReadableStream({ chunks: [{ type: 'tool-call', toolCallId: 'save', toolName: 'kr_propose_draft', input: JSON.stringify({ prose: 'Synthetic candidate.', expectedRevision: 'fixture-v1', operationId }) }, { type: 'finish', finishReason: { unified: 'tool-calls', raw: 'tool_calls' }, usage }] }) },
     { stream: simulateReadableStream({ chunks: [{ type: 'text-start', id: 'text' }, { type: 'text-delta', id: 'text', delta: 'Candidate saved.' }, { type: 'text-end', id: 'text' }, { type: 'finish', finishReason: { unified: 'stop', raw: 'stop' }, usage }] }) },
   ] });
-  const agent = await createWritingAgent({ source: 'saved', model: 'gpt-5' }, {
+  const agent = await createWritingAgent({ source: 'saved', model: 'gpt-6.1-sol' }, {
     readContext: async () => { reads++; return { text: 'Synthetic notes', revision: 'fixture-v1' }; },
     saveCandidate: async input => { saved = input.prose; return { candidateId: operationId, revision: 'candidate-v1' }; },
   }, undefined, model);

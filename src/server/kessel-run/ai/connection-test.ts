@@ -56,10 +56,11 @@ export async function connectionTest(
         proposed = candidateId;
         return { candidateId, revision: 'synthetic-candidate-v1' };
       },
-    }, dependencies.credentials, dependencies.model);
+    }, dependencies.credentials, dependencies.model, 'connection-test');
     const output = await agent.stream(run.message, {
       abortSignal: abort.signal, maxSteps: 4,
-      modelSettings: { maxRetries: 0, maxOutputTokens: 400 },
+      modelSettings: { maxRetries: 0, maxOutputTokens: 4000 },
+      providerOptions: { openai: { forceReasoning: true, reasoningEffort: 'low' } },
     });
     const reader = toAISdkStream(output, {
       from: 'agent', version: 'v5',
@@ -82,6 +83,9 @@ export async function connectionTest(
             if (!canceled) controller.enqueue(chunk);
           }
           record.candidateId = proposed;
+          const finishReason = await output.finishReason;
+          if (finishReason === 'error' || output.error) throw Error('Provider stream failed');
+          record.failure = abort.signal.aborted ? 'canceled' : !proposed ? (finishReason === 'length' ? 'output-limit' : 'no-candidate') : null;
           record.status = abort.signal.aborted ? 'interrupted' : proposed ? 'completed' : 'failed';
           if (!abort.signal.aborted) {
             const usage = await output.totalUsage;
@@ -92,6 +96,7 @@ export async function connectionTest(
           if (!canceled) controller.close();
         } catch {
           record.status = abort.signal.aborted ? 'interrupted' : 'failed';
+          record.failure = abort.signal.aborted ? 'canceled' : 'provider';
           record.candidateId = proposed;
           await cleanup();
           await store.save(record);

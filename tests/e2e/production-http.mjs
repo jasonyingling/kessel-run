@@ -75,6 +75,12 @@ try {
   check((await fetch(`${origin}/api/kessel-run/local/credentials`)).status === 401, 'unpaired read denied');
   const status = await request('credentials', session.headers);
   check(status.environment === false && status.saved === null, 'no model key configured');
+  check((await fetch(`${origin}/api/kessel-run/local/models?source=environment`)).status === 401, 'unpaired model discovery denied');
+  const catalog = await request('models', session.headers);
+  check(JSON.stringify(catalog.models.map(model => model.id)) === JSON.stringify(['gpt-6.1-sol', 'gpt-6-luna']), 'requested model choices');
+  const unavailable = await request('models?source=saved', session.headers);
+  check(!unavailable.checked && unavailable.models.every(model => model.available === false), 'no-key discovery preserves unavailable state without inference');
+  check((await fetch(`${origin}/api/kessel-run/local/models?source=invalid`, { headers: session.headers })).status === 400, 'invalid discovery source denied');
   check((await fetch(`${origin}/api/chat`, { method: 'POST', headers: session.headers, body: '{}' })).status === 403, 'legacy generation disabled');
   const workspace = await request('workspace', session.headers, { operationId: operationId(), root: join(root, 'content'), title: 'Synthetic production HTTP workspace' });
   session.headers['x-kr-workspace-ref'] = workspace.id;
@@ -99,7 +105,7 @@ try {
   check(!result.isError, 'external candidate committed with no app key');
   const after = await request('content', session.headers, { action: 'context', input: { outputId: output.id } });
   check(after.output.body === 'Exact synthetic human prose.\n' && after.pending.length === 1, 'shared revisions preserve editor and candidate');
-  const cleanupInput = { requestId: operationId(), scope: output.id, scopeKind: 'output', text: 'Synthetic um supplied notes.', source: 'saved', model: 'gpt-5-mini' };
+  const cleanupInput = { requestId: operationId(), scope: output.id, scopeKind: 'output', text: 'Synthetic um supplied notes.', source: 'saved', model: 'gpt-6-luna' };
   const cleanupRequest = (headers, input = cleanupInput) => fetch(origin + '/api/kessel-run/local/cleanup', { method: 'POST', headers, body: JSON.stringify(input) });
   check((await cleanupRequest({ origin, 'content-type': 'application/json' })).status === 401, 'cleanup unpaired rejected');
   check((await cleanupRequest({ ...session.headers, 'x-kr-csrf': '' })).status === 403, 'cleanup CSRF rejected');
@@ -114,7 +120,7 @@ try {
   check(JSON.stringify(afterCleanup) === JSON.stringify(after), 'cleanup does not mutate content or proposals');
   let expectedPending = 1;
   if (fake) {
-    const response = await fetch(`${origin}/api/kessel-run/local/writing`, { method: 'POST', headers: session.headers, body: JSON.stringify({ operationId: operationId(), scope: output.id, scopeKind: 'output', message: 'Supplied synthetic fixture notes.', mode: 'fast', source: 'saved', model: 'gpt-5-mini' }) });
+    const response = await fetch(`${origin}/api/kessel-run/local/writing`, { method: 'POST', headers: session.headers, body: JSON.stringify({ operationId: operationId(), scope: output.id, scopeKind: 'output', message: 'Supplied synthetic fixture notes.', mode: 'fast', source: 'saved', model: 'gpt-6-luna' }) });
     if (launchMode === 'dev') {
       check(response.ok && (await response.text()).includes('completed'), 'development fake provider round-trip');
       const runResponse = await fetch(`${origin}/api/kessel-run/local/writing?scope=${output.id}`, { headers: session.headers });

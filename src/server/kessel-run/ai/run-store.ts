@@ -16,6 +16,7 @@ const recordSchema = z.object({
   message: z.string(),
   response: z.string(),
   candidateId: z.string().uuid().nullable(),
+  failure: z.enum(['canceled', 'output-limit', 'no-candidate', 'provider']).nullable().optional(),
   events: z.array(z.unknown()),
   usage: z.object({ inputTokens: z.number().optional(), outputTokens: z.number().optional() }).nullable(),
   createdAt: z.number(),

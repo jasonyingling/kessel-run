@@ -29,7 +29,7 @@ it('wraps the same scoped content operations as native Mastra tools and retains 
       { stream: simulateReadableStream({ chunks: [{ type: 'tool-call', toolCallId: 'save', toolName: 'kr_propose_draft', input: JSON.stringify({ operationId: crypto.randomUUID(), outputId: output.id, expectedHash: context.output.hash, expectedContextHash: context.contextHash, prose: 'Native model candidate.' }) }, { type: 'finish', finishReason: { unified: 'tool-calls', raw: 'tool_calls' }, usage }] }) },
       { stream: simulateReadableStream({ chunks: [{ type: 'text-start', id: 'text' }, { type: 'text-delta', id: 'text', delta: 'Candidate proposed.' }, { type: 'text-end', id: 'text' }, { type: 'finish', finishReason: { unified: 'stop', raw: 'stop' }, usage }] }) },
     ] });
-    const agent = await createWorkspaceAgent({ source: 'saved', model: 'gpt-5' }, service, grant, { model });
+    const agent = await createWorkspaceAgent({ source: 'saved', model: 'gpt-6.1-sol' }, service, grant, { model });
     const result = await agent.stream('Read context and propose prose.', { maxSteps: 4, modelSettings: { maxRetries: 0 } });
     await result.consumeStream();
     const saved = await service.getContext(String(output.id));

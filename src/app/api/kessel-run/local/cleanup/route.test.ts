@@ -5,7 +5,7 @@ vi.mock('@/server/kessel-run/workspace/config', () => ({ configuredWorkspace: mo
 vi.mock('@/server/kessel-run/ai/cleanup', async importOriginal => ({ ...await importOriginal<typeof import('@/server/kessel-run/ai/cleanup')>(), validateCleanupTarget: mocks.target, cleanupText: mocks.infer }));
 import { POST } from './route';
 import { LocalAccessError } from '@/server/kessel-run/local-session';
-const input = { requestId: crypto.randomUUID(), scope: crypto.randomUUID(), scopeKind: 'source', text: 'Synthetic supplied notes', source: 'saved', model: 'gpt-5-mini' };
+const input = { requestId: crypto.randomUUID(), scope: crypto.randomUUID(), scopeKind: 'source', text: 'Synthetic supplied notes', source: 'saved', model: 'gpt-6-luna' };
 const request = (body: unknown = input) => new Request('http://127.0.0.1:3198/api/kessel-run/local/cleanup', { method: 'POST', body: JSON.stringify(body) });
 beforeEach(() => { vi.clearAllMocks(); mocks.session.mockResolvedValue({ workspaceId: 'workspace' }); mocks.reference.mockImplementation(() => undefined); mocks.configured.mockResolvedValue({ configuration: { id: 'workspace' }, service: {} }); mocks.target.mockResolvedValue(undefined); mocks.infer.mockResolvedValue({ suggestion: 'Synthetic notes', requestId: input.requestId }); });
 it.each(['session', 'reference', 'target'] as const)('denies %s before inference', async boundary => { mocks[boundary].mockImplementation(() => { throw new LocalAccessError(); }); expect((await POST(request())).ok).toBe(false); expect(mocks.infer).not.toHaveBeenCalled(); });

@@ -15,7 +15,7 @@ it('passes Stop to the actual provider signal and does not replay the turn', asy
       options.abortSignal?.addEventListener('abort', () => { providerAborted = true; controller.error(new DOMException('Stopped', 'AbortError')); }, { once: true });
     } }) };
   } });
-  const agent = await createWritingAgent({ source: 'saved', model: 'gpt-5' }, { readContext: async () => ({ text: '', revision: 'v1' }), saveCandidate: async () => { throw new Error('Must not save interrupted prose'); } }, undefined, model);
+  const agent = await createWritingAgent({ source: 'saved', model: 'gpt-6.1-sol' }, { readContext: async () => ({ text: '', revision: 'v1' }), saveCandidate: async () => { throw new Error('Must not save interrupted prose'); } }, undefined, model);
   const output = await agent.stream('Draft', { abortSignal: stop.signal, maxSteps: 2, modelSettings: { maxRetries: 0, maxOutputTokens: 100 } });
   const consuming = output.consumeStream().catch(() => undefined);
   await began;

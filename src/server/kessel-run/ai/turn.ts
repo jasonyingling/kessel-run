@@ -64,7 +64,7 @@ export async function startWritingTurn(
           id: run.id, workspaceId, clientName: 'In-app writing', publicationIds: null, allowDrafts: true, allowSources: true, tokenHash: '', createdAt: Date.now(), revokedAt: null,
         }, { credentials, model: dependencies.model, signal: abort.signal, onOperation: async (name, result) => emit({ type: 'operation', name, result }) });
         const output = await agent.stream([...history, { role: 'user', content: `Scope: ${parsed.scopeKind} ${parsed.scope}. Mode: ${parsed.mode}. Current context hash: ${context.contextHash}.\n\n${parsed.message}` }], {
-          abortSignal: abort.signal, maxSteps: 8, modelSettings: { maxRetries: 0, maxOutputTokens: 8000 },
+          providerOptions: { openai: { forceReasoning: true } }, abortSignal: abort.signal, maxSteps: 8, modelSettings: { maxRetries: 0, maxOutputTokens: 8000 },
         });
         reader = output.textStream.getReader();
         while (true) {

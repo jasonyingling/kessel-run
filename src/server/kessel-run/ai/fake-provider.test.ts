@@ -40,7 +40,7 @@ it('saves a synthetic voice proposal through real shared tools without resolving
   const model = await fixtureModel(service, String(publication.id), 'voice');
   const credentials = new Credentials(join(root, 'private'), () => undefined);
   const conversations = new Conversations(join(root, 'private'));
-  const response = await startWritingTurn({ operationId: crypto.randomUUID(), scope: String(publication.id), scopeKind: 'voice', source: 'saved', model: 'gpt-5', mode: 'guided', message: 'Synthetic supplied notes' }, String(state.workspace.id), service, new AbortController().signal, { model, credentials, conversations });
+  const response = await startWritingTurn({ operationId: crypto.randomUUID(), scope: String(publication.id), scopeKind: 'voice', source: 'saved', model: 'gpt-6.1-sol', mode: 'guided', message: 'Synthetic supplied notes' }, String(state.workspace.id), service, new AbortController().signal, { model, credentials, conversations });
   expect(await response.text()).toContain('completed');
   const context = await service.getPublicationContext(String(publication.id), null, null);
   expect(context.proposals[0].proposal.state).toBe('pending');
