@@ -3,7 +3,8 @@ import { readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 test('no-key manual publication, import, independent outputs, save and export', async ({ page, context }, testInfo) => {
-  const errors: string[] = [];
+  const errors: string[] = []; const revisionReads: string[] = []; let contextReads = 0;
+  page.on('request', request => { if (request.url().endsWith('/local/content') && request.method() === 'POST') { const data = request.postDataJSON(); if (data.action === 'revision') revisionReads.push(data.input.revisionId); if (data.action === 'context') contextReads++; } });
   await rm(join(process.env.KR_E2E_ROOT!, 'private', 'workspace.json'), { force: true });
   await rm(join(process.env.KR_E2E_ROOT!, 'private', 'selection.json'), { force: true });
   page.on('pageerror', error => errors.push(error.message));
@@ -31,13 +32,13 @@ test('no-key manual publication, import, independent outputs, save and export', 
   await page.getByRole('button', { name: 'New piece' }).click();
   await page.getByLabel('Title', { exact: true }).fill('Synthetic piece');
   await page.getByLabel('Purpose or brief').fill('Review supplied workshop notes.');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('button', { name: 'Save idea', exact: true }).click();
   await expect(page).toHaveURL(/\/pieces\//);
   const pieceUrl = page.url();
   for (const name of ['Article output', 'Short output']) {
     await page.getByRole('button', { name: 'Add output / repurpose' }).click();
     await page.getByLabel('Title', { exact: true }).fill(name);
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await page.getByRole('button', { name: 'Create and write', exact: true }).click();
     await expect(page).toHaveURL(/\/outputs\//);
     await page.goto(pieceUrl);
   }
@@ -48,15 +49,33 @@ test('no-key manual publication, import, independent outputs, save and export', 
   await page.reload();
   await expect(page.getByLabel('Output prose')).toHaveValue('Human-supplied synthetic draft.');
   await page.getByLabel('Message', { exact: true }).fill('Use the supplied synthetic workshop notes to propose a candidate.');
-  await page.getByRole('button', { name: 'Send billed AI turn' }).click();
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(page.getByText('Synthetic fixture candidate from supplied workshop notes.', { exact: false }).first()).toBeVisible();
+  const usedMachineRevision = revisionReads[0];
+  const readsAfterCandidate = revisionReads.length, pollsBefore = contextReads;
+  await expect.poll(() => contextReads, { timeout: 10000 }).toBeGreaterThanOrEqual(pollsBefore + 3);
+  expect(revisionReads).toHaveLength(readsAfterCandidate);
   await page.getByRole('button', { name: 'Use candidate in editor' }).click();
   await expect(page.getByLabel('Output prose')).toHaveValue('Synthetic fixture candidate from supplied workshop notes.');
+  const beforeNewCandidate = revisionReads.length;
+  await page.getByLabel('Message', { exact: true }).fill('Propose one more candidate from these supplied notes.'); await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Reject candidate' })).toBeEnabled();
+  await expect.poll(() => revisionReads.length).toBe(beforeNewCandidate + 1);
+  await page.getByRole('button', { name: 'Reject candidate' }).click(); await expect(page.getByRole('button', { name: 'Reject candidate' })).toHaveCount(0);
+  expect(new Set(revisionReads).size).toBe(revisionReads.length);
   await page.getByLabel('Output prose').fill('Human-supplied synthetic final after machine comparison.');
   await page.getByRole('button', { name: 'Save prose' }).click();
   await expect(page.locator('.kr-main > .kr-status')).toHaveText('Saved.');
   await page.getByRole('button', { name: 'Accept this exact final prose' }).click();
   await expect(page.getByText('Current output: accepted.', { exact: false })).toBeVisible();
+  await page.getByText('Propose lessons from a retained comparison', { exact: true }).click();
+  await page.getByRole('combobox', { name: 'Machine draft', exact: true }).selectOption(usedMachineRevision);
+  await page.getByLabel('Proposed rule', { exact: true }).fill('Keep firsthand observations concrete.');
+  await page.getByLabel('Evidence from this exact comparison', { exact: true }).fill('The accepted final names a firsthand observation.');
+  await page.getByRole('button', { name: 'Save lesson proposals for review' }).click();
+  await expect(page.getByRole('heading', { name: 'Publication lesson proposals' })).toBeVisible();
+  await page.getByRole('checkbox', { name: /Keep firsthand observations concrete/ }).check(); await page.getByRole('button', { name: 'Approve selected lessons' }).click();
+  await expect(page.getByRole('heading', { name: 'Publication lesson proposals' })).toHaveCount(0);
   await page.getByLabel('Output prose').fill('Later manual edit invalidates acceptance.');
   await page.getByRole('button', { name: 'Save prose' }).click();
   await expect(page.locator('.kr-main > .kr-status')).toHaveText('Saved.');

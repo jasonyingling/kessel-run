@@ -22,12 +22,12 @@ test('real keyless studio, recoverable exact preferences, presets, author pins a
   }
   await page.getByRole('button', { name: 'New piece', exact: true }).click();
   await page.getByLabel('Title', { exact: true }).fill('My first idea');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('button', { name: 'Save idea', exact: true }).click();
   await expect(page).toHaveURL(/\/pieces\//); const pieceUrl = page.url();
   await page.getByRole('button', { name: 'Add output / repurpose' }).click();
-  await expect(page.getByRole('heading', { name: 'Choose or create a voice' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Add an independent output' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Save', exact: true })).toHaveCount(0);
-  await page.getByRole('link', { name: 'Write a starter voice or import a profile' }).click();
+  await page.getByRole('button', { name: 'Create a starter voice', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Voice studio', level: 1 })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Write a starter voice', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Voice setup conversation' })).toHaveCount(0);
@@ -80,8 +80,9 @@ test('real keyless studio, recoverable exact preferences, presets, author pins a
   const reviewPreset = (await overview()).presets.find(value => value.title === 'Weekend review')!;
   await page.goto(pieceUrl);
   await page.getByRole('button', { name: 'Add output / repurpose' }).click();
+  await page.getByRole('combobox', { name: 'Exact publication voice', exact: true }).selectOption(`${originalVoice.id}:1`);
   await page.getByLabel('Title', { exact: true }).fill('First review'); await page.getByRole('combobox', { name: 'Format preset', exact: true }).selectOption(String(reviewPreset.id));
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('button', { name: 'Create and write', exact: true }).click();
   await expect(page).toHaveURL(/\/outputs\//); const outputUrl = page.url(); const originalOutput = (await overview()).outputs[0];
   await page.getByLabel('Output prose').fill('I noticed the controls after a week.'); await page.getByRole('button', { name: 'Save prose' }).click();
   await expect(page.locator('.kr-main > .kr-status')).toHaveText('Saved.');
@@ -130,7 +131,7 @@ test('real keyless studio, recoverable exact preferences, presets, author pins a
   expect((await rejected.json()).code).toBe('MISSING_PROFILE_VERSION');
   await page.goto(pieceUrl); await page.getByRole('button', { name: 'Add output / repurpose' }).click();
   await expect(page.getByRole('combobox', { name: 'Author overlay', exact: true }).locator('option')).toHaveCount(1);
-  await page.getByLabel('Title', { exact: true }).fill('Newsletter'); await page.getByRole('combobox', { name: 'Format preset', exact: true }).selectOption(String(reviewPreset.id)); await page.getByRole('button', { name: 'Save', exact: true }).click(); await expect(page).toHaveURL(/\/outputs\//);
+  await page.getByLabel('Title', { exact: true }).fill('Newsletter'); await page.getByRole('combobox', { name: 'Format preset', exact: true }).selectOption(String(reviewPreset.id)); await page.getByRole('button', { name: 'Create and write', exact: true }).click(); await expect(page).toHaveURL(/\/outputs\//);
   state = await overview(); expect(state.outputs.find(value => value.title === 'Newsletter')?.format).toBe('Newsletter');
   const original = await command<OutputContext>('context', { outputId: originalOutput.id });
   expect(original.output.format).toBe('Review'); expect(original.output.voice).toEqual({ profileId: originalVoice.id, version: 1 }); expect(original.output.body).toBe('I noticed the controls after a week.');
@@ -139,9 +140,10 @@ test('real keyless studio, recoverable exact preferences, presets, author pins a
   await page.goto(`${launcher.origin}/kessel-run/voices?publication=${publicationId}`);
   await expect(page.getByRole('heading', { name: 'Voice setup conversation' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Get AI help', exact: true }).click();
+  await page.getByText('Assistant settings', { exact: true }).click();
   await expect(page.getByText('No key is configured for this source. Add a key or select the configured source.')).toBeVisible();
   await page.getByRole('textbox', { name: 'Message', exact: true }).fill('Supplied request, not sent.');
-  await expect(page.getByRole('button', { name: 'Send billed AI turn', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Get AI help', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Voice setup conversation' })).toHaveCount(0);
   expect(inference).toEqual([]); expect(errors).toEqual([]);

@@ -5,8 +5,8 @@ export function safeFilename(title: string) {
   return `${clean || 'Kessel Run output'}.md`;
 }
 
-export async function exportOutput(service: WorkspaceService, outputId: string) {
-  const { context: first, bundle, revisions } = await service.exportSnapshot(outputId);
+export async function exportOutput(service: WorkspaceService, outputId: string, expected: Parameters<WorkspaceService['exportSnapshot']>[1] = {}) {
+  const { context: first, bundle, revisions } = await service.exportSnapshot(outputId, expected);
   const sources = first.sources;
   const handoff = [
     `# ${first.output.title}\n`,
@@ -29,5 +29,5 @@ export async function exportOutput(service: WorkspaceService, outputId: string) 
     '## Explicit restoration data\nRestore into a new empty app workspace only after reviewing its preview. This contains editorial files, including prior human decisions, never private runs, credentials or access tokens.\n',
     `\n\`\`\`kessel-run-handoff\n${JSON.stringify(bundle)}\n\`\`\`\n`,
   ].join('\n');
-  return { filename: safeFilename(String(first.output.title)), prose: first.output.body, handoff };
+  return { identity: { revision: first.output.currentRevision, hash: first.output.hash, contextHash: first.contextHash }, filename: safeFilename(String(first.output.title)), prose: first.output.body, handoff };
 }
