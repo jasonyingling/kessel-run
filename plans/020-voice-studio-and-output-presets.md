@@ -4,7 +4,7 @@
 
 ## Status / drift
 
-- IMPLEMENTED · awaiting independent final review/merge · P1 · M–L · MED risk · direction/correctness.
+- DONE · independently reviewed, verified and merged · P1 · M–L · MED risk · direction/correctness.
 - Depends on 018 (stable operations, publication entry), 019 (studio destination/shared controls).
 - Planned 2026-10-16 at `939adc5c2dbb36034fd2def4f4a395ba708d7be0` plus intentional uncommitted Luna/Sol fixes. Run `git diff --stat 939adc5..HEAD -- src/components/kessel-run/app src/server/kessel-run/workspace src/app/api/kessel-run/local src/app/kessel-run tests docs` and `node plans/2026-10-16-ui-review/check-baseline.mjs`. Reconcile expected 018/019 extractions; unexpected contract drift or missing model changes means STOP.
 

@@ -12,8 +12,8 @@ Commit `95bf0c6` preserves the existing Luna/Sol fixes and the approved plans. B
 |---|---|---|
 | 018 | `codex/018-publication-first` · `/Users/miniying/.codex/worktrees/018-publication-first/kessel-run` | APPROVED `0f155f0`; combined candidate `b5124cc`, merged `a8d5bb8` |
 | 019 | `codex/019-editorial-shell` · isolated worktree | APPROVED `dde48c6`, merged after independent verification |
-| 020 | `codex/020-voice-studio` · isolated prepared worktree | Implementing from reviewed019 |
-| 021 | Read-only preflight complete | Waiting for 020 |
+| 020 | `codex/020-voice-studio` · isolated worktree | APPROVED `4d14201`, merged after independent verification |
+| 021 | `codex/021-writing-desk` · isolated prepared worktree | Implementing from reviewed020 |
 | 022 early unit | `codex/022-ui-foundations` · `/Users/miniying/.codex/worktrees/022-ui-foundations/kessel-run` | APPROVED at `77cda84`; handoff-selection safety and reusable mark assets only |
 | 022 completion | Same executor after stacking onto 021 | Waiting for final surfaces |
 
@@ -50,3 +50,7 @@ One revision round fixed repeated New publication after Cancel, duplicate AI hea
 Backend checkpoint passed independent52focused tests with no blocker in two source reviews. UI review found late unmounted command responses could clear a newer command/draft, late previews could overwrite recovered draft storage, and preset edits used refreshed hashes with older local fields. Round1 adds owner/command identity checks, abort/lifetime preview protection and captured preset base hashes. Follow-up source review confirms the fixes; actual browser tests hold preview/import responses across navigation and inspect recovery storage, and exercise external preset edits. Strict recovered-draft validation, retained old/proposed rule comparison and workspace-scoped component keys were also verified. Primary full suite passed215tests/52files, typecheck, lint0errors/9baselinewarnings and skills15+15. Final browser/build/visual gates and merge remain pending. Narrow studio styling makes AI help secondary and provides visible keyboard tab selection.
 
 Browser tests exposed locator assumptions and an incorrect expectation that approving proposedv2 makesv2approved. Primary inspected the unchanged service: it retainsv2draft and createsv3approved. The plan now explicitly documents that contract and authorizes the corrected assertion/rerun after executor's repair-limit stop. A separately vetted export fallback now must name stored output.format when current preset instructions are empty; historical output format remains authoritative.
+
+## 020 final independent verification and integration
+
+Candidate `4d14201` passed primary independent215unit tests/52files, nonincremental typecheck, lint0errors/9baselinewarnings, skills15+15, production build and24/24Chromium cases across1440/768/390(reducedmotion). The primary inspected empty, approved, long-profile and recovery/error screenshots at desktop/tablet/mobile, including the independent run's mobile preset rejection. Full source/test diff reviewed; the late-preview storage assertion closes the independent reviewer's final test gap. No source blocker remains. Merged after verification; main source matches the tested candidate. All fixture servers stopped.021 now inherits these contracts and may narrowly adapt existing journey navigation tests without dropping their assertions. Live provider, microphone and real external-agent acceptance remain unverified as previously recorded.
