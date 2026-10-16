@@ -2,11 +2,12 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Feather, Layers, Menu, Plus, Settings, AudioLines, X } from 'lucide-react';
+import { BookOpen, Layers, Menu, Plus, Settings, AudioLines, X } from 'lucide-react';
 import type { WorkspaceAvailability, WorkspaceOverview } from '@/lib/kessel-run/app-contracts';
 import { localApi } from '@/lib/kessel-run/local-api';
 import { pairFromLauncher } from './pairing';
 import { AppButton } from './app-button';
+import { KesselRunMark } from '../brand';
 
 const NavigationContext = createContext<(overview: WorkspaceOverview) => void>(() => {});
 export function useWorkspaceNavigation(overview: WorkspaceOverview | null) {
@@ -40,7 +41,7 @@ function EditorialShell({ children, pathname }: { children: ReactNode; pathname:
   return <NavigationContext.Provider value={setOverview}><div className="kr-app">
     <a className="kr-skip" href="#writing-content">Skip to content</a>
     <aside className="kr-sidebar" onKeyDown={event => { if (event.key === 'Escape' && expanded) { event.preventDefault(); close(true); } }}>
-      <div className="kr-brand-row"><Link href="/kessel-run" className="kr-brand" onClick={() => close()}><Feather size={24} aria-hidden="true" />Kessel Run</Link><AppButton ref={toggle} static className="kr-menu-toggle" aria-expanded={expanded} aria-controls="workspace-navigation" onClick={() => setExpanded(value => !value)}>{expanded ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}<span>{expanded ? 'Close menu' : 'Open menu'}</span></AppButton></div>
+      <div className="kr-brand-row"><Link href="/kessel-run" className="kr-brand" onClick={() => close()}><KesselRunMark className="kr-brand-mark" />Kessel Run</Link><AppButton ref={toggle} static className="kr-menu-toggle" aria-expanded={expanded} aria-controls="workspace-navigation" onClick={() => setExpanded(value => !value)}>{expanded ? <X size={20} strokeWidth={1.5} aria-hidden="true" /> : <Menu size={20} strokeWidth={1.5} aria-hidden="true" />}<span>{expanded ? 'Close menu' : 'Open menu'}</span></AppButton></div>
       <div className="kr-navigation" id="workspace-navigation" data-expanded={expanded}>
         <p className="kr-workspace-name">{String(overview?.workspace.title ?? 'Your editorial workspace')}</p>
         <nav aria-label="Workspace" onClick={event => { if ((event.target as Element).closest('a')) close(); }}>
