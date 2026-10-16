@@ -54,3 +54,9 @@ Browser tests exposed locator assumptions and an incorrect expectation that appr
 ## 020 final independent verification and integration
 
 Candidate `4d14201` passed primary independent215unit tests/52files, nonincremental typecheck, lint0errors/9baselinewarnings, skills15+15, production build and24/24Chromium cases across1440/768/390(reducedmotion). The primary inspected empty, approved, long-profile and recovery/error screenshots at desktop/tablet/mobile, including the independent run's mobile preset rejection. Full source/test diff reviewed; the late-preview storage assertion closes the independent reviewer's final test gap. No source blocker remains. Merged after verification; main source matches the tested candidate. All fixture servers stopped.021 now inherits these contracts and may narrowly adapt existing journey navigation tests without dropping their assertions. Live provider, microphone and real external-agent acceptance remain unverified as previously recorded.
+
+## 021 backend checkpoint and 022 independent assets
+
+021 strict piece-update and locked export expectations passed two source reviews and primary55focused tests/11files. Add explicit null-revision regression for blank output export. Fresh review also identified component-local dictation provenance/undo as state that must survive same-piece tab changes; the plan now explicitly requires this and capture cancellation when hiding the view.
+
+022 independent commit `4f2efdf` adds only icon.svg,16/32/48ICO and motion-safe generic skeleton. Primary read all three changes and independently validated SVG XML/exact approved paths and ICO32-bit DIB entries. No source blocker; held in the isolated branch pending final021 integration and whole-plan runtime/build verification.

@@ -52,6 +52,8 @@ Brief view edits title, brief and approach via new hash-checked `piece-update` c
 
 Sources show supplied notes/interviews and attribution, with raw recognition behind disclosure. Keep plan 008's direct-field Dictate/Stop dictation, editable text, Clean text preview/Undo and explicit Send or Save source. Missing AI disables only optional cleanup/generation, not typing, dictation capability or source saving. Hide credential-source/model plumbing in an assistant settings disclosure; show clear one-time Connect AI action only when needed.
 
+Tab extraction must preserve the composer's component-local recognition provenance, cleanup-applied state and undo, not only its controlled text. Keep the same-piece composer mounted or retain its complete state; stop dictation/cleanup when hiding its view. Cover dictate → switch view → return → save source with exact provenance. A fresh output legitimately has `currentRevision: null`; receipt-bound clean export must distinguish an explicit null revision expectation from an omitted expectation and cover export of a new blank output.
+
 Writing view leads with saved/unsaved/conflict state and editor. Assistant has plain **Send** with model and billing context nearby; no new request is made on route entry. Review is contextual alongside/below writing: retained candidate comparison, explicit use/reject, exact final approval and optional lessons. Don't force an immediate lesson modal after approval. Separate generation state from saved editorial state.
 
 Outputs view lists each format, status and exact selected voice/author; Add output reuses the resumable flow and starts an independent draft. Changing the publication default never changes existing pins.
