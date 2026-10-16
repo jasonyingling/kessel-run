@@ -114,6 +114,9 @@ test('editorial navigation, URL filters, exact progress and recovery across dest
   await page.goto(`/kessel-run/outputs/${outputIds[1]}`);
   await page.getByLabel('Output prose').fill('Unsent local prose survives navigation.');
   await navigate('All content');
+  await expect(page.getByText('Save or reconcile your edits before leaving this desk.', { exact: true })).toBeVisible();
+  page.once('dialog', dialog => dialog.accept());
+  await page.goto('/kessel-run/content');
   await page.getByRole('link', { name: /Short post draft/ }).click();
   await expect(page.getByLabel('Output prose')).toHaveValue('Unsent local prose survives navigation.');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

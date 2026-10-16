@@ -5,7 +5,7 @@ import { WorkspaceError } from '@/server/kessel-run/workspace/schema';
 import { exportOutput } from '@/server/kessel-run/workspace/import-export';
 import { parseHandoff } from '@/server/kessel-run/workspace/handoff';
 export const runtime = 'nodejs';
-const envelope = z.object({ action: z.enum(['publication', 'publication-update', 'preset-update', 'preset-create', 'profile-export', 'profile-preview', 'profile-import', 'profile-propose', 'profile-decision', 'draft-decision', 'final-accept', 'lessons-propose', 'lessons-decision', 'piece', 'piece-context', 'output', 'source', 'editor', 'context', 'revision', 'publication-context', 'export', 'handoff-preview', 'handoff-import']), input: z.unknown() }).strict();
+const envelope = z.object({ action: z.enum(['publication', 'publication-update', 'preset-update', 'preset-create', 'profile-export', 'profile-preview', 'profile-import', 'profile-propose', 'profile-decision', 'draft-decision', 'final-accept', 'lessons-propose', 'lessons-decision', 'piece', 'piece-update', 'piece-context', 'output', 'source', 'editor', 'context', 'revision', 'publication-context', 'export', 'handoff-preview', 'handoff-import']), input: z.unknown() }).strict();
 type Service = Awaited<ReturnType<typeof configuredWorkspace>>['service'];
 function input<T>(value: unknown): T { return value as T; }
 export async function POST(request: Request) {
@@ -31,6 +31,7 @@ export async function POST(request: Request) {
       case 'lessons-propose': result = await service.proposeLessons(input<Parameters<Service['proposeLessons']>[0]>(command.input)); break;
       case 'lessons-decision': result = await service.decideLessons(input<Parameters<Service['decideLessons']>[0]>(command.input)); break;
       case 'piece': result = await service.createPiece(input<Parameters<Service['createPiece']>[0]>(command.input)); break;
+      case 'piece-update': result = await service.updatePiece(input<Parameters<Service['updatePiece']>[0]>(command.input)); break;
       case 'output': result = await service.createOutput(input<Parameters<Service['createOutput']>[0]>(command.input)); break;
       case 'source': result = await service.saveSource(input<Parameters<Service['saveSource']>[0]>(command.input)); break;
       case 'editor': result = await service.saveEditor(input<Parameters<Service['saveEditor']>[0]>(command.input)); break;
@@ -51,8 +52,8 @@ export async function POST(request: Request) {
         result = await service.getPublicationContext(value.publicationId, null, null); break;
       }
       case 'export': {
-        const value = z.object({ outputId: z.string().uuid() }).strict().parse(command.input);
-        result = await exportOutput(service, value.outputId); break;
+        const { outputId, ...expected } = z.object({ outputId: z.string().uuid(), expectedRevision: z.string().uuid().nullable().optional(), expectedHash: z.string().length(64).optional(), expectedContextHash: z.string().length(64).optional() }).strict().parse(command.input);
+        result = await exportOutput(service, outputId, expected); break;
       }
       case 'handoff-preview': {
         const value = z.object({ markdown: z.string().max(8000000) }).strict().parse(command.input);

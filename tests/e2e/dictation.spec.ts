@@ -42,13 +42,13 @@ test('inline dictation, typing, freeze, cleanup undo and source failures', async
   await page.getByRole('button', { name: 'New piece' }).click();
   await page.getByLabel('Title', { exact: true }).fill('Synthetic piece');
   await page.getByLabel('Purpose or brief').fill('Review supplied workshop notes.');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('button', { name: 'Save idea', exact: true }).click();
   await expect(page).toHaveURL(/\/pieces\//);
   const pieceUrl = page.url();
   for (const name of ['Article output', 'Short output']) {
     await page.getByRole('button', { name: 'Add output / repurpose' }).click();
     await page.getByLabel('Title', { exact: true }).fill(name);
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await page.getByRole('button', { name: 'Create and write', exact: true }).click();
     await expect(page).toHaveURL(/\/outputs\//);
     await page.goto(pieceUrl);
   }
@@ -75,7 +75,7 @@ test('inline dictation, typing, freeze, cleanup undo and source failures', async
   await composer.getByRole('button', { name: 'Undo cleanup', exact: true }).click();
   await expect(message).toHaveValue('TyXped notes spoken words');
   await composer.getByRole('button', { name: 'Dictate', exact: true }).click();
-  await page.getByRole('button', { name: 'Send billed AI turn' }).click();
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
   await page.evaluate(() => {
     const recognition = (window as unknown as { recognition: { onresult: (event: unknown) => void } }).recognition;
     recognition.onresult({ resultIndex: 0, results: [{ isFinal: true, 0: { transcript: 'late must not enter draft' } }] });
@@ -86,7 +86,7 @@ test('inline dictation, typing, freeze, cleanup undo and source failures', async
   await expect(message).toHaveValue('Newer draft survives');
   await page.route('**/api/kessel-run/local/writing', route => route.request().method() === 'POST' ? route.fulfill({ status: 200, contentType: 'application/x-ndjson', body: JSON.stringify({ sequence: 0, type: 'terminal', status: 'failed' }) + '\n' }) : route.continue());
   await message.fill('Original survives failed terminal');
-  await page.getByRole('button', { name: 'Send billed AI turn' }).click();
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(message).toHaveValue('Original survives failed terminal');
   await page.goto(pieceUrl);
   await page.getByRole('button', { name: 'Add notes / interview' }).click();
@@ -100,6 +100,14 @@ test('inline dictation, typing, freeze, cleanup undo and source failures', async
     const recognition = (window as unknown as { recognition: { onresult: (event: unknown) => void } }).recognition;
     recognition.onresult({ resultIndex: 0, results: [{ isFinal: true, 0: { transcript: 'raw source words' } }] });
   });
+  await sourceComposer.getByRole('button', { name: 'Clean up', exact: true }).click();
+  await expect(notes).toHaveValue('Synthetic cleaned fixture text.');
+  await page.getByRole('tab', { name: 'Outputs', exact: true }).click();
+  await expect(notes).toBeHidden();
+  await page.getByRole('tab', { name: 'Brief & sources', exact: true }).click();
+  await expect(notes).toHaveValue('Synthetic cleaned fixture text.');
+  await sourceComposer.getByRole('button', { name: 'Undo cleanup', exact: true }).click();
+  await expect(notes).toHaveValue('Typed source raw source words');
   let fail = true;
   await page.route('**/api/kessel-run/local/content', route => {
     if (route.request().postDataJSON()?.action === 'source' && fail) { fail = false; return route.fulfill({ status: 400, json: { error: 'Synthetic failure' } }); }

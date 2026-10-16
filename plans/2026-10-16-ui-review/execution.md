@@ -13,9 +13,9 @@ Commit `95bf0c6` preserves the existing Luna/Sol fixes and the approved plans. B
 | 018 | `codex/018-publication-first` · `/Users/miniying/.codex/worktrees/018-publication-first/kessel-run` | APPROVED `0f155f0`; combined candidate `b5124cc`, merged `a8d5bb8` |
 | 019 | `codex/019-editorial-shell` · isolated worktree | APPROVED `dde48c6`, merged after independent verification |
 | 020 | `codex/020-voice-studio` · isolated worktree | APPROVED `4d14201`, merged after independent verification |
-| 021 | `codex/021-writing-desk` · isolated prepared worktree | Implementing from reviewed020 |
+| 021 | `codex/021-writing-desk` · isolated worktree | APPROVED `f79e30b`, merged after independent verification |
 | 022 early unit | `codex/022-ui-foundations` · `/Users/miniying/.codex/worktrees/022-ui-foundations/kessel-run` | APPROVED at `77cda84`; handoff-selection safety and reusable mark assets only |
-| 022 completion | Same executor after stacking onto 021 | Waiting for final surfaces |
+| 022 completion | Same executor after stacking onto reviewed021 | Final integration authorized |
 
 ## Review gates
 
@@ -54,3 +54,21 @@ Browser tests exposed locator assumptions and an incorrect expectation that appr
 ## 020 final independent verification and integration
 
 Candidate `4d14201` passed primary independent215unit tests/52files, nonincremental typecheck, lint0errors/9baselinewarnings, skills15+15, production build and24/24Chromium cases across1440/768/390(reducedmotion). The primary inspected empty, approved, long-profile and recovery/error screenshots at desktop/tablet/mobile, including the independent run's mobile preset rejection. Full source/test diff reviewed; the late-preview storage assertion closes the independent reviewer's final test gap. No source blocker remains. Merged after verification; main source matches the tested candidate. All fixture servers stopped.021 now inherits these contracts and may narrowly adapt existing journey navigation tests without dropping their assertions. Live provider, microphone and real external-agent acceptance remain unverified as previously recorded.
+
+## 021 backend checkpoint and 022 independent assets
+
+021 strict piece-update and locked export expectations passed two source reviews and primary55focused tests/11files. Add explicit null-revision regression for blank output export. Fresh review also identified component-local dictation provenance/undo as state that must survive same-piece tab changes; the plan now explicitly requires this and capture cancellation when hiding the view.
+
+022 independent commit `4f2efdf` adds only icon.svg,16/32/48ICO and motion-safe generic skeleton. Primary read all three changes and independently validated SVG XML/exact approved paths and ICO32-bit DIB entries. No source blocker; held in the isolated branch pending final021 integration and whole-plan runtime/build verification.
+
+## 021 UI review round 1
+
+Primary and fresh reviewer vetted three blockers: shared brief/approach fields remained editable after piece acknowledgement although output retry would discard those edits; a held export response could download an older context after polling had already observed a newer brief; and failed brief recovery still allowed overwriting the unread record. Requested fixes and deterministic regressions, plus complete starter-return, delayed owner, revision-request-count and dictation-undo coverage. Supported routes explicitly key WritingWorkspace by entity ID, so a suspected cross-entity prop-reuse busy lock was investigated and rejected. No021 integration until reviewed corrections and independent final gates.
+
+Round1 follow-up confirms all three source fixes. Strengthen delayed-response tests to wait for client processing and inspect same-output recovery storage, and explicitly assert rejected-output shared fields stay locked. Primary independent full unit suite passes226tests/55files; lint0errors/9baselinewarnings and skills15+15 pass. A later browser assertion assumed UUID-ordered first preset was Article; the plan now authorizes explicit fixture selection and a fresh verification run after the executor's repair-limit stop. Build/browser/visual acceptance remains pending.
+
+Final read-only test review confirms those delayed-response and partial-creation assertions now exercise the intended behavior. Primary reread the updated browser tests and nonincremental typecheck passes after correction of a duplicate test option. The refined desktop desk journey passes; full matrix and independent rerun remain required. The original baseline checker still reports the expected reviewed018–020 and current021 files;022 must reconcile to the final reviewed021 commit rather than restore audit-baseline implementations.
+
+## 021 final independent verification and integration
+
+Candidate `f79e30b` passed independent226unit tests/55files, nonincremental typecheck, lint0errors/9baselinewarnings, skills15+15, production build and27/27Chromium cases across desktop/tablet/mobile-reduced-motion. The primary read the complete22-file change, reviewed delayed-response/ancestry/cache/provenance assertions and inspected desktop Outputs, tablet conflict and mobile blocked-recovery captures. Remaining known composer contrast and spacing belong to022. No source blocker remains. Candidate merged into main; no live model, microphone or user-content actions were used.022 may now merge this reviewed baseline into its isolated branch and finish presentation/assets.

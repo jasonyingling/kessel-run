@@ -16,3 +16,15 @@ it('advances the save base while retaining typing that happened during a delayed
   expect(state.contextHash).toBe('acknowledged-context');
   expect(acknowledgeSave(state.prose, state.prose, 'next', 'next-context').dirty).toBe(false);
 });
+
+import { canExportBuffer, parseEditorRecovery } from './editor-state';
+it('refuses changed buffers and any mismatched export identity', () => {
+  const saved = { revision: 'revision', hash: 'hash', contextHash: 'context' };
+  expect(canExportBuffer('visible', 'visible', saved, saved)).toBe(true);
+  expect(canExportBuffer('visible', 'new typing', saved, saved)).toBe(false);
+  for (const field of ['revision', 'hash', 'contextHash']) expect(canExportBuffer('visible', 'visible', saved, { ...saved, [field]: 'other' })).toBe(false);
+});
+it('rejects malformed recovered editor buffers', () => {
+  expect(parseEditorRecovery(JSON.stringify({ prose: 42, hash: 'a'.repeat(64), contextHash: 'b'.repeat(64) }))).toBeNull();
+  expect(parseEditorRecovery(JSON.stringify({ prose: 'Retained', hash: 'a'.repeat(64), contextHash: 'b'.repeat(64) }))?.prose).toBe('Retained');
+});

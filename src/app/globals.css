@@ -259,3 +259,13 @@
 /* Voice studio uses the shared controls with a secondary, optional AI path. */
 .kr-studio [role="tabpanel"] > .kr-panel { margin-top:16px; }
 .kr-studio .kr-secondary { background:transparent; border-color:transparent; box-shadow:none; color:var(--kr-muted); text-decoration:underline; text-underline-offset:4px; }
+
+/* Focused desk: retained panels keep local editor and dictation state across tabs. */
+.kr-tabs button { min-height: 44px; padding: 10px 14px; color: var(--kr-muted); border-radius: 8px; cursor: pointer; }
+.kr-tabs button[aria-selected="true"] { color: var(--kr-ink); background: var(--kr-paper); box-shadow: inset 0 -2px currentColor; }
+.kr-tabs button:focus-visible { outline: 2px solid #8aabff; outline-offset: 3px; }
+.kr-app [hidden] { display: none !important; }
+.kr-app fieldset { min-width: 0; }
+.kr-desk { align-items: start; }
+.kr-paper textarea { min-height: 420px; }
+@media (max-width: 760px) { .kr-paper textarea { min-height: 320px; } .kr-tabs { overflow-x: auto; } .kr-tabs button { flex-shrink: 0; } }

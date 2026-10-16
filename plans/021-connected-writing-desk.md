@@ -4,7 +4,7 @@
 
 ## Status / drift
 
-- IN PROGRESS · P1 · effort L · risk MED · direction/correctness/performance.
+- DONE · reviewed candidate `f79e30b`; merged after independent226unit/27browser cases, typecheck, lint, skills and build. P1 · effort L · risk MED · direction/correctness/performance.
 - Depends on 018 stable operations, 019 shell/routes, 020 approved starter voices and real presets.
 - Planned 2026-10-16 at `939adc5c2dbb36034fd2def4f4a395ba708d7be0` plus uncommitted Luna/Sol work. Run `git diff --stat 939adc5..HEAD -- src/components/kessel-run/app src/server/kessel-run/workspace src/app/api/kessel-run/local/content src/lib/kessel-run src/app/kessel-run tests docs` and `node plans/2026-10-16-ui-review/check-baseline.mjs`. Map expected predecessor extractions to their new files; STOP for unrelated contract drift or missing model fixes.
 
@@ -52,6 +52,8 @@ Brief view edits title, brief and approach via new hash-checked `piece-update` c
 
 Sources show supplied notes/interviews and attribution, with raw recognition behind disclosure. Keep plan 008's direct-field Dictate/Stop dictation, editable text, Clean text preview/Undo and explicit Send or Save source. Missing AI disables only optional cleanup/generation, not typing, dictation capability or source saving. Hide credential-source/model plumbing in an assistant settings disclosure; show clear one-time Connect AI action only when needed.
 
+Tab extraction must preserve the composer's component-local recognition provenance, cleanup-applied state and undo, not only its controlled text. Keep the same-piece composer mounted or retain its complete state; stop dictation/cleanup when hiding its view. Cover dictate → switch view → return → save source with exact provenance. A fresh output legitimately has `currentRevision: null`; receipt-bound clean export must distinguish an explicit null revision expectation from an omitted expectation and cover export of a new blank output.
+
 Writing view leads with saved/unsaved/conflict state and editor. Assistant has plain **Send** with model and billing context nearby; no new request is made on route entry. Review is contextual alongside/below writing: retained candidate comparison, explicit use/reject, exact final approval and optional lessons. Don't force an immediate lesson modal after approval. Separate generation state from saved editorial state.
 
 Outputs view lists each format, status and exact selected voice/author; Add output reuses the resumable flow and starts an independent draft. Changing the publication default never changes existing pins.
@@ -78,6 +80,10 @@ Cache retained revision text by workspace ID + output ID + immutable revision ID
    - Verify: `npm run test:app:e2e -- tests/e2e/writing-desk.spec.ts tests/e2e/workspace.spec.ts tests/e2e/dictation.spec.ts` → pass all configured viewport/motion projects. No billed provider call is necessary.
 
 ## Final gates / done
+
+### Verification refinement from execution review
+
+The new desk browser journey must explicitly select its intended Article fixture preset before asserting Article output. The application does not promise a semantic ordering of presets; selecting the first returned preset does not establish that it is Article. After the executor correctly stopped at its test-repair limit, the reviewer inspected the fixture and creation default and authorized this deterministic setup correction plus the requested review regressions, then a fresh gate run. Do not change product preset ordering merely to satisfy the test. For delayed-response regressions, confirm the relevant response was consumed by the client before checking text/storage or releasing the next response; observing an earlier overview update is insufficient evidence that output context was processed.
 
 `npm test`, `npm run typecheck -- --incremental false`, `npm run lint`, `npm run skills:check`, `npm run build` → exit 0, baseline warnings recorded separately. Capture actual populated desk/review/outputs screenshots at 1440/768/390px, keyboard paths, saved/dirty/loading/error states and reduced motion. Record Not verified for blocked checks. Scope diff is clean, manual path makes no inference requests, and exact approval/provenance tests remain passing.
 
