@@ -14,6 +14,10 @@
 
 The primary inspected021 desktop Outputs and tablet conflict captures: layout is intact, while composer-note contrast and the adjacent settings-link/refresh-button spacing remain within this final polish scope. Capture screenshots at scroll top after fonts, layout and status settle. Keep provider/model behavior, authentication grants and editorial contracts unchanged.
 
+### Focused verification refinement after two-repair stop
+
+The first browser gate found two genuine transition defects: pointer-scale residue when keyboard focus arrives, and intermediate disabled-background contrast. Scoped CSS corrections cancel transform interpolation on keyboard focus and transitions on disabled controls. Both pass the follow-up browser checks. A subsequently strengthened focus assertion must use a real keyboard gesture: after pointer-hover contrast, focus the preceding Markdown preview summary, press Tab to the link, assert the link is focused, then check visible outline style, width of at least2px and contrast. Programmatic link.focus() after hover does not establish keyboard modality and is not a valid test of :focus-visible. The primary reviewed that gesture mismatch and authorizes this narrow test correction and a fresh final gate; retain the stronger assertions and all handoff client-consumption checks. No additional source redesign is authorized. Distinguish CSS zoom, served icon assets and source skeleton checks from actual browser zoom, tab-chrome rendering and runtime skeleton animation.
+
 ## Why / current state
 
 Polish needs to survive every surface and state. The current dark shell uses pale links even on light paper, static cards advertise hover, settings/loading use another theme, and handoff selection can act on stale file contents. The generic Feather should become a recognizable original mark. This plan finishes the redesigned surfaces without adding ornamental animation or replacing working controls.
