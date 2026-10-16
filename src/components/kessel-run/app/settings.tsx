@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import { AppButton } from './app-button';
 import { useModelCatalog } from './use-model-catalog';
 import { connectionFailure } from '@/lib/kessel-run/connection-result';
 import { AgentConnections } from './connections';
@@ -69,23 +69,21 @@ export function AppSettings() {
     } catch (error) { setMessage(error instanceof Error && error.name === 'AbortError' ? 'Stopped. Partial text is provisional.' : error instanceof Error ? error.message : 'Test failed'); }
     finally { setBusy(false); setTesting(false); stop.current = null; }
   }
-  return <main className="mx-auto max-w-2xl space-y-6 px-6 py-12">
-    <Link className="underline underline-offset-4" href="/kessel-run">Back to writing</Link>
-    <h1 className="text-3xl font-semibold">Settings</h1>
+  return <div className="kr-settings">
+    <header className="kr-heading"><div><p className="kr-eyebrow">Workspace</p><h1>Settings</h1></div></header>
     <StorageSettings />
-    <h2 className="text-2xl font-semibold">AI connection (optional)</h2>
-    <p>Connect an OpenAI API key to write with AI or clean up dictated text. You can use the workspace without one.</p>
-    <div className="space-y-4 rounded-xl border p-5">
+    <h2>AI connection <span className="kr-muted">(optional)</span></h2><p>Connect an OpenAI API key to write with AI or clean up dictated text. You can use the workspace without one.</p>
+    <div className="kr-panel kr-settings-section">
       <label className="block">Credential source<select value={source} onChange={event => setSource(event.target.value)} className="mt-2 block w-full rounded-md border bg-background p-2"><option value="saved">Saved local key {status?.saved?.masked ?? '(not configured)'}</option><option value="environment">Server environment {status?.environment ? '(configured)' : '(not configured)'}</option></select></label>
       <p className="text-sm">The selected source is used explicitly. An invalid or exhausted key never triggers a fallback.</p>
       <label className="block">Replace saved key<input type="password" autoComplete="off" value={key} onChange={event => setKey(event.target.value)} className="mt-2 block w-full rounded-md border bg-background p-2" /></label>
-      <div className="flex flex-wrap gap-3"><button disabled={busy || key.length < 20} onClick={save} className="rounded-md border px-4 py-2 disabled:opacity-50">Save key</button><button disabled={busy || !status?.saved} onClick={remove} className="rounded-md border px-4 py-2 disabled:opacity-50">Remove saved key</button></div>
+      <div className="flex flex-wrap gap-3"><AppButton disabled={busy || key.length < 20} onClick={save} className="rounded-md border px-4 py-2 disabled:opacity-50">Save key</AppButton><AppButton disabled={busy || !status?.saved} onClick={remove} className="rounded-md border px-4 py-2 disabled:opacity-50">Remove saved key</AppButton></div>
       <label className="block">Model<select disabled={busy} value={model} onChange={event => setModel(event.target.value)} className="mt-2 block w-full rounded-md border bg-background p-2">{catalog.models.map(item => <option key={item.id} value={item.id} disabled={item.available === false}>{item.label}{item.available === false ? " · unavailable" : ""}</option>)}</select></label>
-      <p className="text-sm" role="status">{catalog.message}</p><button disabled={busy} onClick={refreshModels} className="underline underline-offset-4">Refresh models</button>
+      <p className="text-sm" role="status">{catalog.message}</p><AppButton disabled={busy} onClick={refreshModels} className="underline underline-offset-4">Refresh models</AppButton>
       <p className="text-sm">Connection testing sends supplied synthetic notes and may incur API charges. It saves a synthetic candidate in private test records.</p>
-      <div className="flex gap-3"><button disabled={busy || !status || !catalog.available} onClick={test} className="rounded-md border px-4 py-2 disabled:opacity-50">Check AI connection</button>{testing && <button onClick={() => stop.current?.abort()} className="rounded-md border px-4 py-2">Stop</button>}</div>
+      <div className="flex gap-3"><AppButton disabled={busy || !status || !catalog.available} onClick={test} className="rounded-md border px-4 py-2 disabled:opacity-50">Check AI connection</AppButton>{testing && <AppButton onClick={() => stop.current?.abort()} className="rounded-md border px-4 py-2">Stop</AppButton>}</div>
     </div>
     <p role="status" aria-live="polite" className="rounded-md border p-3">{message}</p>
     <AgentConnections />
-  </main>;
+  </div>;
 }

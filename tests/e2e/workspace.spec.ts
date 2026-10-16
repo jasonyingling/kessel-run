@@ -17,6 +17,7 @@ test('no-key manual publication, import, independent outputs, save and export', 
   await page.getByLabel('Purpose or brief').fill('A supplied synthetic audience');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page).toHaveURL(/\/publications\//);
+  await page.getByRole('link', { name: 'Manage voice', exact: true }).click();
   await page.getByRole('button', { name: 'Import voice / author' }).click();
   await page.getByLabel('Title', { exact: true }).fill('Synthetic voice');
   const profile = await readFile('tests/fixtures/kessel-run/voice.md', 'utf8');
@@ -25,6 +26,7 @@ test('no-key manual publication, import, independent outputs, save and export', 
   await page.getByRole('button', { name: 'Preview import' }).click();
   await expect(page.getByText('Added metadata preview')).toBeVisible();
   await page.getByRole('button', { name: 'Confirm use of this profile' }).click();
+  await page.getByRole('link', { name: 'Back to publication', exact: true }).click();
   await page.getByRole('button', { name: 'New piece' }).click();
   await page.getByLabel('Title', { exact: true }).fill('Synthetic piece');
   await page.getByLabel('Purpose or brief').fill('Review supplied workshop notes.');

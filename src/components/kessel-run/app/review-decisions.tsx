@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { OutputContext, WorkspaceOverview } from '@/lib/kessel-run/app-contracts';
 import { localApi } from '@/lib/kessel-run/local-api';
-import { AppButton } from './workspace';
+import { AppButton } from './app-button';
 import { MarkdownPreview } from './markdown-preview';
 
 type Rule = { text: string; evidence: string };

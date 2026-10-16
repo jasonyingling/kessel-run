@@ -50,7 +50,7 @@ test('real keyless launcher, name-only creation, lost response, duplicate click 
   await page.reload(); await expect(page).toHaveURL(publicationUrl);
   const nextPairUrl = await launcher.start();
   await page.goto(nextPairUrl);
-  await page.getByRole('link', { name: `Review ${testInfo.project.name}` }).click();
+  await page.getByRole('main').getByRole('link', { name: `Review ${testInfo.project.name}` }).click();
   await expect(page).toHaveURL(publicationUrl);
   const config = JSON.parse(await readFile(join(launcher.root, 'private', 'workspace.json'), 'utf8'));
   expect(await readdir(join(config.root, 'Publications'))).toHaveLength(1);

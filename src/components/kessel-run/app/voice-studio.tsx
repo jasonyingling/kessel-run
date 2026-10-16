@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import type { Entity } from '@/lib/kessel-run/app-contracts';
 import type { WorkspaceService } from '@/server/kessel-run/workspace/service';
 import { localApi } from '@/lib/kessel-run/local-api';
-import { AppButton } from './workspace';
+import { AppButton } from './app-button';
 import { MarkdownPreview } from './markdown-preview';
 type PublicationContext = Awaited<ReturnType<WorkspaceService['getPublicationContext']>>;
 
