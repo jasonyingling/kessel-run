@@ -36,6 +36,8 @@ Short New piece flow: publication (preselected in publication context), working 
 
 Create the piece with a stable command ID, retain its returned identity, then create the output with a separate stable command ID and current expected hash. Persist resumable operation state if the second operation fails; retry only the incomplete step. Do not create duplicate pieces or silently drop a saved idea. Navigate via the real returned link. Cancel after partial success keeps the saved idea visible.
 
+Review020 exposed a lifecycle hazard to address in this extraction: an old unmounted request can finish after a new owner retries the same command and starts another. Capture the command/store identity before awaiting, and guard both success and failure effects by owner lifecycle and retained operation identity. A late response must never clear a newer command, mark it rejected or remove a newer draft. Apply this to the existing unconditional clear in `WritingWorkspace.submit` when integrating the resumable flow. Include a deterministic delayed-old-response/new-command regression. Capture a brief or preset edit's expected hash together with its starting field values; refreshed polling props must not silently authorize overwriting another client's edits.
+
 ### Desk structure
 
 Breadcrumb and title; three views: **Brief & sources**, **Write & review**, **Outputs**. Use real URL-backed view state or accessible tabs, with back/forward behavior specified in tests. Default a new idea to brief, existing output to writing. Output selector stays visible. Desktop pairs paper editor and writing assistant; narrow layout stacks them without hiding save/export/state.
