@@ -12,8 +12,8 @@ Commit `95bf0c6` preserves the existing Luna/Sol fixes and the approved plans. B
 |---|---|---|
 | 018 | `codex/018-publication-first` · `/Users/miniying/.codex/worktrees/018-publication-first/kessel-run` | Implementing; review pending |
 | 019 | Assigned read-only preflight; worktree follows reviewed 018 | Waiting for dependency |
-| 020 | Not dispatched | Waiting for 019 |
-| 021 | Not dispatched | Waiting for 020 |
+| 020 | Read-only preflight complete | Waiting for 019 |
+| 021 | Read-only preflight complete | Waiting for 020 |
 | 022 early unit | `codex/022-ui-foundations` · `/Users/miniying/.codex/worktrees/022-ui-foundations/kessel-run` | APPROVED at `77cda84`; handoff-selection safety and reusable mark assets only |
 | 022 completion | Same executor after stacking onto 021 | Waiting for final surfaces |
 
@@ -28,3 +28,9 @@ Additional risks communicated to 018: preserve restart/re-pair bootstrap recover
 The primary reviewer read all five changed files and the ten async selection tests. Scope matches the approved independent unit. Independent rerun: 176 tests/40 files pass; nonincremental typecheck, lint (zero errors/nine existing warnings), skill-reference check and production build pass. Existing NFT tracing warning remains. SVG XML validates and the public asset exactly matches the approved concept. No source corrections were needed. Approved for integration; final 022 browser/UI acceptance remains open until shell and desk integration.
 
 019 preflight corrected a planning assumption: current editor has recovery storage, not an existing navigation guard. 019 must preserve buffers; 021 adds focused save/reconcile navigation. 020 preflight confirmed preset/format validation must apply only to new outputs, preserving historical output formats.
+
+## 018 review round 1
+
+Review identified unsafe client abandonment based on generic `INVALID_INPUT`/`CONFLICT` codes: existing content error mapping and journal recovery can emit those after partial writes. Requested authoritative rejection evidence, preservation of uncertain command IDs, and regression tests. Minimal content-route/journal/schema scope extension is approved for this contract. Also requested guarded browser-storage error paths and consistent advanced-workspace validation. No 018 merge until reviewed corrections and gates.
+
+021 preflight confirmed piece hashes already participate in context fingerprints. Revision-cache keys now explicitly include workspace identity because restored workspaces can share entity IDs.

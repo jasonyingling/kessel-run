@@ -54,7 +54,7 @@ When clean, **Export Markdown** exports current saved prose. When dirty, **Save 
 
 ### Polling
 
-Cache retained revision text by output ID + immutable revision ID (and hash when supplied). Derive pending revision keys rather than depending on new array identity. Fetch missing revisions only, discard late responses on output changes, and retain error/retry state. Keep external context detection even when user text is dirty; never suppress it just to avoid requests. An unchanged poll should cause zero extra revision-text reads after the initial load. Measure with request counts in deterministic tests, not a guessed performance percentage.
+Cache retained revision text by workspace ID + output ID + immutable revision ID (and hash when supplied). Derive pending revision keys rather than depending on new array identity. Fetch missing revisions only, discard late responses on output changes, and retain error/retry state. Keep external context detection even when user text is dirty; never suppress it just to avoid requests. An unchanged poll should cause zero extra revision-text reads after the initial load. Measure with request counts in deterministic tests, not a guessed performance percentage.
 
 ## Steps / gates
 
