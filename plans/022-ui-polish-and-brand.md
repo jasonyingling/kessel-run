@@ -4,7 +4,7 @@
 
 ## Status / drift
 
-- IN PROGRESS · final integration authorized after reviewed021 merge. P2 · effort M · risk LOW–MED · UI/correctness.
+- DONE · reviewed candidate `654927b` including early units; merged after independent226unit/33browser cases, typecheck, lint, skills, build and asset validation. Manual coverage limits are recorded in execution notes. P2 · effort M · risk LOW–MED · UI/correctness.
 - Depends on 019–021 for final shell/studio/desk surfaces; the handoff-file bug can be fixed earlier as a scoped unit.
 - Planned 2026-10-16 at `939adc5c2dbb36034fd2def4f4a395ba708d7be0` plus uncommitted Luna/Sol changes. Run `git diff --stat 939adc5..HEAD -- src/app src/components/kessel-run src/components/ui/skeleton.tsx public tests docs` and `node plans/2026-10-16-ui-review/check-baseline.mjs`. Reconcile expected 018–021 changes; unexpected contract drift or missing model fixes means STOP.
 

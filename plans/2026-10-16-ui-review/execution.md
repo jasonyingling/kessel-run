@@ -15,7 +15,7 @@ Commit `95bf0c6` preserves the existing Luna/Sol fixes and the approved plans. B
 | 020 | `codex/020-voice-studio` · isolated worktree | APPROVED `4d14201`, merged after independent verification |
 | 021 | `codex/021-writing-desk` · isolated worktree | APPROVED `f79e30b`, merged after independent verification |
 | 022 early unit | `codex/022-ui-foundations` · `/Users/miniying/.codex/worktrees/022-ui-foundations/kessel-run` | APPROVED at `77cda84`; handoff-selection safety and reusable mark assets only |
-| 022 completion | Same executor after stacking onto reviewed021 | Final integration authorized |
+| 022 completion | Same executor after stacking onto reviewed021 | APPROVED `654927b` including `4f2efdf` assets; merged after independent verification |
 
 ## Review gates
 
@@ -76,3 +76,20 @@ Candidate `f79e30b` passed independent226unit tests/55files, nonincremental type
 ## 022 final integration review
 
 Primary and fresh reviewer found no source behavior/scope blocker in the presentation diff. Browser checks caught keyboard-focus transform residue and a transient disabled-background contrast failure; narrow CSS corrections pass. Review strengthened focus checks to require an actual visible outline and handoff tests to await stale preview JSON consumption before confirming selectedB. The strengthened focus test used programmatic focus after hover, which does not request keyboard modality. Executor correctly stopped after two repairs. Primary reviewed the gesture mismatch, refined022 to use Tab from the preceding summary and authorized a fresh final gate. Full gates and visual acceptance remain pending.
+
+## 022 final independent verification and integration
+
+Candidate `654927b`, including icon/skeleton commit `4f2efdf` and previously merged handoff/mark unit `77cda84`, is approved and merged. Primary independently passed226unit tests/55files, nonincremental typecheck, lint0errors/9baselinewarnings, skills15+15, production build and33/33Chromium cases across1440/768/390 with reduced motion on mobile. Existing Next NFT warning remains. Primary read the complete nine-file final diff and tests, validated canonical SVG XML/path identity and16/32/48ICO entries, and inspected the16/20/24/28/32 mark sheet at1x/2x on white/navy. Main source matches the independently tested candidate.
+
+### UI review verdict: Approve for inspected coverage
+
+| Severity resolved | Principle / locations | Before → after | Evidence |
+|---|---|---|---|
+| HIGH | Selection identity · handoff import | Stale file/preview could replace the current selection → generation-bound reads, reviewed content/hash and explicit confirmation | Unit interleavings plus browser consumes staleA, retainsB and restores exactB |
+| MEDIUM | Contrast / focus · globals, paper, composer, shared controls | Low-contrast links/notes and weak boundaries → scoped colors, persistent paper underline and visible keyboard outline | Runtime ordinary text≥4.5:1 and sampled essential boundaries/focus≥3:1 |
+| MEDIUM | Interaction states · shared controls/cards | Disabled/static hover and transition residue → enabled-only press, instant keyboard/disabled state, static/reduced-motion suppression | Actual pointer, keyboard, disabled/static and reduced-motion browser checks |
+| MEDIUM | Consistency · shell, connections, icons | Placeholder brand and divergent controls → approved Run mark, coherent assets and shared leaf controls | Rendered size sheet, served asset/metadata checks and settled screenshots |
+
+State coverage includes entry/navigation empty/loading/recovery/error/success journeys; studio exact preferences, recovery, approval and disabled controls; desk dirty/conflict/save/export, paper links and composer notes; settled Settings/connection controls; invalid/canceled/stale handoff selection and restoration. Primary inspected settled desktop desk/handoff, mobile Settings, independent mobile overview/focus and tablet studio captures. CSS200% zoom and390px overflow checks pass. Screenshots are retained in the executor's ignored `test-results/022-final/` and the independent `/tmp/kr-022-root-browser/`; logs use `/tmp/kr-022-root-*.log`.
+
+**Not verified:** browser-native zoom (CSS zoom verified), actual browser-tab chrome rendering (served SVG/ICO metadata verified), generic Skeleton runtime animation (motion-safe source verified),10% animation replay, and exhaustive visual inspection of every token/connection state. No HIGH finding remains in inspected coverage. Live provider calls, real microphone capture and a real external Codex/MCP client remain separate acceptance checks. No user content or credentials were used. All018–022 plans are reviewed and merged; this is not a claim of exhaustive UI or live-provider acceptance.
