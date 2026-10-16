@@ -33,6 +33,10 @@ Out of scope: archive crawler, automatic website import, model/provider replacem
 
 UI integration scope includes a narrow `src/app/globals.css` extension if required for studio tab hit areas, visible selected state and studio/preset layout. Existing `.kr-tabs` rules style anchors only; new tab buttons must have a clear visible selection as well as ARIA state. Reuse shared static AppButton controls where appropriate. Global contrast and interaction polish remains022 scope.
 
+### Verification refinement from execution review
+
+Existing `decideProfile` creates a new approved version after every retained version; it does not mutate the proposed draft. Starting from v1, a proposed v2 remains draft and approval creates v3. Browser tests must assert those exact retained states, approved prose/default and unchanged old output pins. The reviewer explicitly authorized correcting the newly reached v2 expectation and resuming verification after the executor stopped at its repair limit; service version semantics stay unchanged. Also correct `exportOutput`'s empty-instructions fallback to describe the stored output format, since a preset's newer format must not relabel an older output. Keep current preset instruction/context-hash semantics intact and cover the fallback in tests.
+
 ## Target behavior
 
 ### Voice studio
