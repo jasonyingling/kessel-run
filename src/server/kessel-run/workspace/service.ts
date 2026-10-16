@@ -243,6 +243,16 @@ export class WorkspaceService {
     });
   }
 
+  async updatePiece(input: { operationId: string; expectedHash: string; pieceId: string; title: string; brief: string; mode: 'guided' | 'fast' }) {
+    const parsed = validatedCommand(baseInput.extend({ pieceId: schemas.id, title: z.string().trim().min(1).max(160), brief: text, mode: z.enum(['guided', 'fast']) }).strict(), input);
+    return this.mutate(parsed.operationId, parsed, async notes => {
+      const piece = this.find(notes, parsed.pieceId, 'content-brief');
+      this.check(piece, parsed.expectedHash);
+      const write = changed(piece, { title: parsed.title, mode: parsed.mode }, parsed.brief);
+      return { writes: [write], result: { id: parsed.pieceId, hash: hashText(write.text) } };
+    });
+  }
+
   async createOutput(input: { operationId: string; expectedHash: string; pieceId: string; title: string; format: string; preset: string; voice: schemas.Pin; author: schemas.Pin | null }) {
     const parsed = validatedCommand(baseInput.extend({ pieceId: schemas.id, title: z.string().min(1).max(160), format: z.string().min(1).max(80), preset: z.string().min(1).max(80), voice: schemas.pin, author: schemas.pin.nullable() }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
@@ -319,10 +329,16 @@ export class WorkspaceService {
     return this.journal.readLocked(async () => this.selection(await this.index(), outputId));
   }
 
-  async exportSnapshot(outputId: string) {
+  async exportSnapshot(outputId: string, expected: { expectedRevision?: string | null; expectedHash?: string; expectedContextHash?: string } = {}) {
+    const selection = validatedCommand(z.object({ expectedRevision: schemas.id.nullable().optional(), expectedHash: expectedHash.optional(), expectedContextHash: expectedHash.optional() }).strict(), expected);
     return this.journal.readLocked(async () => {
       const notes = await this.index();
       const context = this.context(notes, outputId, 0, true);
+      if ((selection.expectedRevision !== undefined && selection.expectedRevision !== context.output.currentRevision)
+        || (selection.expectedHash !== undefined && selection.expectedHash !== context.output.hash)
+        || (selection.expectedContextHash !== undefined && selection.expectedContextHash !== context.contextHash)) {
+        throw new schemas.WorkspaceError('CONFLICT', 'The saved output changed before export. Review it and try again.', 'rejected');
+      }
       const bundle = await this.selection(notes, outputId);
       const revisions = notes.filter(note => note.metadata.type === 'revision' && note.metadata.outputId === outputId).map(note => {
         const revision = schemas.revision.parse(note.metadata);
