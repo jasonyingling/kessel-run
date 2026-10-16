@@ -4,10 +4,14 @@ import { DictationComposer, type ComposerHandle } from './dictation-composer';
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button as BaseButton } from '@base-ui/react/button';
 import { BookOpen, FileText, Settings, Feather } from 'lucide-react';
-import { localApi, getWorkspaceReference, setWorkspaceReference } from '@/lib/kessel-run/local-api';
-import type { Entity, OutputContext, WorkspaceOverview } from '@/lib/kessel-run/app-contracts';
+import { localApi, LocalApiError, getWorkspaceReference, setWorkspaceReference } from '@/lib/kessel-run/local-api';
+import type { Entity, OutputContext, WorkspaceOverview, WorkspaceAvailability } from '@/lib/kessel-run/app-contracts';
+import { pairFromLauncher } from './pairing';
+import { PublicationEntry } from './publication-entry';
+import { operationState, type PendingOperation } from './operation-state';
 import { acknowledgeSave } from './editor-state';
 import { WritingPanel } from './writing-panel';
 import { MarkdownPreview } from './markdown-preview';
@@ -24,6 +28,12 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function entityName(entity?: Entity) { return String(entity?.title ?? ''); }
 
 export function WritingWorkspace({ publicationId, pieceId, outputId }: { publicationId?: string; pieceId?: string; outputId?: string }) {
+  const router = useRouter();
+  const [availability, setAvailability] = useState<WorkspaceAvailability | null>(null);
+  const [pairRequired, setPairRequired] = useState(false);
+  const operations = useRef<ReturnType<typeof operationState> | null>(null);
+  const [pendingOperation, setPendingOperation] = useState<PendingOperation | null>(null);
+  const submitting = useRef(false);
   const [state, setState] = useState<WorkspaceOverview | null>(null);
   const [context, setContext] = useState<OutputContext | null>(null);
   const [materials, setMaterials] = useState<{ sources: Entity[]; artifacts: Entity[] } | null>(null);
@@ -60,6 +70,9 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
   const workspaceReady = state !== null;
 
   async function refresh(allowWorkspaceChange = false) {
+    const available = await localApi<WorkspaceAvailability>('bootstrap');
+    setAvailability(available);
+    if (available.status !== 'ready') return;
     const next = await localApi<WorkspaceOverview>('workspace');
     if (getWorkspaceReference() && getWorkspaceReference() !== next.workspace.id && !allowWorkspaceChange) throw new Error('Workspace selection changed. Your previous editor buffer remains recoverable. Reload this tab to enter the newly selected workspace.');
     setWorkspaceReference(String(next.workspace.id));
@@ -79,6 +92,13 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
     let mounted = true;
     const controller = new AbortController();
     async function initialize() {
+      await pairFromLauncher();
+      const available = await localApi<WorkspaceAvailability>('bootstrap', undefined, controller.signal);
+      if (!mounted) return;
+      setAvailability(available); setPairRequired(false);
+      if (available.status !== 'ready') { setMessage(''); return; }
+      operations.current = operationState(sessionStorage, `${available.scope}:${available.workspaceRef}`);
+      setPendingOperation(operations.current.read());
       const next = await localApi<WorkspaceOverview>('workspace', undefined, controller.signal);
       if (!mounted) return;
       if (getWorkspaceReference() && getWorkspaceReference() !== next.workspace.id) throw new Error('Workspace selection changed. Reload this tab before editing.');
@@ -102,7 +122,7 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
         if (recovered && (recovered.hash !== saved.output.hash || recovered.contextHash !== saved.contextHash)) setExternal(saved);
       }
     }
-    void initialize().catch(error => { if (mounted) setMessage(error.message); });
+    void initialize().catch(error => { if (mounted) { setMessage(error.message); setPairRequired(error instanceof LocalApiError && error.status === 401); } });
     return () => { mounted = false; controller.abort(); };
   }, [outputId, pieceId]);
 
@@ -145,6 +165,8 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
   const outputs = state?.outputs.filter(value => (piece ? value.pieceId === piece.id : publication ? value.publicationId === publication.id : filter === 'all' || value.publicationId === filter) && (statusFilter === 'all' || value.status === statusFilter)) ?? [];
 
   function open(next: NonNullable<typeof form>) {
+    if (busy) { setMessage('Finish the current save before starting another.'); return; }
+    if (pendingOperation) { setMessage('Resolve your pending save before starting another.'); return; }
     setFormIdentity(crypto.randomUUID()); setForm(next); setTitle(''); setBody(''); setPreview(null); setAuthorId(crypto.randomUUID());
     setPreset(String(presets[0]?.id ?? ''));
     const defaultVoice = publication?.defaultVoice as { profileId: string; version: number } | null;
@@ -155,26 +177,43 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
   }
   function pin(value: string) { const [profileId, version] = value.split(':'); return { profileId, version: Number(version) }; }
   async function submit() {
+    if (submitting.current) return;
+    submitting.current = true;
     setBusy(true);
     try {
       const operationId = crypto.randomUUID();
-      if (form === 'workspace') await localApi('workspace', { operationId, root, title });
-      else if (form === 'publication') await localApi('content', { action: 'publication', input: { operationId, expectedHash: state?.workspace.hash, title, purpose: body, presets: ['Article', 'Short post'] } });
-      else if (form === 'publication-update') await localApi('content', { action: form, input: { operationId, expectedHash: publication?.hash, publicationId: publication?.id, title, purpose: body } });
-      else if (form === 'preset-update') await localApi('content', { action: form, input: { operationId, expectedHash: presets.find(value => value.id === preset)?.hash, presetId: preset, title, instructions: body } });
+      let command: PendingOperation | null = null;
+      if (form === 'workspace') command = { path: 'workspace', body: { operationId, root, title } };
+      else if (form === 'publication') command = { path: 'content', body: { action: 'publication', input: { operationId, expectedHash: state?.workspace.hash, title, purpose: body, presets: ['Article', 'Short post'] } } };
+      else if (form === 'publication-update') command = { path: 'content', body: { action: form, input: { operationId, expectedHash: publication?.hash, publicationId: publication?.id, title, purpose: body } } };
+      else if (form === 'preset-update') command = { path: 'content', body: { action: form, input: { operationId, expectedHash: presets.find(value => value.id === preset)?.hash, presetId: preset, title, instructions: body } } };
       else if (form === 'profile') {
         const input = { publicationId: publication?.id, prose: body, scope, parent: scope === 'author' ? pin(voiceId) : null, authorId: scope === 'author' ? authorId : null };
         if (!preview) {
           setPreview(await localApi('content', { action: 'profile-preview', input }));
           setMessage('Review the exact prose and added metadata, then confirm use.'); return;
         }
-        await localApi('content', { action: 'profile-import', input: { ...input, operationId, expectedHash: preview.publicationHash, title, provenance: attribution } });
-      } else if (form === 'piece') await localApi('content', { action: 'piece', input: { operationId, expectedHash: publication?.hash, publicationId: publication?.id, title, brief: body, mode } });
-      else if (form === 'output') await localApi('content', { action: 'output', input: { operationId, expectedHash: piece?.hash, pieceId: piece?.id, title, format: String(presets.find(value => value.id === preset)?.format ?? ''), preset, voice: pin(voiceId), author: authorPin ? pin(authorPin) : null } });
-      else if (form === 'source') await localApi('content', { action: 'source', input: { operationId, expectedHash: piece?.hash, pieceId: piece?.id, title, body: sourceComposer.current?.freeze() ?? body, dictation: sourceComposer.current?.provenance(), attribution, sourceType, referenceUrl: null } });
-      setForm(null); await refresh(form === 'workspace'); setMessage('Saved.');
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Save failed. Your input remains here.'); }
-    finally { setBusy(false); }
+        command = { path: 'content', body: { action: 'profile-import', input: { ...input, operationId, expectedHash: preview.publicationHash, title, provenance: attribution } } };
+      } else if (form === 'piece') command = { path: 'content', body: { action: 'piece', input: { operationId, expectedHash: publication?.hash, publicationId: publication?.id, title, brief: body, mode } } };
+      else if (form === 'output') command = { path: 'content', body: { action: 'output', input: { operationId, expectedHash: piece?.hash, pieceId: piece?.id, title, format: String(presets.find(value => value.id === preset)?.format ?? ''), preset, voice: pin(voiceId), author: authorPin ? pin(authorPin) : null } } };
+      else if (form === 'source') command = { path: 'content', body: { action: 'source', input: { operationId, expectedHash: piece?.hash, pieceId: piece?.id, title, body: sourceComposer.current?.freeze() ?? body, dictation: sourceComposer.current?.provenance(), attribution, sourceType, referenceUrl: null } } };
+      const store = operations.current;
+      if (!store || (!command && !store.read())) throw new Error('Reload before saving.');
+      const frozen = store.read() ?? store.begin(command!);
+      setPendingOperation(frozen);
+      const result = await localApi<{ link?: string }>(frozen.path, frozen.body);
+      store.clear(); setPendingOperation(null); setForm(null);
+      await refresh(frozen.path === 'workspace'); setMessage('Saved.');
+      if (result.link) router.push(result.link);
+    } catch (error) {
+      try { operations.current?.failed(error); } catch { /* Preserve unknown submission on storage failure. */ }
+      setMessage(error instanceof Error ? error.message : 'Save failed. Your input remains here.');
+    }
+    finally {
+      try { if (operations.current) setPendingOperation(operations.current.read()); }
+      catch { setMessage('Browser recovery storage is unavailable. Keep this tab open and restore storage access before retrying.'); }
+      setBusy(false); submitting.current = false;
+    }
   }
   async function saveEditor() {
     if (!context || !outputId) return;
@@ -205,10 +244,13 @@ export function WritingWorkspace({ publicationId, pieceId, outputId }: { publica
 
   return <main className="kr-app">
     <aside className="kr-sidebar"><Link href="/kessel-run" className="kr-brand"><Feather size={23} />Kessel Run</Link><p>Your editorial workspace</p><nav aria-label="Workspace"><Link href="/kessel-run"><BookOpen size={18} />Overview</Link><Link href="/kessel-run/settings"><Settings size={18} />API & agent settings</Link></nav><div className="kr-sidebar-bottom">Local first<br />Your words, your workspace</div></aside>
-    <div className="kr-main"><header className="kr-heading"><div><p className="kr-eyebrow">{output ? 'Writing desk' : publication ? 'Publication' : 'Workspace'}</p><h1>{entityName(output ?? piece ?? publication) || 'Your writing, in one place'}</h1><p>{publication ? publication.body : 'Publications, voices and independent outputs.'}</p></div><div className="kr-toolbar">{state && !publication && <><AppButton onClick={() => open('publication')}>New publication</AppButton><AppButton static onClick={() => open('workspace')}>Choose folder</AppButton></>}{publication && <AppButton onClick={() => open('piece')}>New piece</AppButton>}{piece && <AppButton onClick={() => open('output')}>Add output / repurpose</AppButton>}</div></header>
+    <div className="kr-main"><header className="kr-heading"><div><p className="kr-eyebrow">{output ? 'Writing desk' : publication ? 'Publication' : 'Workspace'}</p><h1>{entityName(output ?? piece ?? publication) || 'Your writing, in one place'}</h1><p>{publication ? publication.body : 'Publications, voices and independent outputs.'}</p></div><div className="kr-toolbar">{state && !publication && <AppButton disabled={busy || Boolean(pendingOperation)} onClick={() => open('publication')}>New publication</AppButton>}{publication && <AppButton disabled={busy || Boolean(pendingOperation)} onClick={() => open('piece')}>New piece</AppButton>}{piece && <AppButton disabled={busy || Boolean(pendingOperation)} onClick={() => open('output')}>Add output / repurpose</AppButton>}</div></header>
       <p className="kr-status" role="status" aria-live="polite">{message}</p>
-      {!state && <section className="kr-panel"><h2>Choose a new workspace</h2><p>Pair this browser through the launcher link in API settings. Choose an empty folder for new app content; existing notes are imported explicitly.</p><AppButton onClick={() => open('workspace')}>Choose folder</AppButton><Link href="/kessel-run/settings">Pair browser / API settings</Link></section>}
-      {form && <fieldset disabled={busy} className="kr-panel kr-form" aria-label={`New ${form}`}><h2>{form === 'profile' ? 'Import a voice' : `New ${form}`}</h2><Field label="Title"><input value={title} onChange={event => setTitle(event.target.value)} maxLength={160} disabled={Boolean(preview)} /></Field>
+      {!state && !availability && !pairRequired && <section className="kr-panel" aria-busy="true"><h2>Opening your writing workspace…</h2></section>}
+      {pairRequired && <section className="kr-panel"><h2>Open your local browser link</h2><p>Restart the local launcher and open the link it prints to connect this browser. You do not need an API key.</p></section>}
+      {availability && availability.status !== 'ready' && <PublicationEntry key={availability.scope} availability={availability} onReady={() => refresh(true)} />}
+      {pendingOperation && <section className="kr-panel"><h2>Resolve your pending save</h2><p>Your exact submission is retained. Retry to recover its result before editing or starting another save.</p><AppButton disabled={busy} onClick={() => void submit()}>Retry saved submission</AppButton>{pendingOperation.failed && <AppButton static onClick={() => { operations.current?.abandon(); setPendingOperation(null); }}>Edit failed submission</AppButton>}</section>}
+      {form && <fieldset disabled={busy || Boolean(pendingOperation)} className="kr-panel kr-form" aria-label={`New ${form}`}><h2>{form === 'profile' ? 'Import a voice' : `New ${form}`}</h2><Field label="Title"><input value={title} onChange={event => setTitle(event.target.value)} maxLength={160} disabled={Boolean(preview)} /></Field>
         {form === 'workspace' && <Field label="Empty folder path"><input value={root} onChange={event => setRoot(event.target.value)} /></Field>}
         {['publication', 'publication-update', 'preset-update', 'profile', 'piece'].includes(form) && <Field label={form === 'profile' ? 'Exact profile prose (Markdown)' : form === 'source' ? 'Supplied notes, including questions and answers' : 'Purpose or brief'}><textarea value={body} onChange={event => { setBody(event.target.value); setPreview(null); }} rows={9} maxLength={80000} /></Field>}
         {form === 'piece' && <Field label="Writing mode"><select value={mode} onChange={event => setMode(event.target.value)}><option value="guided">Guided · collaborate section by section</option><option value="fast">Fast · complete draft with gaps marked</option></select></Field>}

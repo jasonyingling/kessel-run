@@ -1,0 +1,24 @@
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { ownerWrite } from '@/server/kessel-run/local-session';
+import { GET, POST } from './route';
+let root: string;
+const token = 'a'.repeat(64);
+beforeEach(async () => { root = await mkdtemp(join(tmpdir(), 'kr-bootstrap-route-')); vi.stubEnv('KESSEL_RUN_PRIVATE_ROOT', join(root, 'private')); vi.stubEnv('KESSEL_RUN_CONTENT_PARENT', join(root, 'content')); vi.stubEnv('KESSEL_RUN_ORIGIN', 'http://127.0.0.1:3000'); await ownerWrite('session.json', { tokenHash: createHash('sha256').update(token).digest('hex'), expires: Date.now() + 60000, workspaceId: crypto.randomUUID() }); });
+afterEach(async () => { vi.unstubAllEnvs(); await rm(root, { recursive: true, force: true }); });
+const request = (body?: unknown, overrides: Record<string, string> = {}) => new Request('http://127.0.0.1:3000/api/kessel-run/local/bootstrap', { method: body ? 'POST' : 'GET', headers: { host: '127.0.0.1:3000', origin: 'http://127.0.0.1:3000', cookie: `kr-local-session=${token}`, 'x-kr-csrf': 'local', ...overrides }, body: body ? JSON.stringify(body) : undefined });
+it('requires the paired browser and same-origin CSRF before writes and never returns session secrets', async () => {
+  const command = { operationId: crypto.randomUUID(), title: 'Name only' };
+  expect((await POST(request(command, { cookie: '' }))).status).toBe(401);
+  expect((await POST(request(command, { 'x-kr-csrf': '' }))).status).toBe(403);
+  expect((await POST(request(command, { origin: 'https://attacker.example' }))).status).toBe(403);
+  const available = await (await GET(request())).json();
+  expect(available.status).toBe('uninitialized'); expect(JSON.stringify(available)).not.toContain(token); expect(JSON.stringify(available)).not.toContain(createHash('sha256').update(token).digest('hex'));
+  const created = await (await POST(request(command))).json();
+  expect(created.publicationId).toBeTruthy();
+  expect(await (await POST(request(command))).json()).toEqual(created);
+  expect((await (await GET(request())).json()).status).toBe('ready');
+});

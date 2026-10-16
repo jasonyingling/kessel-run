@@ -5,6 +5,10 @@ import { randomBytes, randomUUID, createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 
 export default async function setup() {
+  // The real-launcher onboarding suite owns port3199 and its own disposable roots.
+  // It runs production start, so it can also coexist with this separate dev suite.
+  const selectedFiles = process.argv.filter(value => /\.spec\.[tj]s$/.test(value));
+  if (selectedFiles.length && selectedFiles.every(value => value.endsWith('onboarding.spec.ts'))) return;
   const root = await mkdtemp(join(tmpdir(), 'kr-browser-fixture-'));
   const privateRoot = join(root, 'private');
   await mkdir(privateRoot, { mode: 0o700 });

@@ -13,6 +13,12 @@ const text = z.string().max(80000);
 const expectedHash = z.string().length(64);
 const baseInput = z.object({ operationId: schemas.id, expectedHash });
 const now = () => new Date().toISOString();
+// Only call at the public command boundary, before journal recovery or writes.
+function validatedCommand<T extends z.ZodType>(schema: T, value: unknown): z.output<T> {
+  const result = schema.safeParse(value);
+  if (!result.success) throw new schemas.WorkspaceError('INVALID_INPUT', 'Check the required fields and try again.', 'rejected');
+  return result.data;
+}
 const kinds: Record<string, z.ZodType> = {
   workspace: schemas.workspace, publication: schemas.publication,
   'voice-profile': schemas.profile, 'content-brief': schemas.piece,
@@ -78,6 +84,10 @@ export class WorkspaceService {
         if (!revision || revision.metadata.outputId !== output.id) throw new schemas.WorkspaceError('INVALID_INPUT', 'Output references a missing or unrelated retained revision');
       }
     }
+    for (const note of notes.filter(value => value.metadata.type === 'publication')) {
+      const publication = schemas.publication.parse(note.metadata);
+      if (publication.defaultVoice) this.version(notes, publication.defaultVoice, publication.id);
+    }
     return notes;
   }
 
@@ -129,14 +139,14 @@ export class WorkspaceService {
     });
   }
 
-  async initialize(input: { operationId: string; title: string }) {
-    const parsed = z.object({ operationId: schemas.id, title: z.string().min(1).max(160) }).strict().parse(input);
+  async initialize(input: { operationId: string; title: string; workspaceId?: string }) {
+    const parsed = validatedCommand(z.object({ operationId: schemas.id, title: z.string().min(1).max(160), workspaceId: schemas.id.optional() }).strict(), input);
     return this.journal.transaction(parsed.operationId, parsed, async () => {
       await safePath(this.root, 'Kessel Run.md', true);
       if ((await readdir(this.root)).length) {
         throw new schemas.WorkspaceError('INVALID_INPUT', 'Choose a new empty app workspace. Existing notes require explicit import.');
       }
-      const home = metadata('workspace', parsed.title, { version: 0 });
+      const home = metadata('workspace', parsed.title, { version: 0, ...(parsed.workspaceId ? { id: parsed.workspaceId } : {}) });
       const write = created('Kessel Run.md', home, `# ${parsed.title}\n\n[Publications](Publications/) · [Pieces](Pieces/)\n`);
       return { writes: [write], result: { id: home.id, hash: hashText(write.text), version: 0 } };
     });
@@ -165,13 +175,14 @@ export class WorkspaceService {
     });
   }
 
-  async createPublication(input: { operationId: string; expectedHash: string; title: string; purpose: string; presets: string[] }) {
-    const parsed = baseInput.extend({ title: z.string().min(1).max(160), purpose: text, presets: z.array(z.string().min(1).max(80)).max(20) }).strict().parse(input);
+  async createPublication(input: { operationId: string; expectedHash: string; title: string; purpose: string; presets: string[]; publicationId?: string }) {
+    const parsed = validatedCommand(baseInput.extend({ title: z.string().min(1).max(160), purpose: text, presets: z.array(z.string().min(1).max(80)).max(20), publicationId: schemas.id.optional() }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const home = notes.find(note => note.metadata.type === 'workspace')!;
       this.check(home, parsed.expectedHash);
       if (new Set(parsed.presets).size !== parsed.presets.length) throw new schemas.WorkspaceError('INVALID_INPUT', 'Preset labels must be unique within a publication');
-      const publication = metadata('publication', parsed.title, { defaultVoice: null, presets: [] });
+      if (parsed.publicationId && notes.some(note => note.metadata.id === parsed.publicationId)) throw new schemas.WorkspaceError('CONFLICT', 'Publication identity already exists');
+      const publication = metadata('publication', parsed.title, { defaultVoice: null, presets: [], ...(parsed.publicationId ? { id: parsed.publicationId } : {}) });
       const presets = parsed.presets.map(title => metadata('output-preset', title, { publicationId: publication.id, format: title }));
       const publicationMetadata = { ...publication, presets: presets.map(preset => preset.id) };
       const path = `Publications/${publication.id}.md`;
@@ -180,7 +191,7 @@ export class WorkspaceService {
   }
 
   async previewProfile(input: { publicationId: string; prose: string; scope: 'publication' | 'author'; parent: schemas.Pin | null; authorId: string | null }) {
-    const parsed = z.object({ publicationId: schemas.id, prose: text.min(1), scope: z.enum(['publication', 'author']), parent: schemas.pin.nullable(), authorId: schemas.id.nullable() }).strict().parse(input);
+    const parsed = validatedCommand(z.object({ publicationId: schemas.id, prose: text.min(1), scope: z.enum(['publication', 'author']), parent: schemas.pin.nullable(), authorId: schemas.id.nullable() }).strict(), input);
     return this.journal.readLocked(async () => {
       const notes = await this.index();
       const publication = this.find(notes, parsed.publicationId, 'publication');
@@ -200,7 +211,7 @@ export class WorkspaceService {
     title: string; scope: 'publication' | 'author'; parent: schemas.Pin | null;
     authorId: string | null; provenance: string;
   }) {
-    const parsed = baseInput.extend({ publicationId: schemas.id, prose: text.min(1), title: z.string().min(1).max(160), scope: z.enum(['publication', 'author']), parent: schemas.pin.nullable(), authorId: schemas.id.nullable(), provenance: z.string().min(1).max(12000) }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ publicationId: schemas.id, prose: text.min(1), title: z.string().min(1).max(160), scope: z.enum(['publication', 'author']), parent: schemas.pin.nullable(), authorId: schemas.id.nullable(), provenance: z.string().min(1).max(12000) }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const publication = this.find(notes, parsed.publicationId, 'publication');
       this.check(publication, parsed.expectedHash);
@@ -222,7 +233,7 @@ export class WorkspaceService {
   }
 
   async createPiece(input: { operationId: string; expectedHash: string; publicationId: string; title: string; brief: string; mode: 'guided' | 'fast' }) {
-    const parsed = baseInput.extend({ publicationId: schemas.id, title: z.string().min(1).max(160), brief: text, mode: z.enum(['guided', 'fast']) }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ publicationId: schemas.id, title: z.string().min(1).max(160), brief: text, mode: z.enum(['guided', 'fast']) }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const publication = this.find(notes, parsed.publicationId, 'publication');
       this.check(publication, parsed.expectedHash);
@@ -233,7 +244,7 @@ export class WorkspaceService {
   }
 
   async createOutput(input: { operationId: string; expectedHash: string; pieceId: string; title: string; format: string; preset: string; voice: schemas.Pin; author: schemas.Pin | null }) {
-    const parsed = baseInput.extend({ pieceId: schemas.id, title: z.string().min(1).max(160), format: z.string().min(1).max(80), preset: z.string().min(1).max(80), voice: schemas.pin, author: schemas.pin.nullable() }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ pieceId: schemas.id, title: z.string().min(1).max(160), format: z.string().min(1).max(80), preset: z.string().min(1).max(80), voice: schemas.pin, author: schemas.pin.nullable() }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const piece = this.find(notes, parsed.pieceId, 'content-brief');
       this.check(piece, parsed.expectedHash);
@@ -380,7 +391,7 @@ export class WorkspaceService {
   }
 
   async importHandoff(input: { operationId: string; expectedHash: string; previewHash: string; bundle: HandoffBundle }) {
-    const parsed = baseInput.extend({ previewHash: expectedHash, bundle: handoffBundle }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ previewHash: expectedHash, bundle: handoffBundle }).strict(), input);
     const validated = this.validateHandoff(parsed.bundle);
     if (handoffHash(validated.value) !== parsed.previewHash) throw new schemas.WorkspaceError('CONFLICT', 'Restoration preview changed');
     return this.mutate(parsed.operationId, parsed, async notes => {
@@ -392,7 +403,7 @@ export class WorkspaceService {
   }
 
   async updatePublication(input: { operationId: string; expectedHash: string; publicationId: string; title: string; purpose: string }) {
-    const parsed = baseInput.extend({ publicationId: schemas.id, title: z.string().min(1).max(160), purpose: text }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ publicationId: schemas.id, title: z.string().min(1).max(160), purpose: text }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const publication = this.find(notes, parsed.publicationId, 'publication');
       this.check(publication, parsed.expectedHash);
@@ -401,7 +412,7 @@ export class WorkspaceService {
   }
 
   async updatePreset(input: { operationId: string; expectedHash: string; presetId: string; title: string; instructions: string }) {
-    const parsed = baseInput.extend({ presetId: schemas.id, title: z.string().min(1).max(80), instructions: text }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ presetId: schemas.id, title: z.string().min(1).max(80), instructions: text }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const preset = this.find(notes, parsed.presetId, 'output-preset');
       this.check(preset, parsed.expectedHash);
@@ -493,7 +504,7 @@ export class WorkspaceService {
   }
 
   async saveSource(input: { operationId: string; expectedHash: string; pieceId: string; title: string; body: string; attribution: string; sourceType: 'notes' | 'interview' | 'supplied-text'; referenceUrl: string | null; dictation?: { recognizedText: string; cleanupApplied: boolean } }) {
-    const parsed = baseInput.extend({ pieceId: schemas.id, title: z.string().min(1).max(160), body: text.min(1), attribution: z.string().min(1).max(2000), sourceType: schemas.source.shape.sourceType, referenceUrl: schemas.source.shape.referenceUrl, dictation: schemas.source.shape.dictation }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ pieceId: schemas.id, title: z.string().min(1).max(160), body: text.min(1), attribution: z.string().min(1).max(2000), sourceType: schemas.source.shape.sourceType, referenceUrl: schemas.source.shape.referenceUrl, dictation: schemas.source.shape.dictation }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const piece = this.find(notes, parsed.pieceId, 'content-brief');
       this.check(piece, parsed.expectedHash);
@@ -531,7 +542,7 @@ export class WorkspaceService {
   }
 
   async saveEditor(input: { operationId: string; expectedHash: string; expectedContextHash: string; outputId: string; prose: string }) {
-    const parsed = baseInput.extend({ outputId: schemas.id, expectedContextHash: expectedHash, prose: text }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ outputId: schemas.id, expectedContextHash: expectedHash, prose: text }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const output = this.find(notes, parsed.outputId, 'content-output');
       this.check(output, parsed.expectedHash);
@@ -548,7 +559,7 @@ export class WorkspaceService {
   }
 
   async proposeDraft(input: { operationId: string; expectedHash: string; expectedContextHash: string; outputId: string; prose: string; provenance: 'model' | 'external-agent'; declaredModel: string | null }) {
-    const parsed = baseInput.extend({ outputId: schemas.id, expectedContextHash: expectedHash, prose: text.min(1), provenance: z.enum(['model', 'external-agent']), declaredModel: z.string().max(160).nullable() }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ outputId: schemas.id, expectedContextHash: expectedHash, prose: text.min(1), provenance: z.enum(['model', 'external-agent']), declaredModel: z.string().max(160).nullable() }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const output = this.find(notes, parsed.outputId, 'content-output');
       this.check(output, parsed.expectedHash);
@@ -573,7 +584,7 @@ export class WorkspaceService {
   }
 
   async recordProgress(input: { operationId: string; expectedHash: string; pieceId: string; nextAction: string }) {
-    const parsed = baseInput.extend({ pieceId: schemas.id, nextAction: z.string().max(2000) }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ pieceId: schemas.id, nextAction: z.string().max(2000) }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const piece = this.find(notes, parsed.pieceId, 'content-brief');
       this.check(piece, parsed.expectedHash);
@@ -583,7 +594,7 @@ export class WorkspaceService {
   }
 
   async saveArtifact(input: { operationId: string; expectedHash: string; pieceId: string; title: string; kind: 'research' | 'anchor' | 'hook' | 'outline' | 'review'; body: string }) {
-    const parsed = baseInput.extend({ pieceId: schemas.id, title: z.string().min(1).max(160), kind: schemas.artifact.shape.kind, body: text }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ pieceId: schemas.id, title: z.string().min(1).max(160), kind: schemas.artifact.shape.kind, body: text }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const piece = this.find(notes, parsed.pieceId, 'content-brief');
       this.check(piece, parsed.expectedHash);
@@ -597,7 +608,7 @@ export class WorkspaceService {
     scope: 'publication' | 'author'; parent: schemas.Pin | null; authorId: string | null;
     prior: schemas.Pin | null; prose: string; evidence: string;
   }) {
-    const parsed = baseInput.extend({ publicationId: schemas.id, title: z.string().min(1).max(160), scope: z.enum(['publication', 'author']), parent: schemas.pin.nullable(), authorId: schemas.id.nullable(), prior: schemas.pin.nullable(), prose: text.min(1), evidence: z.string().min(1).max(24000) }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ publicationId: schemas.id, title: z.string().min(1).max(160), scope: z.enum(['publication', 'author']), parent: schemas.pin.nullable(), authorId: schemas.id.nullable(), prior: schemas.pin.nullable(), prose: text.min(1), evidence: z.string().min(1).max(24000) }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const publication = this.find(notes, parsed.publicationId, 'publication');
       this.check(publication, parsed.expectedHash);
@@ -626,7 +637,7 @@ export class WorkspaceService {
     operationId: string; expectedHash: string; outputId: string; machineRevisionId: string;
     finalRevisionId: string; target: 'publication' | 'author'; rules: { text: string; evidence: string }[];
   }) {
-    const parsed = baseInput.extend({ outputId: schemas.id, machineRevisionId: schemas.id, finalRevisionId: schemas.id, target: z.enum(['publication', 'author']), rules: z.array(z.object({ text: z.string().min(1).max(4000), evidence: z.string().min(1).max(4000) }).strict()).min(1).max(20) }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ outputId: schemas.id, machineRevisionId: schemas.id, finalRevisionId: schemas.id, target: z.enum(['publication', 'author']), rules: z.array(z.object({ text: z.string().min(1).max(4000), evidence: z.string().min(1).max(4000) }).strict()).min(1).max(20) }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const output = this.find(notes, parsed.outputId, 'content-output');
       this.check(output, parsed.expectedHash);
@@ -662,7 +673,7 @@ export class WorkspaceService {
 
   // Human-only decisions: these methods are absent from both agent tool registries.
   async decideDraft(input: { operationId: string; expectedHash: string; expectedContextHash: string; outputId: string; proposalId: string; accept: boolean }) {
-    const parsed = baseInput.extend({ expectedContextHash: expectedHash, outputId: schemas.id, proposalId: schemas.id, accept: z.boolean() }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ expectedContextHash: expectedHash, outputId: schemas.id, proposalId: schemas.id, accept: z.boolean() }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const output = this.find(notes, parsed.outputId, 'content-output');
       this.check(output, parsed.expectedHash);
@@ -686,7 +697,7 @@ export class WorkspaceService {
   }
 
   async acceptFinal(input: { operationId: string; expectedHash: string; expectedContextHash: string; outputId: string; revisionId: string }) {
-    const parsed = baseInput.extend({ expectedContextHash: expectedHash, outputId: schemas.id, revisionId: schemas.id }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ expectedContextHash: expectedHash, outputId: schemas.id, revisionId: schemas.id }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const output = this.find(notes, parsed.outputId, 'content-output');
       this.check(output, parsed.expectedHash);
@@ -706,7 +717,7 @@ export class WorkspaceService {
   }
 
   async decideProfile(input: { operationId: string; expectedHash: string; publicationId: string; proposalId: string; expectedProfileHash: string; accept: boolean }) {
-    const parsed = baseInput.extend({ publicationId: schemas.id, proposalId: schemas.id, expectedProfileHash: expectedHash, accept: z.boolean() }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ publicationId: schemas.id, proposalId: schemas.id, expectedProfileHash: expectedHash, accept: z.boolean() }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const publication = this.find(notes, parsed.publicationId, 'publication');
       this.check(publication, parsed.expectedHash);
@@ -740,7 +751,7 @@ export class WorkspaceService {
   }
 
   async decideLessons(input: { operationId: string; expectedHash: string; outputId: string; proposalId: string; expectedProposalHash: string; expectedProfileHash: string; decisions: { index: number; accept: boolean }[] }) {
-    const parsed = baseInput.extend({ outputId: schemas.id, proposalId: schemas.id, expectedProposalHash: expectedHash, expectedProfileHash: expectedHash, decisions: z.array(z.object({ index: z.number().int().nonnegative(), accept: z.boolean() }).strict()).min(1).max(20) }).strict().parse(input);
+    const parsed = validatedCommand(baseInput.extend({ outputId: schemas.id, proposalId: schemas.id, expectedProposalHash: expectedHash, expectedProfileHash: expectedHash, decisions: z.array(z.object({ index: z.number().int().nonnegative(), accept: z.boolean() }).strict()).min(1).max(20) }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const output = this.find(notes, parsed.outputId, 'content-output');
       this.check(output, parsed.expectedHash);

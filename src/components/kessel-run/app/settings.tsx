@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useModelCatalog } from './use-model-catalog';
 import { connectionFailure } from '@/lib/kessel-run/connection-result';
 import { AgentConnections } from './connections';
+import { pairFromLauncher } from './pairing';
+import { StorageSettings } from './storage-settings';
 
 type Status = { environment: boolean; saved: { reference: string; masked: string } | null; storage: string };
 const headers = { 'content-type': 'application/json', 'x-kr-csrf': 'local' };
@@ -25,12 +27,7 @@ export function AppSettings() {
   }
   useEffect(() => {
     async function initialize() {
-      const token = new URLSearchParams(window.location.hash.slice(1)).get('pair');
-      window.history.replaceState(null, '', window.location.pathname);
-      if (token) {
-        const response = await fetch('/api/kessel-run/local/pair', { method: 'POST', headers, body: JSON.stringify({ token }) });
-        if (!response.ok) throw new Error('Pairing expired or was already used. Restart the local launcher for a new link.');
-      }
+      await pairFromLauncher();
       await reload();
       refreshModels();
 
@@ -74,7 +71,9 @@ export function AppSettings() {
   }
   return <main className="mx-auto max-w-2xl space-y-6 px-6 py-12">
     <Link className="underline underline-offset-4" href="/kessel-run">Back to writing</Link>
-    <h1 className="text-3xl font-semibold">AI connection</h1>
+    <h1 className="text-3xl font-semibold">Settings</h1>
+    <StorageSettings />
+    <h2 className="text-2xl font-semibold">AI connection (optional)</h2>
     <p>Connect an OpenAI API key to write with AI or clean up dictated text. You can use the workspace without one.</p>
     <div className="space-y-4 rounded-xl border p-5">
       <label className="block">Credential source<select value={source} onChange={event => setSource(event.target.value)} className="mt-2 block w-full rounded-md border bg-background p-2"><option value="saved">Saved local key {status?.saved?.masked ?? '(not configured)'}</option><option value="environment">Server environment {status?.environment ? '(configured)' : '(not configured)'}</option></select></label>

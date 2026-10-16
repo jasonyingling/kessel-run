@@ -65,6 +65,8 @@ export async function POST(request: Request) {
     return Response.json(result, { headers: { 'cache-control': 'no-store' } });
   } catch (error) {
     const code = error instanceof WorkspaceError ? error.code : 'INVALID_INPUT';
-    return Response.json({ code: error instanceof LocalAccessError && error.status === 409 ? 'CONFLICT' : code, error: error instanceof WorkspaceError ? error.message : error instanceof LocalAccessError && error.status === 409 ? 'Workspace selection changed. Preserve your editor buffer and reload this tab.' : error instanceof LocalAccessError ? 'Pair this browser using the launcher link.' : 'Content operation failed. Preserve your input and check the selected workspace.' }, { status: error instanceof LocalAccessError ? error.status : code === 'CONFLICT' ? 409 : 400 });
+    // Only explicit command-boundary / zero-write journal rejection is definitive.
+    const outcome = error instanceof WorkspaceError ? error.outcome : 'unknown';
+    return Response.json({ code: error instanceof LocalAccessError && error.status === 409 ? 'CONFLICT' : code, outcome, error: error instanceof WorkspaceError ? error.message : error instanceof LocalAccessError && error.status === 409 ? 'Workspace selection changed. Preserve your editor buffer and reload this tab.' : error instanceof LocalAccessError ? 'Pair this browser using the launcher link.' : 'Content operation failed. Preserve your input and check the selected workspace.' }, { status: error instanceof LocalAccessError ? error.status : code === 'CONFLICT' ? 409 : 400 });
   }
 }

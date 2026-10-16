@@ -122,16 +122,20 @@ export class Journal {
       const prior = operations.find(value => value.operationId === operationId);
       if (prior) {
         if (prior.argumentsHash !== argumentsHash) throw new WorkspaceError('CONFLICT', 'Operation ID was reused with different arguments');
-        if (prior.state === 'conflict') throw new WorkspaceError('CONFLICT', 'This conflicting operation is retained for reconciliation');
+        if (prior.state === 'conflict') throw new WorkspaceError('CONFLICT', 'This rejected operation is retained for reconciliation', prior.writes.length === 0 ? 'rejected' : 'unknown');
         return prior.result as T;
       }
       let prepared: { writes: Write[]; result: T };
       try {
         prepared = await prepare();
       } catch (error) {
-        if (error instanceof WorkspaceError && error.code === 'CONFLICT') {
-          operations.push({ operationId, argumentsHash, state: 'conflict', writes: [], result: { error: 'CONFLICT' }, rejectedArguments: argumentsValue });
+        if (error instanceof WorkspaceError || error instanceof z.ZodError) {
+          const code = error instanceof WorkspaceError ? error.code : 'INVALID_INPUT';
+          operations.push({ operationId, argumentsHash, state: 'conflict', writes: [], result: { error: code }, rejectedArguments: argumentsValue });
           await ownerWrite('operations.json', operations, privateDirectory);
+          // Only the prepare phase can prove this command has made no writes.
+          // Recovery/apply failures above/below this block remain unknown.
+          throw new WorkspaceError(code, error instanceof WorkspaceError ? error.message : 'Invalid command input', 'rejected');
         }
         throw error;
       }

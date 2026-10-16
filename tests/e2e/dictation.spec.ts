@@ -2,9 +2,10 @@ import { test, expect } from '@playwright/test';
 import { readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
-test('inline dictation, typing, freeze, cleanup undo and source failures (authored; execution pending)', async ({ page, context }, testInfo) => {
+test('inline dictation, typing, freeze, cleanup undo and source failures', async ({ page, context }, testInfo) => {
   const errors: string[] = [];
   await rm(join(process.env.KR_E2E_ROOT!, 'private', 'workspace.json'), { force: true });
+  await rm(join(process.env.KR_E2E_ROOT!, 'private', 'selection.json'), { force: true });
   page.on('pageerror', error => errors.push(error.message));
   await context.addCookies([{ name: 'kr-local-session', value: process.env.KR_E2E_SESSION!, url: 'http://127.0.0.1:3197', httpOnly: true, sameSite: 'Strict' }]);
   await page.route('**/api/kessel-run/local/models?source=*', route => route.fulfill({ json: { checked: true, message: 'Synthetic model access', models: [{ id: 'gpt-6.1-sol', label: 'GPT-6.1 Sol', available: true }, { id: 'gpt-6-luna', label: 'GPT-6 Luna', available: true }] } }));
@@ -19,16 +20,14 @@ test('inline dictation, typing, freeze, cleanup undo and source failures (author
     }
     Object.assign(window, { SpeechRecognition: FakeRecognition });
   });
+  const fixture = await context.request.post('/api/kessel-run/local/workspace', { headers: { origin: 'http://127.0.0.1:3197', 'x-kr-csrf': 'local' }, data: { operationId: crypto.randomUUID(), root: join(process.env.KR_E2E_ROOT!, 'dictation-' + testInfo.project.name), title: `Synthetic ${testInfo.project.name}` } });
+  expect(fixture.ok()).toBe(true);
   await page.goto('/kessel-run');
-  await page.getByRole('button', { name: 'Choose folder' }).click();
-  await page.getByLabel('Title', { exact: true }).fill(`Synthetic ${testInfo.project.name}`);
-  await page.getByLabel('Empty folder path').fill(join(process.env.KR_E2E_ROOT!, 'dictation-' + testInfo.project.name));
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
   await page.getByRole('button', { name: 'New publication' }).click();
   await page.getByLabel('Title', { exact: true }).fill('Synthetic publication');
   await page.getByLabel('Purpose or brief').fill('A supplied synthetic audience');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await page.getByRole('link', { name: 'Synthetic publication' }).click();
+  await expect(page).toHaveURL(/\/publications\//);
   await page.getByRole('button', { name: 'Import voice / author' }).click();
   await page.getByLabel('Title', { exact: true }).fill('Synthetic voice');
   const profile = await readFile('tests/fixtures/kessel-run/voice.md', 'utf8');
@@ -41,15 +40,20 @@ test('inline dictation, typing, freeze, cleanup undo and source failures (author
   await page.getByLabel('Title', { exact: true }).fill('Synthetic piece');
   await page.getByLabel('Purpose or brief').fill('Review supplied workshop notes.');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await page.getByRole('link', { name: 'Synthetic piece' }).click();
+  await expect(page).toHaveURL(/\/pieces\//);
+  const pieceUrl = page.url();
   for (const name of ['Article output', 'Short output']) {
     await page.getByRole('button', { name: 'Add output / repurpose' }).click();
     await page.getByLabel('Title', { exact: true }).fill(name);
     await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page).toHaveURL(/\/outputs\//);
+    await page.goto(pieceUrl);
   }
   await page.getByRole('link', { name: 'Article output' }).click();
+  await expect(page).toHaveURL(/\/outputs\//);
+  await expect(page.getByRole('heading', { name: 'AI writing', exact: true })).toBeVisible();
   const composer = page.locator('.kr-composer');
-  const message = page.getByLabel('Message', { exact: true });
+  const message = page.getByRole('textbox', { name: 'Message', exact: true });
   await message.fill('Typed notes');
   await composer.getByRole('button', { name: 'Dictate', exact: true }).click();
   await message.focus();
@@ -81,11 +85,11 @@ test('inline dictation, typing, freeze, cleanup undo and source failures (author
   await message.fill('Original survives failed terminal');
   await page.getByRole('button', { name: 'Send billed AI turn' }).click();
   await expect(message).toHaveValue('Original survives failed terminal');
-  await page.getByRole('link', { name: 'Synthetic piece', exact: true }).click();
+  await page.goto(pieceUrl);
   await page.getByRole('button', { name: 'Add notes / interview' }).click();
   await page.getByLabel('Title', { exact: true }).fill('Synthetic dictated source');
   await page.getByLabel('Attribution / provenance').fill('Synthetic test writer');
-  const notes = page.getByLabel('Supplied notes, including questions and answers');
+  const notes = page.getByRole('textbox', { name: 'Supplied notes, including questions and answers', exact: true });
   await notes.fill('Typed source');
   const sourceComposer = page.locator('.kr-composer').first();
   await sourceComposer.getByRole('button', { name: 'Dictate', exact: true }).click();
@@ -100,7 +104,7 @@ test('inline dictation, typing, freeze, cleanup undo and source failures (author
   });
   await sourceComposer.getByRole('button', { name: 'Save source', exact: true }).click();
   await expect(notes).toHaveValue('Typed source raw source words');
-  await sourceComposer.getByRole('button', { name: 'Save source', exact: true }).click();
+  await page.getByRole('button', { name: 'Retry saved submission', exact: true }).click();
   await expect(page.getByText('Synthetic dictated source', { exact: false })).toBeVisible();
   await page.getByText('Synthetic dictated source', { exact: false }).click();
   await expect(page.getByText('Raw recognition (may contain errors)', { exact: true })).toBeVisible();

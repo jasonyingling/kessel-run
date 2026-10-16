@@ -1,0 +1,30 @@
+import { expect, it } from 'vitest';
+import { operationState } from './operation-state';
+import { LocalApiError } from '@/lib/kessel-run/local-api';
+it('retains exact command, identity and expected hash through unknown outcomes and reloads', () => {
+  const values = new Map<string, string>();
+  const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); }, removeItem: (key: string) => { values.delete(key); } };
+  const first = operationState(storage, 'session:workspace');
+  const command = { path: 'content', body: { action: 'publication', input: { operationId: 'stable', expectedHash: 'original', title: 'Original' } } };
+  expect(first.begin(command)).toEqual(command);
+  first.failed(new Error('response lost'));
+  const reloaded = operationState(storage, 'session:workspace');
+  expect(reloaded.begin({ path: 'content', body: { title: 'Changed' } })).toEqual(command);
+  expect(() => reloaded.abandon()).toThrow();
+  expect(operationState(storage, 'other-session:workspace').read()).toBeNull();
+  reloaded.failed(new LocalApiError(400, 'INVALID_INPUT', 'Unknown write failure'));
+  expect(() => reloaded.abandon()).toThrow();
+  reloaded.failed(new LocalApiError(409, 'CONFLICT', 'Recovery conflict after partial write'));
+  expect(() => reloaded.abandon()).toThrow();
+  reloaded.failed(new LocalApiError(409, 'CONFLICT', 'Stale hash, no writes', 'rejected'));
+  reloaded.abandon(); expect(reloaded.read()).toBeNull();
+  first.begin(command); first.clear(); expect(first.read()).toBeNull();
+});
+it('stops before remote work when browser storage cannot be read or written', () => {
+  const unavailable = operationState({ getItem: () => { throw new Error('denied'); }, setItem: () => {}, removeItem: () => {} }, 'scope');
+  expect(() => unavailable.read()).toThrow('denied');
+  const corrupt = operationState({ getItem: () => '{broken', setItem: () => {}, removeItem: () => {} }, 'scope');
+  expect(() => corrupt.read()).toThrow('Pending save needs recovery');
+  const full = operationState({ getItem: () => null, setItem: () => { throw new Error('quota'); }, removeItem: () => {} }, 'scope');
+  expect(() => full.begin({ path: 'bootstrap', body: { operationId: 'retained' } })).toThrow('quota');
+});
