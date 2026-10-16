@@ -28,6 +28,8 @@ Out of scope: schema/provider changes, key handling, editorial workflow redesign
 
 ### Reviewed integration details
 
+Parallel execution refinement: after reviewed020, the existing022 executor may finish the independent `src/app/icon.svg`, `src/app/favicon.ico` and generic `src/components/ui/skeleton.tsx` unit in isolation while021 works. These files do not overlap the desk contract or presentation. Preserve the approved mark geometry and perform asset/XML checks and focused type/lint checks. Do not integrate shell, shared CSS, connection controls, workspace wording or final UI/browser tests until reviewed021 is available; stack onto that reviewed base before completing the whole plan. This independent unit is not final022 acceptance.
+
 019 already fixes the Geist binding and uses bounded, static application loading skeletons; preserve those instead of duplicating the work. Include `connections.tsx` only for shared leaf controls, panel styling and settled-state browser evidence; its connection grants, authorization and token behavior must remain unchanged. Include publication-card count wording in `workspace.tsx` for correct singular/plural labels. Existing AgentConnections native borders and disabled controls need the same visual checks as Settings. The current favicon has 16/32/48/256px entries; deliberately replace it with the planned coherent 16/32/48 set. Installed Next16 file-based icon metadata supports the favicon and icon.svg without adding redundant layout metadata. Use existing local image tooling rather than introducing a generation dependency.
 
 ## Design specification
