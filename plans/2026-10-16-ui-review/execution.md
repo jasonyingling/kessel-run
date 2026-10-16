@@ -60,3 +60,7 @@ Candidate `4d14201` passed primary independent215unit tests/52files, nonincremen
 021 strict piece-update and locked export expectations passed two source reviews and primary55focused tests/11files. Add explicit null-revision regression for blank output export. Fresh review also identified component-local dictation provenance/undo as state that must survive same-piece tab changes; the plan now explicitly requires this and capture cancellation when hiding the view.
 
 022 independent commit `4f2efdf` adds only icon.svg,16/32/48ICO and motion-safe generic skeleton. Primary read all three changes and independently validated SVG XML/exact approved paths and ICO32-bit DIB entries. No source blocker; held in the isolated branch pending final021 integration and whole-plan runtime/build verification.
+
+## 021 UI review round 1
+
+Primary and fresh reviewer vetted three blockers: shared brief/approach fields remained editable after piece acknowledgement although output retry would discard those edits; a held export response could download an older context after polling had already observed a newer brief; and failed brief recovery still allowed overwriting the unread record. Requested fixes and deterministic regressions, plus complete starter-return, delayed owner, revision-request-count and dictation-undo coverage. Supported routes explicitly key WritingWorkspace by entity ID, so a suspected cross-entity prop-reuse busy lock was investigated and rejected. No021 integration until reviewed corrections and independent final gates.
