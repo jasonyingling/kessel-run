@@ -4,9 +4,13 @@
 
 ## Status and drift
 
-- TODO · P1 · effort L · risk MED · direction/architecture/UI.
+- IN PROGRESS · P1 · effort L · risk MED · direction/architecture/UI.
 - Depends on 018's typed entry states and stable create operations. No requirement to configure AI.
 - Planned 2026-10-16 at `939adc5c2dbb36034fd2def4f4a395ba708d7be0` plus uncommitted Luna/Sol changes. Run `git diff --stat 939adc5..HEAD -- src/app src/components/kessel-run src/lib/kessel-run tests/e2e docs` and `node plans/2026-10-16-ui-review/check-baseline.mjs`. Reconcile intentional 018 changes against the contracts below; stop for unrelated behavioral drift or missing model changes.
+
+## Reconciled execution base
+
+Reviewed main `a8d5bb8` includes018 and the independent022 handoff/mark unit. Baseline drift was inspected: every change matches the preserved model fixes,018, or reviewed022 early scope. Preserve bootstrap availability and session/workspace-scoped exact pending commands; only explicit `LocalApiError.outcome === "rejected"` permits abandonment. Shared pairing supports hash-only launcher navigation. `handoff-import.tsx` now uses the reviewed selection controller; only change its control imports here. Shell status must keep useful live announcements without painting empty status chrome. Existing browser suites now run successfully: retain actual pairing/keyless onboarding and separate Synthetic-workspace fake fixtures; update dictation navigation selectors as necessary when studio moves. This narrow test integration is in scope.
 
 ## Why
 

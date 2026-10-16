@@ -10,8 +10,8 @@ Commit `95bf0c6` preserves the existing Luna/Sol fixes and the approved plans. B
 
 | Plan | Branch / worktree | State |
 |---|---|---|
-| 018 | `codex/018-publication-first` · `/Users/miniying/.codex/worktrees/018-publication-first/kessel-run` | Implementing; review pending |
-| 019 | Assigned read-only preflight; worktree follows reviewed 018 | Waiting for dependency |
+| 018 | `codex/018-publication-first` · `/Users/miniying/.codex/worktrees/018-publication-first/kessel-run` | APPROVED `0f155f0`; combined candidate `b5124cc`, merged `a8d5bb8` |
+| 019 | `codex/019-editorial-shell` · isolated prepared worktree | Implementing from reviewed018 |
 | 020 | Read-only preflight complete | Waiting for 019 |
 | 021 | Read-only preflight complete | Waiting for 020 |
 | 022 early unit | `codex/022-ui-foundations` · `/Users/miniying/.codex/worktrees/022-ui-foundations/kessel-run` | APPROVED at `77cda84`; handoff-selection safety and reusable mark assets only |
@@ -36,3 +36,7 @@ Review identified unsafe client abandonment based on generic `INVALID_INPUT`/`CO
 021 preflight confirmed piece hashes already participate in context fingerprints. Revision-cache keys now explicitly include workspace identity because restored workspaces can share entity IDs.
 
 018 round1 follow-up found no remaining blockers. Primary independent unit rerun passed 187 tests/44 files; lint zero errors/nine baseline warnings and skills15+15 passed. Actual Chromium exposed same-document pairing-fragment navigation, now fixed with regression coverage. Final combined-tree gates remain pending. Narrow dictation fixture updates authorized because the new entry flow removed Choose folder; fake suites retain their existing Synthetic-workspace guard and explicit fixture setup.
+
+## 018 final independent verification
+
+Combined candidate `b5124cc` (includes reviewed022 early unit) passed200 tests/47 files, typecheck, lint0errors/9baselinewarnings, skills15+15 and production build. Normal, fake-production and fake-dev HTTP checks passed. Combined Chromium run passed15/15 across1440/768/390 with reduced motion on mobile. Primary inspected entry, loading, location error, retry, successful publication and corruption screenshots; no horizontal overflow. Expected preexisting font/mobile-header/status chrome issues move to019/022. Merged into main `a8d5bb8`; no paid inference, real credentials or user-content testing.

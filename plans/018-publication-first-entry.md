@@ -6,7 +6,7 @@
 
 ## Status
 
-- Priority P1; effort L; risk MED; category direction/correctness; status TODO.
+- Priority P1; effort L; risk MED; category direction/correctness; status DONE.
 - Depends on: 017/008 merged; preserve the working-tree Luna/Sol fixes before isolating execution.
 
 ## Why this matters
@@ -91,3 +91,7 @@ Stop if safe bootstrap requires relaxing authentication, initializing a nonempty
 Read applicable installed Next docs under `node_modules/next/dist/docs/` before route/component changes; use existing React/Next16, strict TypeScript, Zod and Vitest conventions. Branch suggestion `codex/018-publication-first`; commit style matches “Add inline dictation and optional reviewable cleanup.” `npm ci` is only needed in a new executor checkout. Do not alter lockfile for this work.
 
 Selection recovery is a security boundary: future multi-workspace support must preserve the global ordering and stale-session checks. New create flows must reuse stable command identities. Keep generic UI errors helpful and secret-free, while preserving specific recovery causes. The shared shell follows in 019; this plan should not attempt that redesign.
+
+## Reviewed completion
+
+Executor `0f155f0`; combined candidate `b5124cc`; merged into main at `a8d5bb8`. Primary reviewer read all changes and tests; independent review found three recovery defects, fixed in round1 and re-reviewed without blockers. Primary independently reran 200 tests/47 files, nonincremental typecheck, lint (zero errors/nine baseline warnings), skills15+15, production build (baseline NFT warning), all three HTTP modes, and all15 Chromium cases (onboarding9, workspace3, dictation3). All passed. Entry/loading/location-error/retry/success/corrupt-state screenshots captured at1440/768/390; primary inspected representative desktop/tablet/mobile states. Existing font, mobile-header and empty-status presentation belongs to019/022; broader editorial acceptance follows020/021. No paid inference or real user content was used.
