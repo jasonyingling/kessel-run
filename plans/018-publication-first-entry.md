@@ -30,6 +30,8 @@ Only modify `scripts/kessel-run-local.mjs`; `src/server/kessel-run/workspace/{co
 
 Review refinement: the new client retry state must distinguish a known rejected command from an unknown or partially applied outcome. The existing content route maps unexpected failures to `INVALID_INPUT`, and journal recovery may return `CONFLICT` after partial writes; neither code alone proves abandonment is safe. A minimal extension to `src/app/api/kessel-run/local/content/route.ts`, workspace journal/schema and focused tests is in scope to expose authoritative rejection evidence while retaining original IDs through uncertain outcomes.
 
+Test compatibility refinement: `tests/e2e/dictation.spec.ts` is also in scope solely for fixture creation, navigation and retry selectors affected by the new entry flow. Preserve its dictation/cleanup assertions. Fake-provider suites must retain the Synthetic-workspace guard and explicitly create such a workspace; the real no-key onboarding suite remains separate.
+
 Out of scope: UI-wide redesign, presets/voice workflow expansion, provider/model routing, MCP permission changes, portable skill storage, existing user content, `.env` and credentials. Never overwrite, auto-import or relocate an existing notes folder.
 
 ## Target interaction and storage contract
