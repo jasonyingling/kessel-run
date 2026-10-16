@@ -4,7 +4,7 @@
 
 ## Status / drift
 
-- IN PROGRESS · P1 · M–L · MED risk · direction/correctness.
+- IMPLEMENTED · awaiting independent final review/merge · P1 · M–L · MED risk · direction/correctness.
 - Depends on 018 (stable operations, publication entry), 019 (studio destination/shared controls).
 - Planned 2026-10-16 at `939adc5c2dbb36034fd2def4f4a395ba708d7be0` plus intentional uncommitted Luna/Sol fixes. Run `git diff --stat 939adc5..HEAD -- src/components/kessel-run/app src/server/kessel-run/workspace src/app/api/kessel-run/local src/app/kessel-run tests docs` and `node plans/2026-10-16-ui-review/check-baseline.mjs`. Reconcile expected 018/019 extractions; unexpected contract drift or missing model changes means STOP.
 
@@ -77,3 +77,33 @@ Use Node ≥22.13/npm (`npm ci` only if fresh checkout); read installed Next doc
 ## STOP / maintenance
 
 Stop if implementation requires modifying immutable approved profiles, inferring author traits, defaulting to an unapproved voice, changing MCP authorization or replacing stored output versions. Stop for unrelated drift/out-of-scope edits or two failed repair attempts. Keep approval distinct from maturity in future UI. Future preset versioning is a separate design decision; this plan makes current format semantics truthful without claiming immutable preset snapshots.
+
+
+## Execution evidence — 2026-10-16
+
+Implemented in isolated branch `codex/020-voice-studio` from reviewed baseline `1af3e83`. Baseline drift checks reconciled reviewed 018/019, early 022 and intentional Luna/Sol changes; model/provider behavior was preserved. Read the installed Next.js guides and applied better-ui standards. No dependencies, credentials, real user content, MCP authorization or immutable approved profile versions were changed.
+
+### Completed steps
+
+1. Added journaled preset creation, optional-format updates, membership/name/hash checks and new-output format agreement. Added authenticated standalone profile export with exact prose and whitelisted metadata. Historical output formats/pins remain readable and exportable; empty-instruction export copy uses the output's stored format. Focused workspace/content gates passed (52 tests across 10 files at the backend checkpoint).
+2. Added supplied-preference formatting, editable exact preview and explicit confirmation, no-voice prerequisite routing, validated return target and tab-local draft recovery. Focused library/app gates passed (69 tests across 16 files at the UI checkpoint). Strict recovery parsing rejects malformed draft fields.
+3. Added Profile/Authors/Evidence views, exact parent selection, selected-version export, prior/proposed comparison and explicit decisions. Added real preset settings with separate display name/format. Captured form hashes reject external preset edits rather than silently overwriting them. AI help is secondary and remains closed until chosen.
+4. Verified the full keyless journey through real local launcher fixtures, including no inference, delayed/lost responses, recovery across navigation, exact export, imported long prose, author mismatch, retained draft v2/separate approved v3, old output v1 pins and stored format, and optional AI configuration prompt only after choosing AI help. No API key or paid request was used.
+
+### Review corrections
+
+Independent review identified and verified fixes for late unmounted command completions/failures clearing newer commands, stale previews overwriting recovered drafts, and polled hashes overwriting locally dirty preset forms. Deterministic browser tests hold actual responses across remounts and assert both the current draft and retained storage/command identity. The pre-existing approval service retains proposed v2 and creates approved v3; the browser expectation was reconciled to that contract with explicit authorization after the repair-limit pause. Earlier locator failures were corrected to accessible named textbox/combobox locators without changing product behavior.
+
+### Final verification
+
+- `npm test`: **215 passed, 52 files**.
+- `npm run typecheck -- --incremental false`: passed.
+- `npm run lint`: passed, **0 errors / 9 pre-existing warnings** in shared AI elements.
+- `npm run skills:check`: **15 workspace / 15 runtime references** checked.
+- `npm run build`: passed; existing Next NFT tracing warning remains.
+- Combined `npm run test:app:e2e -- tests/e2e/onboarding.spec.ts tests/e2e/voice-studio.spec.ts tests/e2e/workspace.spec.ts tests/e2e/navigation.spec.ts tests/e2e/dictation.spec.ts --output=test-results-020-final`: **24 passed** across 1440px desktop, 768px tablet and 390px mobile with reduced motion. Fixture teardown completed; no owned server remains running.
+- `git diff --check`: passed.
+
+Screenshots are preserved locally in ignored `test-results/020-final/`; each studio project contains empty, exact preview, uncertain save, approved/exported, preset rejection and long-profile captures. Final desktop approved, tablet preview, mobile approved and mobile preset rejection were visually inspected; content stacks without observed horizontal overflow. Keyboard tab arrows/Home and reduced-motion behavior are automated. No separate slow-motion animation acceptance was performed; studio controls use static shared buttons. Broader visual polish remains plan 022.
+
+The studio and onboarding suites use real disposable keyless local workspaces. Existing dictation/navigation coverage uses synthetic fixtures where established; it is regression evidence, not proof of live provider or microphone behavior. Parent owns the plans index, independent final gate rerun and merge decision. No merge or push was performed by this executor.

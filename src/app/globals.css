@@ -255,3 +255,7 @@
 }
 
 .kr-settings [role="status"]:empty { position:absolute; width:1px; height:1px; border:0; padding:0; margin:0; clip-path:inset(50%); overflow:hidden; }
+
+/* Voice studio uses the shared controls with a secondary, optional AI path. */
+.kr-studio [role="tabpanel"] > .kr-panel { margin-top:16px; }
+.kr-studio .kr-secondary { background:transparent; border-color:transparent; box-shadow:none; color:var(--kr-muted); text-decoration:underline; text-underline-offset:4px; }

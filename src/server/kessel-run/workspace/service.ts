@@ -252,6 +252,7 @@ export class WorkspaceService {
       const publication = schemas.publication.parse(this.find(notes, publicationId, 'publication').metadata);
       const preset = notes.find(note => note.metadata.type === 'output-preset' && note.metadata.publicationId === publicationId && (note.metadata.id === parsed.preset || note.metadata.title === parsed.preset));
       if (!preset || !publication.presets.includes(String(preset.metadata.id))) throw new schemas.WorkspaceError('INVALID_INPUT', 'Choose an allowed publication preset');
+      if (parsed.format !== preset.metadata.format) throw new schemas.WorkspaceError('INVALID_INPUT', 'The selected preset format changed. Reload and choose its current format.');
       const voice = this.version(notes, parsed.voice, publicationId);
       if (voice.profile.scope !== 'publication' || voice.profile.status !== 'approved') throw new schemas.WorkspaceError('APPROVAL_REQUIRED', 'Select an approved publication voice');
       if (parsed.author) {
@@ -411,13 +412,37 @@ export class WorkspaceService {
     });
   }
 
-  async updatePreset(input: { operationId: string; expectedHash: string; presetId: string; title: string; instructions: string }) {
-    const parsed = validatedCommand(baseInput.extend({ presetId: schemas.id, title: z.string().min(1).max(80), instructions: text }).strict(), input);
+  async createPreset(input: { operationId: string; expectedHash: string; publicationId: string; title: string; format: string; instructions: string }) {
+    const parsed = validatedCommand(baseInput.extend({ publicationId: schemas.id, title: z.string().trim().min(1).max(80), format: z.string().trim().min(1).max(80), instructions: text }).strict(), input);
+    return this.mutate(parsed.operationId, parsed, async notes => {
+      const publication = this.find(notes, parsed.publicationId, 'publication');
+      this.check(publication, parsed.expectedHash);
+      if (notes.some(note => note.metadata.type === 'output-preset' && note.metadata.publicationId === parsed.publicationId && String(note.metadata.title).trim().toLowerCase() === parsed.title.toLowerCase())) throw new schemas.WorkspaceError('INVALID_INPUT', 'Choose a unique preset name in this publication.');
+      const preset = metadata('output-preset', parsed.title, { publicationId: parsed.publicationId, format: parsed.format });
+      return { writes: [created(`Output Presets/${preset.id}.md`, preset, parsed.instructions), changed(publication, { presets: [...schemas.publication.parse(publication.metadata).presets, preset.id] })], result: { id: preset.id } };
+    });
+  }
+
+  async updatePreset(input: { operationId: string; expectedHash: string; presetId: string; title: string; instructions: string; format?: string }) {
+    const parsed = validatedCommand(baseInput.extend({ presetId: schemas.id, title: z.string().trim().min(1).max(80), instructions: text, format: z.string().trim().min(1).max(80).optional() }).strict(), input);
     return this.mutate(parsed.operationId, parsed, async notes => {
       const preset = this.find(notes, parsed.presetId, 'output-preset');
       this.check(preset, parsed.expectedHash);
-      this.find(notes, String(preset.metadata.publicationId), 'publication');
-      return { writes: [changed(preset, { title: parsed.title }, parsed.instructions)], result: { id: parsed.presetId } };
+      const publication = schemas.publication.parse(this.find(notes, String(preset.metadata.publicationId), 'publication').metadata);
+      if (!publication.presets.includes(parsed.presetId)) throw new schemas.WorkspaceError('INVALID_INPUT', 'This preset is not available in its publication.');
+      if (notes.some(note => note.metadata.type === 'output-preset' && note.metadata.publicationId === publication.id && note.metadata.id !== parsed.presetId && String(note.metadata.title).trim().toLowerCase() === parsed.title.toLowerCase())) throw new schemas.WorkspaceError('INVALID_INPUT', 'Choose a unique preset name in this publication.');
+      return { writes: [changed(preset, { title: parsed.title, ...(parsed.format === undefined ? {} : { format: parsed.format }) }, parsed.instructions)], result: { id: parsed.presetId } };
+    });
+  }
+
+  async exportProfile(input: { publicationId: string; profile: schemas.Pin }) {
+    const parsed = validatedCommand(z.object({ publicationId: schemas.id, profile: schemas.pin }).strict(), input);
+    return this.journal.readLocked(async () => {
+      const notes = await this.index();
+      this.find(notes, parsed.publicationId, 'publication');
+      const { note, profile } = this.version(notes, parsed.profile, parsed.publicationId);
+      // A standalone editorial profile, never a workspace restoration bundle.
+      return { format: 'kessel-run-profile-v1' as const, metadata: { id: profile.id, title: profile.title, publicationId: profile.publicationId, version: profile.version, scope: profile.scope, authorId: profile.authorId, parent: profile.parent, status: profile.status, evidenceLevel: profile.evidenceLevel, provenance: profile.provenance }, prose: note.body, proseHash: hashText(note.body) };
     });
   }
 
