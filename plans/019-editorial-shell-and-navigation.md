@@ -60,7 +60,7 @@ Create pure functions selecting publication work and grouping ideas/outputs. Add
 
 ### 3. Compose publication home, studio destination and settings
 
-Extract current presentation into focused route views. Retain working import/proposal/approval actions under Voice studio. Publication home leads with work, not AI controls. Preserve dirty-output buffers on navigation; keep the existing guard until 021 explicitly improves it. Render loading in the same shell with bounded widths and static reduced-motion fallback.
+Extract current presentation into focused route views. Retain working import/proposal/approval actions under Voice studio. Publication home leads with work, not AI controls. Preserve dirty-output recovery buffers on navigation. Preflight confirmed there is no existing navigation guard; do not claim one exists or discard recovery while moving components. Plan 021 adds the focused save/reconcile navigation behavior. Render loading in the same shell with bounded widths and static reduced-motion fallback.
 
 **Verify:** `npm run test:app:e2e -- tests/e2e/navigation.spec.ts` → new tests pass across the three configured projects. Cover active links, publication switching, browser back/forward, settings continuity, unknown IDs, filtering and no horizontal overflow at 390px. Assert computed sans font includes Geist rather than Times. Use disposable fixtures, not the user's workspace.
 
