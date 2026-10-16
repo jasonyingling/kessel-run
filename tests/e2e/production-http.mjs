@@ -43,7 +43,7 @@ async function shutdown() {
 async function launch() {
   let output = '';
   child = spawn(process.execPath, [await realpath(npmPath), 'run', `app:${launchMode}`], {
-    env: { ...process.env, NODE_ENV: launchMode === 'dev' ? 'development' : 'production', PATH: `${bin}:/usr/bin:/bin`, PORT: '3198', OPENAI_API_KEY: '', KESSEL_RUN_ENABLE_LEGACY: '', KESSEL_RUN_TEST_PROVIDER: fake ? 'fake' : '', KESSEL_RUN_TEST_ROOT: root, KESSEL_RUN_PRIVATE_ROOT: privateRoot }, detached: true, stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, NODE_ENV: launchMode === 'dev' ? 'development' : 'production', PATH: `${bin}:/usr/bin:/bin`, PORT: '3198', OPENAI_API_KEY: '', KESSEL_RUN_ENABLE_LEGACY: '', KESSEL_RUN_TEST_PROVIDER: fake ? 'fake' : '', KESSEL_RUN_TEST_ROOT: root, KESSEL_RUN_PRIVATE_ROOT: privateRoot, KESSEL_RUN_CONTENT_PARENT: join(root, 'content') }, detached: true, stdio: ['ignore', 'pipe', 'pipe'],
   });
   child.stdout.on('data', value => { output += value.toString(); });
   child.stderr.on('data', () => { /* No raw runtime logs or pairing secrets are printed by this check. */ });
@@ -82,16 +82,21 @@ try {
   check(!unavailable.checked && unavailable.models.every(model => model.available === false), 'no-key discovery preserves unavailable state without inference');
   check((await fetch(`${origin}/api/kessel-run/local/models?source=invalid`, { headers: session.headers })).status === 400, 'invalid discovery source denied');
   check((await fetch(`${origin}/api/chat`, { method: 'POST', headers: session.headers, body: '{}' })).status === 403, 'legacy generation disabled');
-  const workspace = await request('workspace', session.headers, { operationId: operationId(), root: join(root, 'content'), title: 'Synthetic production HTTP workspace' });
+  check((await request('bootstrap', session.headers)).status === 'uninitialized', 'genuine first use is explicit');
+  const bootstrapInput = { operationId: operationId(), title: 'Synthetic publication' };
+  // Fake-provider checks retain their explicit Synthetic workspace guard. The
+  // normal mode above/below exercises the real keyless publication bootstrap.
+  const workspace = fake ? await request('workspace', session.headers, { operationId: operationId(), title: 'Synthetic production HTTP workspace', root: join(root, 'fake-content') }) : await request('bootstrap', session.headers, bootstrapInput);
+  if (!fake) check(JSON.stringify(await request('bootstrap', session.headers, bootstrapInput)) === JSON.stringify(workspace), 'identical bootstrap retry returns original result');
   session.headers['x-kr-workspace-ref'] = workspace.id;
   let state = await request('workspace', session.headers);
-  const publication = await request('content', session.headers, { action: 'publication', input: { operationId: operationId(), expectedHash: state.workspace.hash, title: 'Synthetic publication', purpose: 'Supplied synthetic purpose', presets: ['article', 'email'] } });
+  const publication = fake ? await request('content', session.headers, { action: 'publication', input: { operationId: operationId(), expectedHash: state.workspace.hash, title: 'Synthetic publication', purpose: 'Supplied synthetic purpose', presets: ['Article', 'Short post'] } }) : { id: workspace.publicationId };
   state = await request('workspace', session.headers);
   const profile = await request('content', session.headers, { action: 'profile-import', input: { operationId: operationId(), expectedHash: state.publications[0].hash, publicationId: publication.id, title: 'Synthetic voice', prose: 'Use supplied facts only.\n', scope: 'publication', authorId: null, parent: null, provenance: 'Explicitly confirmed synthetic HTTP fixture' } });
   state = await request('workspace', session.headers);
   const piece = await request('content', session.headers, { action: 'piece', input: { operationId: operationId(), expectedHash: state.publications[0].hash, publicationId: publication.id, title: 'Synthetic piece', brief: 'Supplied workshop notes', mode: 'fast' } });
   state = await request('workspace', session.headers);
-  const output = await request('content', session.headers, { action: 'output', input: { operationId: operationId(), expectedHash: state.pieces[0].hash, pieceId: piece.id, title: 'Article', format: 'article', preset: 'article', voice: { profileId: profile.id, version: 1 }, author: null } });
+  const output = await request('content', session.headers, { action: 'output', input: { operationId: operationId(), expectedHash: state.pieces[0].hash, pieceId: piece.id, title: 'Article', format: 'Article', preset: state.presets.find(preset => preset.title === 'Article').id, voice: { profileId: profile.id, version: 1 }, author: null } });
   let context = await request('content', session.headers, { action: 'context', input: { outputId: output.id } });
   await request('content', session.headers, { action: 'editor', input: { operationId: operationId(), expectedHash: context.output.hash, expectedContextHash: context.contextHash, outputId: output.id, prose: 'Exact synthetic human prose.\n' } });
   const tokenIndex = await request('connections', session.headers);

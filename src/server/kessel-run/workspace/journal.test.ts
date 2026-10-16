@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { Journal } from './journal';
 import { WorkspaceService } from './service';
 import { hashText } from './files';
+import { WorkspaceError } from './schema';
 
 let folder: string;
 let root: string;
@@ -65,10 +66,21 @@ it('preserves an external pointer edit and incoming text on ambiguous recovery',
     ], result: { saved: true },
   }), index => { if (index === 0) throw new Error('Injected crash'); })).rejects.toThrow();
   await writeFile(join(root, 'Pointer.md'), 'external human edit');
-  await expect(new Journal(root, privateDirectory).readLocked(async () => undefined)).rejects.toMatchObject({ code: 'CONFLICT' });
+  await expect(new Journal(root, privateDirectory).readLocked(async () => undefined)).rejects.toMatchObject({ code: 'CONFLICT', outcome: 'unknown' });
   expect(await readFile(join(root, 'Pointer.md'), 'utf8')).toBe('external human edit');
   expect(await readFile(join(root, 'Retained.md'), 'utf8')).toBe('incoming');
   expect(await readFile(join(privateDirectory, 'operations.json'), 'utf8')).toContain('incoming pointer');
+});
+it('distinguishes durable zero-write rejection from a conflict after a partial commit', async () => {
+  const journal = new Journal(root, privateDirectory);
+  const rejected = crypto.randomUUID();
+  await expect(journal.transaction(rejected, { input: 'old' }, async () => { throw new WorkspaceError('CONFLICT', 'Stale base'); })).rejects.toMatchObject({ outcome: 'rejected' });
+  await expect(journal.transaction(rejected, { input: 'old' }, async () => { throw new Error('must not prepare again'); })).rejects.toMatchObject({ outcome: 'rejected' });
+  const pending = crypto.randomUUID();
+  await expect(journal.transaction(pending, { input: 'same' }, async () => ({ writes: [{ path: 'First.md', text: 'saved', previousHash: null }, { path: 'Second.md', text: 'pending', previousHash: null }], result: { saved: true } }), index => { if (index === 0) throw new Error('I/O failure after write'); })).rejects.toThrow('I/O failure');
+  await writeFile(join(root, 'Second.md'), 'intervening edit');
+  await expect(journal.transaction(pending, { input: 'same' }, async () => { throw new Error('must not prepare again'); })).rejects.toMatchObject({ code: 'CONFLICT', outcome: 'unknown' });
+  expect(await readFile(join(root, 'First.md'), 'utf8')).toBe('saved');
 });
 
 it('reports journal corruption without overwriting content or returning empty state', async () => {

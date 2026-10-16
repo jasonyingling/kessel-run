@@ -5,18 +5,18 @@ import { join } from 'node:path';
 test('no-key manual publication, import, independent outputs, save and export', async ({ page, context }, testInfo) => {
   const errors: string[] = [];
   await rm(join(process.env.KR_E2E_ROOT!, 'private', 'workspace.json'), { force: true });
+  await rm(join(process.env.KR_E2E_ROOT!, 'private', 'selection.json'), { force: true });
   page.on('pageerror', error => errors.push(error.message));
   await context.addCookies([{ name: 'kr-local-session', value: process.env.KR_E2E_SESSION!, url: 'http://127.0.0.1:3197', httpOnly: true, sameSite: 'Strict' }]);
+  await page.route('**/api/kessel-run/local/models?source=*', route => route.fulfill({ json: { checked: true, models: [{ id: 'gpt-6.1-sol', label: 'GPT 6.1 Sol', available: true }, { id: 'gpt-6-luna', label: 'GPT 6 Luna', available: true }], message: 'Synthetic model catalog' } }));
+  const fixture = await context.request.post('/api/kessel-run/local/workspace', { headers: { origin: 'http://127.0.0.1:3197', 'x-kr-csrf': 'local' }, data: { operationId: crypto.randomUUID(), root: join(process.env.KR_E2E_ROOT!, testInfo.project.name), title: `Synthetic ${testInfo.project.name}` } });
+  expect(fixture.ok()).toBe(true);
   await page.goto('/kessel-run');
-  await page.getByRole('button', { name: 'Choose folder' }).click();
-  await page.getByLabel('Title', { exact: true }).fill(`Synthetic ${testInfo.project.name}`);
-  await page.getByLabel('Empty folder path').fill(join(process.env.KR_E2E_ROOT!, testInfo.project.name));
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
   await page.getByRole('button', { name: 'New publication' }).click();
   await page.getByLabel('Title', { exact: true }).fill('Synthetic publication');
   await page.getByLabel('Purpose or brief').fill('A supplied synthetic audience');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await page.getByRole('link', { name: 'Synthetic publication' }).click();
+  await expect(page).toHaveURL(/\/publications\//);
   await page.getByRole('button', { name: 'Import voice / author' }).click();
   await page.getByLabel('Title', { exact: true }).fill('Synthetic voice');
   const profile = await readFile('tests/fixtures/kessel-run/voice.md', 'utf8');
@@ -29,11 +29,14 @@ test('no-key manual publication, import, independent outputs, save and export', 
   await page.getByLabel('Title', { exact: true }).fill('Synthetic piece');
   await page.getByLabel('Purpose or brief').fill('Review supplied workshop notes.');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await page.getByRole('link', { name: 'Synthetic piece' }).click();
+  await expect(page).toHaveURL(/\/pieces\//);
+  const pieceUrl = page.url();
   for (const name of ['Article output', 'Short output']) {
     await page.getByRole('button', { name: 'Add output / repurpose' }).click();
     await page.getByLabel('Title', { exact: true }).fill(name);
     await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page).toHaveURL(/\/outputs\//);
+    await page.goto(pieceUrl);
   }
   await page.getByRole('link', { name: 'Article output' }).click();
   await page.getByLabel('Output prose').fill('Human-supplied synthetic draft.');

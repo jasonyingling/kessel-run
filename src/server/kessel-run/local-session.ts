@@ -123,10 +123,13 @@ export async function requireLocalSession(request: Request, mutation = false) {
   const expected = Buffer.from(session.tokenHash);
   if (actual.length !== expected.length || !timingSafeEqual(actual, expected) || session.expires < Date.now()) throw new LocalAccessError(401);
   if (mutation && request.headers.get('x-kr-csrf') !== 'local') throw new LocalAccessError();
-  return { workspaceId: session.workspaceId };
+  // Server-only identity lets selection reject requests authenticated before re-pairing.
+  return session;
 }
 export async function exchangePairing(request: Request, token: string) {
   requireLocalRequest(request, true);
+  const { withSelectionLock } = await import('./workspace/selection');
+  return withSelectionLock(async () => {
   // Claim the single-use file atomically across Next workers before comparing.
   const root = privateRoot();
   const claimed = resolve(root, `pairing.${randomBytes(16).toString('hex')}.json`);
@@ -141,4 +144,5 @@ export async function exchangePairing(request: Request, token: string) {
     await ownerWrite('session.json', { tokenHash: hash(sessionToken), expires: Date.now() + 86400000, workspaceId: pairing.workspaceId });
     return sessionToken;
   } finally { await unlink(claimed); }
+  });
 }

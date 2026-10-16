@@ -31,17 +31,24 @@ const workspaceInfo = await lstat(workspaceConfigurationPath).catch(error => {
   return null;
 });
 if (workspaceInfo) {
-  if (!workspaceInfo.isFile() || workspaceInfo.isSymbolicLink()) throw new Error('Workspace configuration must be a private regular file');
+  if (!workspaceInfo.isFile() || workspaceInfo.isSymbolicLink() || (process.getuid && workspaceInfo.uid !== process.getuid())) throw new Error('Workspace configuration must be an owner-controlled private regular file');
   await chmod(workspaceConfigurationPath, 0o600);
-  const workspaceConfiguration = JSON.parse(await readFile(workspaceConfigurationPath, 'utf8'));
-  if (!/^[a-f0-9-]{36}$/.test(workspaceConfiguration.id)) throw new Error('Workspace identity is corrupt');
-  workspaceId = workspaceConfiguration.id;
+  try {
+    const workspaceConfiguration = JSON.parse(await readFile(workspaceConfigurationPath, 'utf8'));
+    if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(workspaceConfiguration.id) || typeof workspaceConfiguration.root !== 'string' || typeof workspaceConfiguration.privateDirectory !== 'string' || Object.keys(workspaceConfiguration).length !== 3) throw new Error('Invalid configuration');
+    workspaceId = workspaceConfiguration.id;
+  } catch {
+    // Preserve damaged regular owner-controlled configuration for explicit repair.
+    // An unbound identity allows pairing only; the app exposes recovery, not setup.
+    workspaceId = randomUUID();
+    console.error('Workspace configuration needs recovery. Original configuration preserved.');
+  }
 }
 const temporary = resolve(canonical, `.pairing-${randomUUID()}.json`);
 await writeFile(temporary, JSON.stringify({ tokenHash: createHash('sha256').update(token).digest('hex'), expires: Date.now() + 600000, workspaceId }), { mode: 0o600, flag: 'wx' });
 await rename(temporary, resolve(canonical, 'pairing.json'));
 const origin = `http://127.0.0.1:${port}`;
-console.log(`Pair this browser within 10 minutes: ${origin}/kessel-run/settings#pair=${token}`);
+console.log(`Open Kessel Run within 10 minutes: ${origin}/kessel-run#pair=${token}`);
 const child = spawn(process.execPath, ['node_modules/next/dist/bin/next', mode, '--hostname', '127.0.0.1', '--port', String(port)], { stdio: 'inherit', env: { ...process.env, KESSEL_RUN_PRIVATE_ROOT: canonical, KESSEL_RUN_ORIGIN: origin } });
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => child.kill(signal));
 child.on('exit', code => process.exit(code ?? 1));

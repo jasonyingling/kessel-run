@@ -6,7 +6,7 @@ export const errorCodes = z.enum(['NOT_FOUND', 'CONFLICT', 'INVALID_INPUT', 'MIS
 export type ErrorCode = z.infer<typeof errorCodes>;
 export class WorkspaceError extends Error {
   readonly code: ErrorCode;
-  constructor(code: ErrorCode, message: string) { super(message); this.code = code; }
+  constructor(code: ErrorCode, message: string, readonly outcome: 'rejected' | 'unknown' = 'unknown') { super(message); this.code = code; }
 }
 export const common = z.object({
   id, title: z.string().min(1).max(160), schema_version: z.literal(1),
