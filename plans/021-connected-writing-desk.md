@@ -81,6 +81,10 @@ Cache retained revision text by workspace ID + output ID + immutable revision ID
 
 ## Final gates / done
 
+### Verification refinement from execution review
+
+The new desk browser journey must explicitly select its intended Article fixture preset before asserting Article output. The application does not promise a semantic ordering of presets; selecting the first returned preset does not establish that it is Article. After the executor correctly stopped at its test-repair limit, the reviewer inspected the fixture and creation default and authorized this deterministic setup correction plus the requested review regressions, then a fresh gate run. Do not change product preset ordering merely to satisfy the test. For delayed-response regressions, confirm the relevant response was consumed by the client before checking text/storage or releasing the next response; observing an earlier overview update is insufficient evidence that output context was processed.
+
 `npm test`, `npm run typecheck -- --incremental false`, `npm run lint`, `npm run skills:check`, `npm run build` → exit 0, baseline warnings recorded separately. Capture actual populated desk/review/outputs screenshots at 1440/768/390px, keyboard paths, saved/dirty/loading/error states and reduced motion. Record Not verified for blocked checks. Scope diff is clean, manual path makes no inference requests, and exact approval/provenance tests remain passing.
 
 Use Node ≥22.13/npm; `npm ci` only in fresh checkout. Read installed Next docs before changing routes. Suggested branch `codex/021-writing-desk`, descriptive commits. Build away from the user's running checkout.
