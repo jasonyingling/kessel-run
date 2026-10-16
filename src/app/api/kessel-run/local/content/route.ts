@@ -5,7 +5,7 @@ import { WorkspaceError } from '@/server/kessel-run/workspace/schema';
 import { exportOutput } from '@/server/kessel-run/workspace/import-export';
 import { parseHandoff } from '@/server/kessel-run/workspace/handoff';
 export const runtime = 'nodejs';
-const envelope = z.object({ action: z.enum(['publication', 'publication-update', 'preset-update', 'profile-preview', 'profile-import', 'profile-propose', 'profile-decision', 'draft-decision', 'final-accept', 'lessons-propose', 'lessons-decision', 'piece', 'piece-context', 'output', 'source', 'editor', 'context', 'revision', 'publication-context', 'export', 'handoff-preview', 'handoff-import']), input: z.unknown() }).strict();
+const envelope = z.object({ action: z.enum(['publication', 'publication-update', 'preset-update', 'preset-create', 'profile-export', 'profile-preview', 'profile-import', 'profile-propose', 'profile-decision', 'draft-decision', 'final-accept', 'lessons-propose', 'lessons-decision', 'piece', 'piece-context', 'output', 'source', 'editor', 'context', 'revision', 'publication-context', 'export', 'handoff-preview', 'handoff-import']), input: z.unknown() }).strict();
 type Service = Awaited<ReturnType<typeof configuredWorkspace>>['service'];
 function input<T>(value: unknown): T { return value as T; }
 export async function POST(request: Request) {
@@ -19,6 +19,8 @@ export async function POST(request: Request) {
     switch (command.action) {
       case 'publication': result = await service.createPublication(input<Parameters<Service['createPublication']>[0]>(command.input)); break;
       case 'publication-update': result = await service.updatePublication(input<Parameters<Service['updatePublication']>[0]>(command.input)); break;
+      case 'preset-create': result = await service.createPreset(input<Parameters<Service['createPreset']>[0]>(command.input)); break;
+      case 'profile-export': result = await service.exportProfile(input<Parameters<Service['exportProfile']>[0]>(command.input)); break;
       case 'preset-update': result = await service.updatePreset(input<Parameters<Service['updatePreset']>[0]>(command.input)); break;
       case 'profile-preview': result = await service.previewProfile(input<Parameters<Service['previewProfile']>[0]>(command.input)); break;
       case 'profile-import': result = await service.confirmProfileImport(input<Parameters<Service['confirmProfileImport']>[0]>(command.input)); break;

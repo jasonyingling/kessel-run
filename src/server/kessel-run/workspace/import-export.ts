@@ -14,7 +14,7 @@ export async function exportOutput(service: WorkspaceService, outputId: string) 
     `Publication: ${first.output.publicationId}\nOutput: ${first.output.id}\nFormat: ${first.output.format}\nPreset: ${first.output.preset}\nStatus: ${first.output.status}\nVoice: ${JSON.stringify(first.output.voice)}\nAuthor: ${JSON.stringify(first.output.author)}\nContext hash: ${first.contextHash}\n`,
     '## Publication voice rules\n', first.voice.body,
     '## Author differences\n', first.author?.body ?? 'No author overlay selected.\n',
-    '## Format requirements\n', first.preset.body || `Selected format: ${first.preset.format}. No additional preset instructions supplied.\n`,
+    '## Format requirements\n', first.preset.body || `Selected format: ${first.output.format}. No additional preset instructions supplied.\n`,
     '## Brief\n', first.brief.body,
     '## Decisions and next action\n', `${JSON.stringify(first.brief.decisions)}\n${first.brief.nextAction}\n`,
     '## Supplied source material\n',
