@@ -4,7 +4,7 @@
 
 ## Status / drift
 
-- IN PROGRESS · P1 · effort L · risk MED · direction/correctness/performance.
+- DONE · reviewed candidate `f79e30b`; merged after independent226unit/27browser cases, typecheck, lint, skills and build. P1 · effort L · risk MED · direction/correctness/performance.
 - Depends on 018 stable operations, 019 shell/routes, 020 approved starter voices and real presets.
 - Planned 2026-10-16 at `939adc5c2dbb36034fd2def4f4a395ba708d7be0` plus uncommitted Luna/Sol work. Run `git diff --stat 939adc5..HEAD -- src/components/kessel-run/app src/server/kessel-run/workspace src/app/api/kessel-run/local/content src/lib/kessel-run src/app/kessel-run tests docs` and `node plans/2026-10-16-ui-review/check-baseline.mjs`. Map expected predecessor extractions to their new files; STOP for unrelated contract drift or missing model fixes.
 

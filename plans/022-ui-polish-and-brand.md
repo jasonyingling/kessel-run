@@ -4,9 +4,15 @@
 
 ## Status / drift
 
-- TODO · P2 · effort M · risk LOW–MED · UI/correctness.
+- IN PROGRESS · final integration authorized after reviewed021 merge. P2 · effort M · risk LOW–MED · UI/correctness.
 - Depends on 019–021 for final shell/studio/desk surfaces; the handoff-file bug can be fixed earlier as a scoped unit.
 - Planned 2026-10-16 at `939adc5c2dbb36034fd2def4f4a395ba708d7be0` plus uncommitted Luna/Sol changes. Run `git diff --stat 939adc5..HEAD -- src/app src/components/kessel-run src/components/ui/skeleton.tsx public tests docs` and `node plans/2026-10-16-ui-review/check-baseline.mjs`. Reconcile expected 018–021 changes; unexpected contract drift or missing model fixes means STOP.
+
+### Final integration reconciliation
+
+018–020 are reviewed and merged. The reviewed021 source candidate is `f79e30b`; final execution waits for the primary's independent browser gate and merge. The original hash checker is expected to report predecessor changes; it is not an instruction to restore old implementations. Preserve the shared shell/leaf controls, publication-first operation identities, scoped studio recovery and exact voice pins, connected creation, brief conflicts, retained desk panels, dictation provenance/undo, save ownership, immutable revision cache and receipt/context-bound exports. Final source scope is presentation and assets only. The early022 handoff/mark unit is already merged; independent icon/skeleton commit `4f2efdf` remains on the executor branch and must be retained when merging the approved main baseline into that branch.
+
+The primary inspected021 desktop Outputs and tablet conflict captures: layout is intact, while composer-note contrast and the adjacent settings-link/refresh-button spacing remain within this final polish scope. Capture screenshots at scroll top after fonts, layout and status settle. Keep provider/model behavior, authentication grants and editorial contracts unchanged.
 
 ## Why / current state
 
