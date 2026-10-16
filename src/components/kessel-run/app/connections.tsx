@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { AppButton } from './app-button';
+import { Field } from './field';
 
 type Connection = { id: string; clientName: string; publicationIds: string[] | null; allowDrafts: boolean; allowSources: boolean; revokedAt: number | null };
 type Index = { version: number; clients: Connection[] };
@@ -69,22 +71,22 @@ export function AgentConnections() {
     } finally { setBusy(false); }
   }
 
-  return <section className="space-y-4 rounded-xl border p-5" aria-labelledby="agent-connections">
+  return <section className="kr-panel kr-settings-section" aria-labelledby="agent-connections">
     <h2 id="agent-connections" className="text-xl font-semibold">Connect your agent</h2>
     <p>Your agent supplies the prose. MCP does not call Kessel Run’s model or require an API key.</p>
     <p className="break-all text-sm">Streamable HTTP endpoint: <code>{endpoint}</code></p>
     <p className="text-sm">A client must reach this machine. Cloud agents need a separately authorized connection. SDK transport is tested; a real Codex connection remains unverified.</p>
-    <label className="block">Client name<input value={name} onChange={event => setName(event.target.value)} maxLength={120} className="mt-2 block w-full rounded-md border bg-background p-2" /></label>
-    <fieldset className="space-y-2"><legend>Connection scope</legend><label className="flex gap-2"><input type="radio" name="scope" checked={publicationIds === null} onChange={() => setPublicationIds(null)} />Entire selected workspace</label><label className="flex gap-2"><input type="radio" name="scope" checked={publicationIds !== null} onChange={() => setPublicationIds([])} />Selected publications</label>{publicationIds !== null && publications.map(publication => <label className="flex gap-2" key={publication.id}><input type="checkbox" checked={publicationIds.includes(publication.id)} onChange={event => setPublicationIds(event.target.checked ? [...publicationIds, publication.id] : publicationIds.filter(id => id !== publication.id))} />{publication.title}</label>)}</fieldset>
+    <Field label="Client name"><input value={name} onChange={event => setName(event.target.value)} maxLength={120} /></Field>
+    <fieldset className="kr-connection-options"><legend>Connection scope</legend><label className="flex gap-2"><input type="radio" name="scope" checked={publicationIds === null} onChange={() => setPublicationIds(null)} />Entire selected workspace</label><label className="flex gap-2"><input type="radio" name="scope" checked={publicationIds !== null} onChange={() => setPublicationIds([])} />Selected publications</label>{publicationIds !== null && publications.map(publication => <label className="flex gap-2" key={publication.id}><input type="checkbox" checked={publicationIds.includes(publication.id)} onChange={event => setPublicationIds(event.target.checked ? [...publicationIds, publication.id] : publicationIds.filter(id => id !== publication.id))} />{publication.title}</label>)}</fieldset>
     <label className="flex items-center gap-2"><input type="checkbox" checked={drafts} onChange={event => setDrafts(event.target.checked)} />Allow draft, artifact and profile proposals</label>
     <label className="flex items-center gap-2"><input type="checkbox" checked={sources} onChange={event => setSources(event.target.checked)} />Allow supplied source notes</label>
-    <button disabled={busy || !index || !name.trim()} onClick={() => void mutate('POST')} className="rounded-md border px-4 py-2 disabled:opacity-50">Create connection</button>
-    {secret && <div className="space-y-2 rounded-md border p-3"><label className="block">One-time access token<textarea readOnly value={secret} className="mt-2 block w-full break-all rounded-md border bg-background p-2" /></label><button onClick={() => setSecret(null)} className="rounded-md border px-3 py-2">Hide token</button></div>}
-    <p role="status" className="rounded-md border p-3">{message}</p>
-    {index?.clients.map(connection => <div key={connection.id} className="space-y-2 border-t pt-3">
+    <AppButton disabled={busy || !index || !name.trim()} onClick={() => void mutate('POST')}>Create connection</AppButton>
+    {secret && <div className="kr-status kr-settings-section"><Field label="One-time access token"><textarea readOnly value={secret} /></Field><AppButton onClick={() => setSecret(null)}>Hide token</AppButton></div>}
+    <p role="status" className="kr-status">{message}</p>
+    {index?.clients.map(connection => <div key={connection.id} className="kr-connection-record">
       <h3 className="font-medium">{connection.clientName}</h3>
       <p className="text-sm">{connection.revokedAt !== null ? 'Revoked' : 'Active'} · {connection.publicationIds?.map(id => publications.find(value => value.id === id)?.title ?? 'Unavailable publication').join(', ') ?? 'Workspace scope'} · Drafts {connection.allowDrafts ? 'allowed' : 'disabled'} · Sources {connection.allowSources ? 'allowed' : 'disabled'}</p>
-      {connection.revokedAt === null && <div className="flex gap-3"><button disabled={busy} onClick={() => void mutate('PUT', connection.id)} className="rounded-md border px-3 py-2">Rotate token</button><button disabled={busy} onClick={() => void mutate('DELETE', connection.id)} className="rounded-md border px-3 py-2">Revoke</button></div>}
+      {connection.revokedAt === null && <div className="kr-toolbar"><AppButton disabled={busy} onClick={() => void mutate('PUT', connection.id)}>Rotate token</AppButton><AppButton disabled={busy} onClick={() => void mutate('DELETE', connection.id)}>Revoke</AppButton></div>}
     </div>)}
     <p className="text-sm">Configure Codex manually with <code>url</code> and <code>bearer_token_env_var</code> in its MCP settings. See docs/kessel-run-mcp.md. Never place a provider key in this configuration.</p>
   </section>;

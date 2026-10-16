@@ -124,7 +124,7 @@ The local app shares one shell across overview, All content, Voice studio and Se
 
 The overview leads with real publication cards and current work. Publication pages lead with content and a compact approved-default voice summary. Manage voice opens `/kessel-run/voices?publication=<id>` for existing import, proposal and approval actions. Voice selection and All content's publication/status filters are URL-backed, so back/forward preserves the destination. Settings groups workspace storage, optional AI connection and agent connections without changing credential or model selection behavior.
 
-Content progress counts pieces with no outputs as Ideas. Drafting, Review and Ready count individual outputs using their persisted states. Ready means that exact output is approved for export; it does not approve its siblings or publish anything. The board becomes a stacked list on narrow screens. Navigation retains output-scoped unsaved recovery buffers; explicit save/reconcile navigation remains plan 021 work.
+Content progress counts pieces with no outputs as Ideas. Drafting, Review and Ready count individual outputs using their persisted states. Ready means that exact output is approved for export; it does not approve its siblings or publish anything. The board becomes a stacked list on narrow screens. Navigation retains output-scoped unsaved recovery buffers and asks writers to save or reconcile edits before leaving the desk.
 
 ### Connected writing desk
 
@@ -135,3 +135,9 @@ The desk has **Brief & sources**, **Write & review**, and **Outputs** tabs. Thei
 **Export Markdown** exports the saved snapshot. **Save and export** first saves the visible text, then verifies the saved receipt, exported revision/context and still-visible buffer. Typing during save or an intervening change stops the download. Export never approves final prose. Save or reconcile edits before following another desk link; hard navigation and browser history retain output-scoped prose recovery. Unreadable brief recovery is not overwritten: restore browser storage or explicitly discard that recovery record.
 
 Retained draft and lesson comparisons are cached by workspace, output, immutable revision and prose hash. Unchanged polls do not fetch their prose again. Failed reads remain visible and can be retried; external context checks continue while the local editor is dirty.
+
+## Editorial UI states and brand
+
+The shared editorial shell uses the Run mark, with matching standalone SVG and 16/32/48px favicon entries. Controls retain visible keyboard focus; pointer press feedback respects static controls and reduced motion. Disabled controls stop motion immediately and retain readable labels. Light-paper Markdown links are underlined and use their own dark color; assistant privacy notes use the dark-surface muted color.
+
+Handoff restoration shows the selected filename and clears old content whenever selection changes. File reads and preview responses belong to that selection; confirmation sends the exact reviewed Markdown and hash. A new selection or changed workspace invalidates confirmation. Restoration still requires an empty workspace and explicit approval.
